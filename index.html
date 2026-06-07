@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelEase | Travel Abroad With Confidence</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="TravelEase home">
+      <span class="brand-mark">T</span>
+      <span>TravelEase</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="#destinations">Destinations</a>
+      <a href="#guide">Guide</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <p class="eyebrow">For first-time Indian travellers</p>
+        <h1>Everything you need to travel abroad, in one place</h1>
+        <p class="hero-copy">Visa basics, currency tips, SIM plans, transport apps, and cultural essentials for your first international trip.</p>
+        <form class="search-panel" id="searchForm" role="search">
+          <label class="sr-only" for="countrySearch">Where are you travelling to?</label>
+          <input id="countrySearch" type="search" placeholder="Where are you travelling to?" autocomplete="off">
+          <button type="submit">Search</button>
+          <div class="suggestions" id="suggestions" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="destinations">
+      <div class="section-heading">
+        <p class="eyebrow">Popular picks</p>
+        <h2>Start with a country guide</h2>
+      </div>
+      <div class="destination-grid" id="destinationGrid"></div>
+    </section>
+
+    <section class="guide-band" id="guide">
+      <div>
+        <p class="eyebrow">What you will find</p>
+        <h2>Built around the questions Indians ask before flying out</h2>
+      </div>
+      <div class="guide-grid">
+        <article>
+          <h3>Visa clarity</h3>
+          <p>Understand visa type, cost, timelines, and documents before you book too much.</p>
+        </article>
+        <article>
+          <h3>Money basics</h3>
+          <p>Know when to carry cash, when to swipe cards, and which forex services to compare.</p>
+        </article>
+        <article>
+          <h3>Arrival ready</h3>
+          <p>Land with SIM, airport transfer, emergency numbers, and etiquette notes sorted.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="chatRoot"></div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
