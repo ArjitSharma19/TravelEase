@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelEase Destination Guide</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="TravelEase home">
+      <span class="brand-mark">T</span>
+      <span>TravelEase</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="index.html#destinations">Destinations</a>
+      <a href="index.html#guide">Guide</a>
+    </nav>
+  </header>
+
+  <main class="destination-page">
+    <section class="destination-hero" id="destinationHero">
+      <div>
+        <a class="back-link" href="index.html">&larr; All destinations</a>
+        <p class="eyebrow">Country guide</p>
+        <h1 id="countryTitle">Loading guide...</h1>
+        <p id="countrySummary"></p>
+      </div>
+      <div class="hero-stat">
+        <span id="countryFlag" aria-hidden="true"></span>
+        <strong id="countryShort"></strong>
+      </div>
+    </section>
+
+    <section class="tabs-shell" aria-label="Destination details">
+      <div class="tabs" role="tablist" aria-label="Travel guide sections">
+        <button class="tab-button active" type="button" data-tab="visa" role="tab" aria-selected="true">Visa</button>
+        <button class="tab-button" type="button" data-tab="currency" role="tab" aria-selected="false">Currency</button>
+        <button class="tab-button" type="button" data-tab="sim" role="tab" aria-selected="false">SIM</button>
+        <button class="tab-button" type="button" data-tab="transport" role="tab" aria-selected="false">Transport</button>
+        <button class="tab-button" type="button" data-tab="essentials" role="tab" aria-selected="false">Essentials</button>
+      </div>
+      <div class="tab-card" id="tabContent" role="tabpanel"></div>
+    </section>
+  </main>
+
+  <div id="chatRoot"></div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
