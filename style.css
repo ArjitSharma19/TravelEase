@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
 :root {
   --blue: #1a73e8;
   --blue-dark: #0b4fb3;
@@ -17,10 +19,14 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Poppins", Arial, Helvetica, sans-serif;
   background: var(--bg);
 }
 
@@ -34,6 +40,46 @@ input {
   font: inherit;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroBlueShift {
+  0% {
+    background-position: 0% 50%, center;
+  }
+
+  50% {
+    background-position: 100% 50%, center;
+  }
+
+  100% {
+    background-position: 0% 50%, center;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.42), 0 12px 28px rgba(26, 115, 232, 0.18);
+  }
+
+  70% {
+    box-shadow: 0 0 0 14px rgba(26, 115, 232, 0), 0 16px 34px rgba(26, 115, 232, 0.24);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0), 0 12px 28px rgba(26, 115, 232, 0.18);
+  }
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -45,6 +91,7 @@ input {
   padding: 18px clamp(18px, 5vw, 72px);
   background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 8px 22px rgba(20, 39, 74, 0.08);
   backdrop-filter: blur(12px);
 }
 
@@ -84,9 +131,11 @@ input {
   place-items: center;
   padding: 72px clamp(18px, 5vw, 72px);
   background:
-    linear-gradient(120deg, rgba(10, 44, 91, 0.86), rgba(26, 115, 232, 0.72)),
+    linear-gradient(120deg, rgba(11, 79, 179, 0.9), rgba(26, 115, 232, 0.72), rgba(66, 133, 244, 0.78)),
     url("https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1800&q=80") center/cover;
+  background-size: 220% 220%, cover;
   color: #fff;
+  animation: heroBlueShift 14s ease-in-out infinite;
 }
 
 .hero-content {
@@ -170,11 +219,20 @@ h3 {
   border: 0;
   border-radius: 6px;
   cursor: pointer;
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .search-panel button:hover,
 .primary-button:hover {
   background: var(--blue-dark);
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulseGlow 2.6s ease-in-out infinite;
 }
 
 .suggestions {
@@ -221,6 +279,35 @@ h3 {
   padding: 68px 0;
 }
 
+.section,
+.guide-band,
+.destination-page,
+.destination-hero,
+.tabs-shell,
+.destination-card,
+.guide-grid article,
+.info-card,
+.tab-card,
+.search-panel {
+  animation: fadeInUp 720ms ease both;
+}
+
+.destination-card:nth-child(2),
+.guide-grid article:nth-child(2),
+.info-card:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.destination-card:nth-child(3),
+.guide-grid article:nth-child(3),
+.info-card:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+.destination-card:nth-child(4) {
+  animation-delay: 270ms;
+}
+
 .section-heading {
   display: flex;
   align-items: end;
@@ -245,12 +332,13 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 12px 32px rgba(20, 39, 74, 0.08);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
 
 .destination-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow);
+  border-color: rgba(26, 115, 232, 0.34);
+  transform: translateY(-8px);
+  box-shadow: 0 24px 52px rgba(20, 39, 74, 0.18);
 }
 
 .flag {
@@ -351,9 +439,11 @@ h3 {
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 8px;
+  scrollbar-width: thin;
 }
 
 .tab-button {
+  position: relative;
   flex: 0 0 auto;
   padding: 13px 20px;
   color: var(--muted);
@@ -362,12 +452,37 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
+  transition: color 220ms ease, background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.tab-button::after {
+  position: absolute;
+  right: 14px;
+  bottom: 6px;
+  left: 14px;
+  height: 3px;
+  background: var(--blue);
+  border-radius: 999px;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 240ms ease;
+}
+
+.tab-button:hover {
+  color: var(--blue);
+  border-color: rgba(26, 115, 232, 0.34);
+  box-shadow: 0 10px 22px rgba(26, 115, 232, 0.1);
 }
 
 .tab-button.active {
-  color: #fff;
-  background: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
   border-color: var(--blue);
+}
+
+.tab-button.active::after {
+  transform: scaleX(1);
 }
 
 .tab-card {
@@ -399,19 +514,23 @@ h3 {
   border-radius: 999px;
 }
 
-.badge.green {
+.badge.green,
+.badge.visa-free {
   background: var(--green);
 }
 
-.badge.orange {
+.badge.orange,
+.badge.visa-on-arrival {
   background: var(--orange);
 }
 
-.badge.blue {
+.badge.blue,
+.badge.e-visa {
   background: var(--blue);
 }
 
-.badge.red {
+.badge.red,
+.badge.sticker-visa {
   background: var(--red);
 }
 
@@ -609,6 +728,79 @@ h3 {
 
   .hero-stat {
     min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-header {
+    gap: 14px;
+    padding: 14px 18px;
+  }
+
+  .top-nav {
+    width: 100%;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .top-nav a {
+    flex: 0 0 auto;
+  }
+
+  .hero {
+    min-height: 560px;
+    padding: 56px 18px;
+  }
+
+  .section,
+  .guide-band,
+  .destination-page {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .section {
+    padding: 48px 0;
+  }
+
+  .guide-band {
+    padding: 38px 0 58px;
+  }
+
+  .destination-card,
+  .guide-grid article,
+  .info-card,
+  .tab-card {
+    padding: 18px;
+  }
+
+  .tabs {
+    gap: 10px;
+    margin-right: -14px;
+    margin-left: -14px;
+    padding: 0 14px 10px;
+  }
+
+  .tab-button {
+    min-width: max-content;
+    padding: 12px 17px;
+  }
+
+  .destination-hero {
+    padding: 28px 20px;
+  }
+
+  .hero-stat {
+    min-height: 132px;
+  }
+
+  .hero-stat span {
+    font-size: 3.2rem;
+  }
+
+  .key-value,
+  .info-grid {
+    grid-template-columns: 1fr;
   }
 }
 
