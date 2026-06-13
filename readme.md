@@ -16,3 +16,9 @@ UAE, USA, UK, Thailand, Singapore, Japan, Canada, Australia
 1. Clone the repo
 2. Add your Anthropic API key in script.js
 3. Open index.html in browser
+
+## Coming Soon
+- Backend with Node.js and MongoDB
+- Live currency rates
+- User accounts and saved trips
+- 8+ more destinations
