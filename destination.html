@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TravelEase Destination Guide</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="index.html" aria-label="TravelEase home">
       <span class="brand-mark">T</span>
+      <span aria-hidden="true">✈️</span>
       <span>TravelEase</span>
     </a>
     <nav class="top-nav" aria-label="Primary navigation">
@@ -34,11 +36,11 @@
 
     <section class="tabs-shell" aria-label="Destination details">
       <div class="tabs" role="tablist" aria-label="Travel guide sections">
-        <button class="tab-button active" type="button" data-tab="visa" role="tab" aria-selected="true">Visa</button>
-        <button class="tab-button" type="button" data-tab="currency" role="tab" aria-selected="false">Currency</button>
-        <button class="tab-button" type="button" data-tab="sim" role="tab" aria-selected="false">SIM</button>
-        <button class="tab-button" type="button" data-tab="transport" role="tab" aria-selected="false">Transport</button>
-        <button class="tab-button" type="button" data-tab="essentials" role="tab" aria-selected="false">Essentials</button>
+        <button class="tab-button active" type="button" data-tab="visa" role="tab" aria-selected="true"><i class="fa-solid fa-passport" aria-hidden="true"></i> Visa</button>
+        <button class="tab-button" type="button" data-tab="currency" role="tab" aria-selected="false"><i class="fa-solid fa-coins" aria-hidden="true"></i> Currency</button>
+        <button class="tab-button" type="button" data-tab="sim" role="tab" aria-selected="false"><i class="fa-solid fa-sim-card" aria-hidden="true"></i> SIM</button>
+        <button class="tab-button" type="button" data-tab="transport" role="tab" aria-selected="false"><i class="fa-solid fa-taxi" aria-hidden="true"></i> Transport</button>
+        <button class="tab-button" type="button" data-tab="essentials" role="tab" aria-selected="false"><i class="fa-solid fa-suitcase-medical" aria-hidden="true"></i> Essentials</button>
       </div>
       <div class="tab-card" id="tabContent" role="tabpanel"></div>
     </section>
