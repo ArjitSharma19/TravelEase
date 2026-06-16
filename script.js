@@ -1,4 +1,3 @@
-const API_KEY = "YOUR_API_KEY";
 const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -276,18 +275,13 @@ function setupChatWidget() {
     appendMessage(log, userMessage, "user");
     input.value = "";
 
-    if (API_KEY === "YOUR_API_KEY") {
-      appendMessage(log, "Add your Anthropic API key in script.js to enable live answers. For production, route this through a backend so the key is not exposed.", "assistant");
-      return;
-    }
-
     const waitingMessage = appendMessage(log, "Checking that for you...", "assistant");
 
     try {
       const answer = await askClaude(userMessage);
       waitingMessage.textContent = answer;
     } catch (error) {
-      waitingMessage.textContent = "Sorry, I could not reach the travel assistant right now. Please try again in a moment.";
+      waitingMessage.textContent = error.message || "Sorry, I could not reach the travel assistant right now. Please try again in a moment.";
     }
   });
 }
@@ -302,28 +296,22 @@ function appendMessage(log, message, sender) {
 }
 
 async function askClaude(userMessage) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("/api/chat", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01"
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 500,
       system: CHAT_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }]
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Server error: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.content
-    .map((part) => part.type === "text" ? part.text : "")
-    .join("")
-    .trim();
+  return data.text;
 }
