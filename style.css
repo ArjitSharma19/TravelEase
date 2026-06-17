@@ -127,9 +127,10 @@ input {
 }
 
 .hero {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-height: 600px;
-  place-items: center;
   padding: 110px clamp(18px, 5vw, 72px) 72px;
   background:
     linear-gradient(120deg, rgba(9, 31, 69, 0.88), rgba(26, 115, 232, 0.58), rgba(9, 31, 69, 0.86)),
@@ -142,6 +143,7 @@ input {
 .hero-content {
   width: min(920px, 100%);
   text-align: center;
+  margin: auto 0;
 }
 
 .eyebrow {
@@ -565,10 +567,20 @@ h3 {
 }
 
 .back-link {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
   display: inline-flex;
-  margin-bottom: 26px;
   color: #dceaff;
   font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.back-link:hover {
+  color: #fff;
+  transform: translateX(-4px);
 }
 
 .hero-stat {

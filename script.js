@@ -144,7 +144,7 @@ const countryImages = {
     "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=1400",
     "https://images.unsplash.com/photo-1570789210967-2cac24afeb00?w=1400",
     "https://images.unsplash.com/photo-1548391350-968f58dedaed?w=1400",
-    "https://images.unsplash.com/photo-1559628233-100c798642fd?w=1400"
+    "https://images.unsplash.com/photo-1574227492706-f65b24c3688a?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   ],
   Japan: [
     "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400",
@@ -159,8 +159,7 @@ const countryImages = {
     "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?w=1400",
     "https://images.unsplash.com/photo-1444044205806-38f3ed106c10?w=1400",
     "https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=1400",
-    "https://images.unsplash.com/photo-1559521783-1d1599583485?w=1400",
-    "https://images.unsplash.com/photo-1507629221898-500b1d27653d?w=1400"
+    "https://images.unsplash.com/photo-1559521783-1d1599583485?w=1400"
   ],
   Australia: [
     "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1400",
@@ -181,11 +180,11 @@ function initSlideshow(country) {
   const container = document.getElementById('slides-container');
   const dotsContainer = document.getElementById('slide-dots');
   if (!container || !dotsContainer) return;
-  
+
   container.innerHTML = '';
   dotsContainer.innerHTML = '';
   currentSlide = 0;
-  
+
   images.forEach((src, i) => {
     const img = document.createElement('img');
     img.src = src;
@@ -196,10 +195,10 @@ function initSlideshow(country) {
     dot.onclick = () => goToSlide(i);
     dotsContainer.appendChild(dot);
   });
-  
+
   if (slideInterval) clearInterval(slideInterval);
   slideInterval = setInterval(() => changeSlide(1), 4000);
-  
+
   const slideshow = document.querySelector('.hero-slideshow');
   if (slideshow) {
     slideshow.onmouseenter = () => clearInterval(slideInterval);
@@ -242,11 +241,11 @@ function renderDestinationPage() {
   const destination = DESTINATIONS[countryCode] || DESTINATIONS.UAE;
   const activeCode = countryCode || "UAE";
   document.title = `${destination.name} Guide | TravelEase`;
-  
+
   const destFlag = document.getElementById("dest-flag");
   const destName = document.getElementById("dest-name");
   const destDesc = document.getElementById("dest-description");
-  
+
   if (destFlag) destFlag.textContent = destination.flag;
   if (destName) destName.textContent = destination.name;
   if (destDesc) destDesc.textContent = destination.summary;
