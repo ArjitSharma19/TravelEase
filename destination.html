@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,132 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+  <aside class="collapsible-sidebar" id="sidebar">
+    <div class="sidebar-toggle-container">
+      <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <i class="fa-solid fa-chevron-right" id="toggleIcon"></i>
+      </button>
+    </div>
+
+    <!-- Collapsed icons navigation -->
+    <div class="sidebar-icons-nav">
+      <button class="nav-icon-btn active" data-target="profile" aria-label="User Profile" title="Traveler Profile">
+        <i class="fa-solid fa-user"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="checklist" aria-label="Flyer Checklist" title="Checklist">
+        <i class="fa-solid fa-list-check"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="converter" aria-label="Currency Converter" title="Converter">
+        <i class="fa-solid fa-calculator"></i>
+      </button>
+    </div>
+
+    <!-- Expanded content panels container -->
+    <div class="sidebar-content-panels">
+
+      <!-- Panel 1: Traveler Profile & Auth -->
+      <div class="sidebar-panel active" id="panel-profile">
+        <div class="profile-widget" id="profileWidget">
+          <!-- Dynamically generated based on login status -->
+          <div class="guest-profile">
+            <i class="fa-solid fa-circle-user guest-avatar"></i>
+            <h3>Welcome, Guest</h3>
+            <p>Sign in to unlock personalized travel alerts and save your trip details.</p>
+            <div class="auth-buttons">
+              <button class="primary-button" id="sidebarLoginBtn">Log In</button>
+              <button class="secondary-button" id="sidebarSignupBtn">Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Checklist -->
+      <div class="sidebar-panel" id="panel-checklist">
+        <div class="widget-card-sidebar" id="checklistWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+            <h3>Flyer Checklist</h3>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="checklistProgress" style="width: 0%"></div>
+          </div>
+          <p class="progress-text"><span id="checklistCompleted">0</span> of <span id="checklistTotal">5</span>
+            completed</p>
+          <ul class="checklist-items">
+            <li>
+              <label class="checkbox-container">
+                <input type="checkbox" data-index="0">
+                <span class="checkmark"></span>
+                Passport valid for >6 months
+              </label>
+            </li>
+            <li>
+              <label class="checkbox-container">
+                <input type="checkbox" data-index="1">
+                <span class="checkmark"></span>
+                Visa/E-Visa approved and printed
+              </label>
+            </li>
+            <li>
+              <label class="checkbox-container">
+                <input type="checkbox" data-index="2">
+                <span class="checkmark"></span>
+                Forex card loaded or local cash ready
+              </label>
+            </li>
+            <li>
+              <label class="checkbox-container">
+                <input type="checkbox" data-index="3">
+                <span class="checkmark"></span>
+                Travel insurance & eSIM booked
+              </label>
+            </li>
+            <li>
+              <label class="checkbox-container">
+                <input type="checkbox" data-index="4">
+                <span class="checkmark"></span>
+                Cab apps & hotel booking copies ready
+              </label>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Panel 3: Currency Converter -->
+      <div class="sidebar-panel" id="panel-converter">
+        <div class="widget-card-sidebar" id="converterWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-calculator" aria-hidden="true"></i>
+            <h3>Currency Converter</h3>
+          </div>
+          <div class="converter-form">
+            <div class="input-group">
+              <label for="converterAmount">Amount in INR (₹)</label>
+              <input type="number" id="converterAmount" value="1000" min="1">
+            </div>
+            <div class="input-group">
+              <label for="converterTarget">Convert to</label>
+              <select id="converterTarget">
+                <option value="AED">UAE Dirham (AED)</option>
+                <option value="USD">US Dollar (USD)</option>
+                <option value="THB">Thai Baht (THB)</option>
+                <option value="JPY">Japanese Yen (JPY)</option>
+                <option value="SGD">Singapore Dollar (SGD)</option>
+              </select>
+            </div>
+            <div class="converter-result">
+              <p id="conversionCalculation">₹1000.00 =</p>
+              <strong id="conversionResult">--</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
   <header class="site-header">
     <a class="brand" href="index.html" aria-label="TravelEase home">
       <span class="brand-mark">T</span>
@@ -17,38 +143,291 @@
     <nav class="top-nav" aria-label="Primary navigation">
       <a href="index.html#destinations">Destinations</a>
       <a href="index.html#guide">Guide</a>
+      <span class="nav-divider">|</span>
+      <div id="headerAuthArea">
+        <button class="header-auth-btn" id="headerLoginBtn"><i class="fa-solid fa-circle-user"></i> Log In</button>
+      </div>
     </nav>
   </header>
 
   <main class="destination-page">
-    <section class="destination-hero" id="destinationHero">
-      <div>
+    <div class="hero-slideshow">
+      <div class="slides-container" id="slides-container"></div>
+      <button class="slide-btn prev" onclick="changeSlide(-1)">&#10094;</button>
+      <button class="slide-btn next" onclick="changeSlide(1)">&#10095;</button>
+      <div class="slide-dots" id="slide-dots"></div>
+      <div class="hero-overlay">
         <a class="back-link" href="index.html">&larr; All destinations</a>
-        <p class="eyebrow">Country guide</p>
-        <h1 id="countryTitle">Loading guide...</h1>
-        <p id="countrySummary"></p>
+        <h1 id="dest-flag"></h1>
+        <h2 id="dest-name"></h2>
+        <p id="dest-description"></p>
       </div>
-      <div class="hero-stat">
-        <span id="countryFlag" aria-hidden="true"></span>
-        <strong id="countryShort"></strong>
+    </div>
+
+    <section class="quick-summary" aria-label="Quick destination summary">
+      <div class="quick-summary-header">
+        <div>
+          <p class="eyebrow">Quick Summary</p>
+          <h2>Key facts before you fly</h2>
+        </div>
+        <button class="share-guide-button" id="shareGuideBtn" type="button">
+          <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+          Share this guide
+        </button>
       </div>
+      <div class="summary-grid" id="quickSummaryGrid"></div>
     </section>
 
     <section class="tabs-shell" aria-label="Destination details">
       <div class="tabs" role="tablist" aria-label="Travel guide sections">
-        <button class="tab-button active" type="button" data-tab="visa" role="tab" aria-selected="true"><i class="fa-solid fa-passport" aria-hidden="true"></i> Visa</button>
-        <button class="tab-button" type="button" data-tab="currency" role="tab" aria-selected="false"><i class="fa-solid fa-coins" aria-hidden="true"></i> Currency</button>
-        <button class="tab-button" type="button" data-tab="sim" role="tab" aria-selected="false"><i class="fa-solid fa-sim-card" aria-hidden="true"></i> SIM</button>
-        <button class="tab-button" type="button" data-tab="transport" role="tab" aria-selected="false"><i class="fa-solid fa-taxi" aria-hidden="true"></i> Transport</button>
-        <button class="tab-button" type="button" data-tab="essentials" role="tab" aria-selected="false"><i class="fa-solid fa-suitcase-medical" aria-hidden="true"></i> Essentials</button>
+        <button class="tab-button active" type="button" data-tab="visa" role="tab" aria-selected="true"><i
+            class="fa-solid fa-passport" aria-hidden="true"></i> Visa</button>
+        <button class="tab-button" type="button" data-tab="currency" role="tab" aria-selected="false"><i
+            class="fa-solid fa-coins" aria-hidden="true"></i> Currency</button>
+        <button class="tab-button" type="button" data-tab="sim" role="tab" aria-selected="false"><i
+            class="fa-solid fa-sim-card" aria-hidden="true"></i> SIM</button>
+        <button class="tab-button" type="button" data-tab="transport" role="tab" aria-selected="false"><i
+            class="fa-solid fa-taxi" aria-hidden="true"></i> Transport</button>
+        <button class="tab-button" type="button" data-tab="essentials" role="tab" aria-selected="false"><i
+            class="fa-solid fa-suitcase-medical" aria-hidden="true"></i> Essentials</button>
       </div>
       <div class="tab-card" id="tabContent" role="tabpanel"></div>
     </section>
+
+    <section class="community-section" id="communitySection">
+      <div class="community-header">
+        <p class="eyebrow">Traveler Community</p>
+        <h2>Tips & Updates from Fellow Travelers</h2>
+        <p class="community-intro">Have you visited this country? Share your visa updates, SIM card kiosks, taxi apps,
+          or general advice to help other first-time flyers!</p>
+      </div>
+
+      <div class="community-grid">
+        <!-- New Comment Form -->
+        <form class="comment-form" id="commentForm">
+          <h3>Share Your Travel Tip</h3>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="commentName">Your Name</label>
+              <input type="text" id="commentName" placeholder="e.g., Arjit Sharma" required>
+            </div>
+            <div class="form-group">
+              <label for="commentPeriod">When did you travel?</label>
+              <input type="text" id="commentPeriod" placeholder="e.g., June 2026" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="commentCategory">Topic / Category</label>
+            <select id="commentCategory" required>
+              <option value="general">General Travel Tip</option>
+              <option value="visa">Visa & Immigration Updates</option>
+              <option value="currency">Money, Forex & ATMs</option>
+              <option value="sim">SIM Cards & Connectivity</option>
+              <option value="transport">Cabs, Taxis & Public Transit</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="commentText">Your Tip or Trip Experience</label>
+            <textarea id="commentText" rows="4"
+              placeholder="Share specific details, pricing, names of apps, or locations where you bought your SIM card..."
+              required></textarea>
+          </div>
+
+          <button class="primary-button" type="submit">Post to Community</button>
+        </form>
+
+        <!-- Comments List -->
+        <div class="comments-list-container">
+          <div class="comments-filters">
+            <span class="filter-label">Filter by:</span>
+            <button class="filter-chip active" data-filter="all">All</button>
+            <button class="filter-chip" data-filter="visa">Visa</button>
+            <button class="filter-chip" data-filter="currency">Money</button>
+            <button class="filter-chip" data-filter="sim">SIMs</button>
+            <button class="filter-chip" data-filter="transport">Transport</button>
+          </div>
+          <div class="comments-list" id="commentsList">
+            <p class="no-comments">Loading community tips...</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-content">
+      <button class="modal-close" id="loginCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Welcome Back</h2>
+      <p class="modal-subtitle">Log in to view your personalized alerts and guides.</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" required
+            autocomplete="current-password">
+        </div>
+        <div class="form-error-msg" id="loginError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Log In</button>
+      </form>
+      <div class="modal-footer">
+        Don't have an account? <button class="link-btn" id="switchToSignupBtn">Register here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div class="modal-overlay" id="signupModal">
+    <div class="modal-content">
+      <button class="modal-close" id="signupCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Create Traveler Account</h2>
+      <p class="modal-subtitle">Register to customize your profile, trip dates, and alerts.</p>
+      <form id="signupForm">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" placeholder="e.g. Arjit Sharma" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="signupEmail">Email Address</label>
+            <input type="email" id="signupEmail" placeholder="e.g. arjit@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" placeholder="Min. 6 characters" required
+              autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="signupPassportExpiry">Passport Expiry Date</label>
+            <input type="date" id="signupPassportExpiry" required>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="signupDestination">Destination Country</label>
+            <select id="signupDestination" required>
+              <option value="">Select country...</option>
+              <option value="UAE">United Arab Emirates (UAE)</option>
+              <option value="USA">United States (USA)</option>
+              <option value="UK">United Kingdom (UK)</option>
+              <option value="Thailand">Thailand</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Japan">Japan</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="signupTripPurpose">Trip Purpose</label>
+            <select id="signupTripPurpose" required>
+              <option value="tourism">Tourism / Vacation</option>
+              <option value="business">Business Trip</option>
+              <option value="education">Education / Study</option>
+              <option value="other">Other Purpose</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="signupTravelDateFrom">Departure Date</label>
+            <input type="date" id="signupTravelDateFrom" required>
+          </div>
+          <div class="form-group">
+            <label for="signupTravelDateTo">Return Date</label>
+            <input type="date" id="signupTravelDateTo" required>
+          </div>
+        </div>
+        <div class="form-group flex-checkbox">
+          <label class="checkbox-container">
+            <input type="checkbox" id="signupFirstTime">
+            <span class="checkmark"></span>
+            Travelling abroad first time?
+          </label>
+        </div>
+        <div class="form-error-msg" id="signupError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
+      </form>
+      <div class="modal-footer">
+        Already have an account? <button class="link-btn" id="switchToLoginBtn">Log in here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile / Traveler Details Modal -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-content">
+      <button class="modal-close" id="profileCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Traveler Details & Preferences</h2>
+      <p class="modal-subtitle">Update your trip details to recalculate personalized alerts.</p>
+      <form id="profileForm">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileName">Full Name</label>
+            <input type="text" id="profileName" required>
+          </div>
+          <div class="form-group">
+            <label for="profilePassportExpiry">Passport Expiry Date</label>
+            <input type="date" id="profilePassportExpiry" required>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileDestination">Destination Country</label>
+            <select id="profileDestination" required>
+              <option value="UAE">United Arab Emirates (UAE)</option>
+              <option value="USA">United States (USA)</option>
+              <option value="UK">United Kingdom (UK)</option>
+              <option value="Thailand">Thailand</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Japan">Japan</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="profileTripPurpose">Trip Purpose</label>
+            <select id="profileTripPurpose" required>
+              <option value="tourism">Tourism / Vacation</option>
+              <option value="business">Business Trip</option>
+              <option value="education">Education / Study</option>
+              <option value="other">Other Purpose</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileTravelDateFrom">Departure Date</label>
+            <input type="date" id="profileTravelDateFrom" required>
+          </div>
+          <div class="form-group">
+            <label for="profileTravelDateTo">Return Date</label>
+            <input type="date" id="profileTravelDateTo" required>
+          </div>
+        </div>
+        <div class="form-group flex-checkbox">
+          <label class="checkbox-container">
+            <input type="checkbox" id="profileFirstTime">
+            <span class="checkmark"></span>
+            Travelling abroad first time?
+          </label>
+        </div>
+        <div class="form-error-msg" id="profileError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
 
   <div id="chatRoot"></div>
 
   <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>
