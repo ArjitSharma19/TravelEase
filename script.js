@@ -1065,13 +1065,36 @@ function setupSidebarLayout() {
 
   if (!sidebar || !toggleBtn) return;
 
+  // Create mobile elements dynamically
+  let backdrop = document.getElementById("sidebarBackdrop");
+  let fab = document.getElementById("mobileToolsFab");
+
+  if (window.innerWidth <= 768) {
+    if (!backdrop) {
+      backdrop = document.createElement("div");
+      backdrop.className = "sidebar-backdrop";
+      backdrop.id = "sidebarBackdrop";
+      document.body.appendChild(backdrop);
+    }
+    if (!fab) {
+      fab = document.createElement("button");
+      fab.className = "mobile-tools-fab";
+      fab.id = "mobileToolsFab";
+      fab.innerHTML = `<i class="fa-solid fa-toolbox"></i> Tools`;
+      fab.setAttribute("aria-label", "Open Checklist and Tools");
+      document.body.appendChild(fab);
+    }
+  }
+
   const updateSidebarState = (isExpanded) => {
     if (isExpanded) {
       sidebar.classList.add("expanded");
       document.body.classList.add("sidebar-expanded");
+      if (backdrop) backdrop.classList.add("show");
     } else {
       sidebar.classList.remove("expanded");
       document.body.classList.remove("sidebar-expanded");
+      if (backdrop) backdrop.classList.remove("show");
     }
 
     // Toggle icon direction
@@ -1090,6 +1113,21 @@ function setupSidebarLayout() {
     const isExpanded = sidebar.classList.contains("expanded");
     updateSidebarState(!isExpanded);
   });
+
+  if (fab) {
+    fab.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isExpanded = sidebar.classList.contains("expanded");
+      updateSidebarState(!isExpanded);
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", (e) => {
+      e.preventDefault();
+      updateSidebarState(false);
+    });
+  }
 
   navBtns.forEach(btn => {
     btn.addEventListener("click", (e) => {
@@ -1329,6 +1367,23 @@ function setupAuthHandlers() {
       }
     });
   }
+
+  // Escape key global listener for modal and sidebar closing accessibility
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeModal("loginModal");
+      closeModal("signupModal");
+      closeModal("profileModal");
+      
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar && sidebar.classList.contains("expanded")) {
+        const toggleBtn = document.getElementById("sidebarToggle");
+        if (toggleBtn) {
+          toggleBtn.click();
+        }
+      }
+    }
+  });
 }
 
 function renderAuthUI() {
