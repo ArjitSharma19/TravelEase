@@ -9,8 +9,7 @@ const UserSchema = new mongoose.Schema({
     lowercase: true
   },
   password: {
-    type: String,
-    required: true
+    type: String
   },
   name: {
     type: String,
@@ -61,6 +60,31 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  photo: {
+    type: String
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
+  },
+  bookedFlights: [{
+    airline: String,
+    flightNumber: String,
+    origin: String,
+    destination: String,
+    departureTime: Date,
+    arrivalTime: Date,
+    price: Number,
+    currency: String,
+    seat: String,
+    pnr: String,
+    passengerName: String,
+    bookedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now
