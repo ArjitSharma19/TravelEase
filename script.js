@@ -264,6 +264,9 @@ function renderDestinationPage() {
     });
     tabContent.classList.remove("is-visible");
     tabContent.innerHTML = getTabMarkup(tabName, destination);
+    if (tabName === "visa") {
+      highlightVisaType(destination.visa.type);
+    }
     requestAnimationFrame(() => tabContent.classList.add("is-visible"));
   };
 
@@ -274,6 +277,7 @@ function renderDestinationPage() {
   renderTab("visa");
   setupCommentsSection(activeCode);
   setupDestinationTipToasts(activeCode);
+  prefillFlightDestination();
 }
 
 function renderQuickSummary(destination) {
@@ -317,6 +321,71 @@ function setupShareGuide() {
 function getTabMarkup(tabName, destination) {
   const templates = {
     visa: () => `
+      <div class="visa-education">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="margin: 0;">📘 New to visas? Here's what you need to know</h3>
+          <button class="secondary-button" id="toggle-visa-edu-btn" onclick="toggleVisaEducation()" style="min-height: 32px; padding: 0 14px; font-size: 12px; height: auto;">Show Less</button>
+        </div>
+        <p class="subtitle">Different countries and trip purposes require different visa types. Here's a simple breakdown:</p>
+        
+        <div class="visa-types-grid" id="visa-types-grid">
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🆓</span>
+            <h4>Visa Free</h4>
+            <p>No visa needed at all. Just show your passport and return ticket at immigration. Easiest option.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🛂</span>
+            <h4>Visa on Arrival</h4>
+            <p>You get your visa stamped at the airport when you land. Pay the fee there, no pre-application needed.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">💻</span>
+            <h4>e-Visa</h4>
+            <p>Apply online before you travel. You get an approval email/PDF — no need to visit an embassy. Usually takes a few days.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">📋</span>
+            <h4>Sticker Visa</h4>
+            <p>A physical visa sticker pasted in your passport. Requires visiting the embassy or VFS center in person, submitting documents and biometrics. Takes weeks.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🎓</span>
+            <h4>Student Visa</h4>
+            <p>For studying abroad. Needs admission letter from university, proof of funds, and is usually valid for the full course duration.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">💼</span>
+            <h4>Work Visa</h4>
+            <p>For employment abroad. Requires a job offer letter and sponsorship from the employer in that country.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">✈️</span>
+            <h4>Tourist Visa</h4>
+            <p>For vacation or visiting purposes only. Cannot work or study on this visa. Most common type for first-time travellers.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🔁</span>
+            <h4>Transit Visa</h4>
+            <p>Needed only if your flight has a layover in a country and you plan to leave the airport during that layover.</p>
+          </div>
+          
+        </div>
+        
+        <div class="visa-tip-box">
+          <strong>💡 Which one applies to you?</strong>
+          <p>For this destination, you'll need a <span id="highlighted-visa-type"></span> — see the full details below.</p>
+        </div>
+      </div>
+
       <div class="tab-header">
         <div>
           <p class="eyebrow">Visa</p>
@@ -1191,6 +1260,595 @@ function closeModal(modalId) {
   if (modal) modal.classList.remove("open");
 }
 
+window.handleGoogleLogin = async function(response) {
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      setToken(data.token);
+      setCurrentUser(data.user);
+      closeModal("signupModal");
+      closeModal("loginModal");
+      
+      renderAuthUI();
+      calculatePersonalizedAlerts();
+      showToast(`Welcome, ${data.user.name.split(' ')[0]}!`, "success");
+
+      // Open Plan Your Trip modal after a short delay for smooth transition
+      setTimeout(() => {
+        openTripModal();
+      }, 300);
+    } else {
+      alert(data.message || 'Google sign-in failed. Please try again.');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Something went wrong. Please try again.');
+  }
+};
+window.highlightVisaType = function(visaType) {
+  const highlightSpan = document.getElementById('highlighted-visa-type');
+  const tipBox = document.querySelector('.visa-tip-box');
+  const user = getCurrentUser();
+  
+  // Reset all highlights
+  const cards = document.querySelectorAll('.visa-type-card');
+  cards.forEach(card => card.classList.remove('highlighted'));
+
+  // Default highlight for the country's standard visa type
+  cards.forEach(card => {
+    const cardTitle = card.querySelector('h4').textContent;
+    if (visaType.toLowerCase().includes(cardTitle.toLowerCase()) || cardTitle.toLowerCase().includes(visaType.toLowerCase())) {
+      card.classList.add('highlighted');
+    }
+  });
+
+  if (highlightSpan) highlightSpan.textContent = visaType;
+
+  // Personalize based on logged-in user's trip purpose
+  if (user && user.tripPurpose === 'education') {
+    // Highlight the Student Visa card too
+    cards.forEach(card => {
+      const cardTitle = card.querySelector('h4').textContent;
+      if (cardTitle.toLowerCase() === 'student visa') {
+        card.classList.add('highlighted');
+      }
+    });
+
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>🎓 Studying Abroad?</strong>
+        <p>While this destination generally requires a <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> for tourist visits, you will need a formal <strong>Student Visa</strong> for academic courses. Student visas require an official university admission letter (e.g. CAS for UK, I-20 for USA), proof of academic qualifications, and proof of sufficient funds to cover your tuition and living expenses.</p>
+      `;
+    }
+  } else if (user && user.tripPurpose === 'business') {
+    // Highlight the Work Visa card too
+    cards.forEach(card => {
+      const cardTitle = card.querySelector('h4').textContent;
+      if (cardTitle.toLowerCase() === 'work visa') {
+        card.classList.add('highlighted');
+      }
+    });
+
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>💼 Travelling for Business?</strong>
+        <p>For temporary business trips (meetings, conferences, or negotiations), a standard <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> or business visitor visa is usually sufficient. However, if you are taking up employment or long-term contract work in the country, you must apply for a sponsored <strong>Work Visa</strong>.</p>
+      `;
+    }
+  } else {
+    // Default Tourism / Guest message
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>💡 Which one applies to you?</strong>
+        <p>For this destination, you'll need a <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> — see the full entry checklist and requirements below.</p>
+      `;
+    }
+  }
+};
+
+window.toggleVisaEducation = function() {
+  const grid = document.getElementById('visa-types-grid');
+  const subtitle = document.querySelector('.visa-education .subtitle');
+  const btn = document.getElementById('toggle-visa-edu-btn');
+  if (!grid || !btn) return;
+
+  if (grid.style.display === 'none') {
+    grid.style.display = 'grid';
+    if (subtitle) subtitle.style.display = 'block';
+    btn.textContent = 'Show Less';
+  } else {
+    grid.style.display = 'none';
+    if (subtitle) subtitle.style.display = 'none';
+    btn.textContent = 'Show More';
+  }
+};
+
+window.searchFlights = async function() {
+  const from = document.getElementById('flight-from').value;
+  const to = document.getElementById('flight-to').value;
+  const departure = document.getElementById('flight-departure').value;
+  const returnDate = document.getElementById('flight-return').value;
+  const travellers = document.getElementById('flight-travellers').value;
+  
+  if (!departure) {
+    alert('Please select a departure date');
+    return;
+  }
+
+  const searchBtn = document.querySelector('.flight-search-btn');
+  const originalText = searchBtn.textContent;
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Searching...';
+
+  try {
+    const res = await fetch(`/api/flights/search?origin=${from}&destination=${to}&departure=${departure}&returnDate=${returnDate || ''}&adults=${travellers}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to search flights');
+    }
+
+    window.allFlights = data.data;
+    window.currentSort = 'cheapest';
+    
+    // Reset filters
+    const radioAll = document.querySelector('input[name="stopsFilter"][value="all"]');
+    if (radioAll) radioAll.checked = true;
+    
+    const priceRange = document.getElementById('priceRangeFilter');
+    if (priceRange) {
+      const maxPrice = window.allFlights.length > 0 ? Math.max(...window.allFlights.map(f => f.price)) : 150000;
+      priceRange.max = Math.max(maxPrice, 50000);
+      priceRange.value = priceRange.max;
+      document.getElementById('priceLimitVal').textContent = `₹${priceRange.max}`;
+    }
+
+    // Populate airline filter options dynamically
+    const airlines = [...new Set(window.allFlights.map(f => f.airline))];
+    const airlineContainer = document.getElementById('airlineFilterContainer');
+    if (airlineContainer) {
+      airlineContainer.innerHTML = airlines.map(airline => `
+        <label class="checkbox-container">
+          <input type="checkbox" name="airlineFilter" value="${escapeHTML(airline)}" checked onchange="filterFlights()">
+          <span class="checkmark"></span> ${escapeHTML(airline)}
+        </label>
+      `).join('');
+    }
+
+    // Set header summary details
+    const searchSummary = document.getElementById('flightSearchSummary');
+    if (searchSummary) {
+      const fromLabel = document.getElementById('flight-from').options[document.getElementById('flight-from').selectedIndex].text.split('(')[0].trim();
+      const toLabel = document.getElementById('flight-to').options[document.getElementById('flight-to').selectedIndex].text.split('(')[0].trim();
+      searchSummary.textContent = `${fromLabel} (${from}) to ${toLabel} (${to}) | ${new Date(departure).toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'})} | ${travellers} Traveller${travellers > 1 ? 's' : ''}`;
+    }
+
+    openModal('flightResultsModal');
+    window.renderFlightResults();
+
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = originalText;
+  }
+};
+
+window.updatePriceLimitLabel = function() {
+  const val = document.getElementById('priceRangeFilter').value;
+  document.getElementById('priceLimitVal').textContent = `₹${val}`;
+};
+
+window.filterFlights = function() {
+  window.renderFlightResults();
+};
+
+window.sortFlights = function(type) {
+  window.currentSort = type;
+  document.getElementById('sortCheapestBtn').classList.toggle('active', type === 'cheapest');
+  document.getElementById('sortFastestBtn').classList.toggle('active', type === 'fastest');
+  window.renderFlightResults();
+};
+
+window.renderFlightResults = function() {
+  const container = document.getElementById('flightResultsList');
+  if (!container) return;
+
+  if (!window.allFlights || window.allFlights.length === 0) {
+    container.innerHTML = `
+      <div class="no-flights-msg">
+        <i class="fa-solid fa-plane-slash"></i>
+        <p>No flights found matching your search parameters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const stopsVal = document.querySelector('input[name="stopsFilter"]:checked').value;
+  const priceVal = parseFloat(document.getElementById('priceRangeFilter').value);
+  
+  const airlineCheckboxes = document.querySelectorAll('input[name="airlineFilter"]:checked');
+  const allowedAirlines = Array.from(airlineCheckboxes).map(cb => cb.value);
+
+  let filtered = window.allFlights.filter(flight => {
+    if (stopsVal !== 'all') {
+      if (flight.stops !== parseInt(stopsVal)) return false;
+    }
+    if (flight.price > priceVal) return false;
+    if (allowedAirlines.length > 0 && !allowedAirlines.includes(flight.airline)) return false;
+    return true;
+  });
+
+  const durationToMinutes = (durStr) => {
+    if (!durStr) return 0;
+    const matches = durStr.match(/(?:(\d+)h)?\s*(?:(\d+)m)?/);
+    if (!matches) return 9999;
+    const h = matches[1] ? parseInt(matches[1]) : 0;
+    const m = matches[2] ? parseInt(matches[2]) : 0;
+    return (h * 60) + m;
+  };
+
+  if (window.currentSort === 'cheapest') {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (window.currentSort === 'fastest') {
+    filtered.sort((a, b) => {
+      const durA = durationToMinutes(a.itineraries[0]?.duration);
+      const durB = durationToMinutes(b.itineraries[0]?.duration);
+      return durA - durB;
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="no-flights-msg">
+        <i class="fa-solid fa-filter"></i>
+        <p>No flights match your filter criteria. Try expanding your search options.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(flight => {
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+    const carrierCodeOut = flight.flightNumber ? flight.flightNumber.substring(0, 2) : 'FL';
+    
+    let inboundHTML = "";
+    if (inbound) {
+      const carrierCodeIn = inbound.flightNumber ? inbound.flightNumber.substring(0, 2) : carrierCodeOut;
+      inboundHTML = `
+        <div class="flight-card-summary" style="margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px;">
+          <div class="flight-airline-info">
+            <img class="flight-logo" src="${inbound.airlineLogo || flight.airlineLogo}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="flight-logo-fallback" style="display: none; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; background: #eef4ff; color: #1a73e8; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+              ${carrierCodeIn}
+            </div>
+            <div>
+              <div class="airline-name">${escapeHTML(inbound.airline || flight.airline)}</div>
+              <div class="flight-number">${escapeHTML(inbound.flightNumber || flight.flightNumber)}</div>
+            </div>
+          </div>
+          <div class="flight-time-info">
+            <div class="time-block">
+              <h4>${inbound.departure.time}</h4>
+              <p>${inbound.departure.iata}</p>
+            </div>
+            <div class="route-visualizer">
+              <span class="duration-text">${inbound.duration}</span>
+              <div class="route-line"></div>
+              <span class="stops-label ${inbound.stops === 0 ? 'direct' : ''}">
+                ${inbound.stops === 0 ? 'Direct' : `${inbound.stops} Stop${inbound.stops > 1 ? 's' : ''} (${inbound.layovers.join(', ')})`}
+              </span>
+            </div>
+            <div class="time-block">
+              <h4>${inbound.arrival.time}</h4>
+              <p>${inbound.arrival.iata}</p>
+            </div>
+          </div>
+          <div class="flight-price-action" style="visibility: hidden;"></div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="flight-card">
+        <div class="flight-card-summary">
+          <div class="flight-airline-info">
+            <img class="flight-logo" src="${flight.airlineLogo}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="flight-logo-fallback" style="display: none; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; background: #eef4ff; color: #1a73e8; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+              ${carrierCodeOut}
+            </div>
+            <div>
+              <div class="airline-name">${escapeHTML(flight.airline)}</div>
+              <div class="flight-number">${escapeHTML(flight.flightNumber)}</div>
+            </div>
+          </div>
+          <div class="flight-time-info">
+            <div class="time-block">
+              <h4>${outbound.departure.time}</h4>
+              <p>${outbound.departure.iata}</p>
+            </div>
+            <div class="route-visualizer">
+              <span class="duration-text">${outbound.duration}</span>
+              <div class="route-line"></div>
+              <span class="stops-label ${flight.stops === 0 ? 'direct' : ''}">
+                ${flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''} (${outbound.layovers.join(', ')})`}
+              </span>
+            </div>
+            <div class="time-block">
+              <h4>${outbound.arrival.time}</h4>
+              <p>${outbound.arrival.iata}</p>
+            </div>
+          </div>
+          <div class="flight-price-action">
+            <div class="price-text">₹${flight.price}</div>
+            <button class="book-btn" onclick="openBookingFlow('${flight.id}')">Book Flight</button>
+          </div>
+        </div>
+        ${inboundHTML}
+      </div>
+    `;
+  }).join('');
+};
+
+window.openBookingFlow = function(flightId) {
+  const flight = window.allFlights.find(f => f.id === flightId);
+  if (!flight) return;
+
+  window.selectedFlight = flight;
+  
+  const user = getCurrentUser();
+  const passengerInput = document.getElementById('bookingPassengerName');
+  if (passengerInput) {
+    passengerInput.value = user ? user.name : '';
+  }
+
+  const detailsContainer = document.getElementById('bookingFlightDetails');
+  if (detailsContainer) {
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+    
+    let summaryText = `
+      <div style="font-weight: 700; color: #1a73e8; margin-bottom: 6px;">
+        ${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})
+      </div>
+      <div><strong>Outbound:</strong> ${escapeHTML(outbound.departure.iata)} ➔ ${escapeHTML(outbound.arrival.iata)} (${outbound.departure.time} - ${outbound.arrival.time}) on ${outbound.departure.date}</div>
+    `;
+
+    if (inbound) {
+      summaryText += `
+        <div style="margin-top: 5px;"><strong>Inbound:</strong> ${escapeHTML(inbound.departure.iata)} ➔ ${escapeHTML(inbound.arrival.iata)} (${inbound.departure.time} - ${inbound.arrival.time}) on ${inbound.departure.date}</div>
+      `;
+    }
+
+    summaryText += `<div style="margin-top: 8px; font-weight: 700; color: #333;">Total Cost: ₹${flight.price}</div>`;
+
+    detailsContainer.innerHTML = summaryText;
+  }
+
+  document.getElementById('bookingError').textContent = '';
+  document.getElementById('bookingFormSide').style.display = 'block';
+  document.getElementById('bookingSuccessPanel').style.display = 'none';
+
+  closeModal('flightResultsModal');
+  openModal('flightBookingModal');
+};
+
+window.confirmFlightBooking = async function() {
+  const passengerName = document.getElementById('bookingPassengerName').value.trim();
+  const seatPref = document.getElementById('bookingSeatPref').value;
+  const errorDiv = document.getElementById('bookingError');
+  
+  if (!passengerName) {
+    errorDiv.textContent = 'Please enter passenger full name';
+    return;
+  }
+
+  const flight = window.selectedFlight;
+  if (!flight) return;
+
+  const confirmBtn = document.querySelector('.booking-confirm-btn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Booking...';
+
+  try {
+    const token = getToken();
+    let bookingData;
+
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+
+    if (token) {
+      const res = await fetch('/api/flights/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          airline: flight.airline,
+          flightNumber: flight.flightNumber,
+          origin: outbound.departure.iata,
+          destination: outbound.arrival.iata,
+          departureTime: outbound.departure.rawDateTime || `${outbound.departure.date}T${outbound.departure.time}:00`,
+          arrivalTime: outbound.arrival.rawDateTime || `${outbound.arrival.date}T${outbound.arrival.time}:00`,
+          price: flight.price,
+          currency: flight.currency,
+          seat: seatPref,
+          passengerName
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to confirm booking');
+      }
+
+      bookingData = data.booking;
+      setCurrentUser(data.user);
+      renderAuthUI();
+      showToast("Flight booked and ticket issued!", "success");
+    } else {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let pnr = '';
+      for (let i = 0; i < 6; i++) {
+        pnr += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      bookingData = {
+        airline: flight.airline,
+        flightNumber: flight.flightNumber,
+        origin: outbound.departure.iata,
+        destination: outbound.arrival.iata,
+        departureTime: new Date(`${outbound.departure.date}T${outbound.departure.time}:00`),
+        price: flight.price,
+        seat: seatPref,
+        pnr,
+        passengerName
+      };
+      
+      showToast("Flight booked successfully (Guest Checkout)!", "success");
+    }
+
+    document.getElementById('passPNR').textContent = bookingData.pnr;
+    document.getElementById('passOrigin').textContent = bookingData.origin;
+    document.getElementById('passDest').textContent = bookingData.destination;
+    document.getElementById('passFlightNo').textContent = bookingData.flightNumber;
+    document.getElementById('passPassengerName').textContent = bookingData.passengerName;
+    document.getElementById('passSeat').textContent = bookingData.seat.split(' ')[0];
+    
+    const depDate = new Date(bookingData.departureTime);
+    document.getElementById('passDate').textContent = depDate.toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'});
+    document.getElementById('passTime').textContent = depDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+
+    document.getElementById('bookingFormSide').style.display = 'none';
+    document.getElementById('bookingSuccessPanel').style.display = 'block';
+
+  } catch (error) {
+    errorDiv.textContent = error.message;
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm & Book Flight';
+  }
+};
+
+window.prefillFlightDestination = function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const country = urlParams.get('country') || urlParams.get('code');
+  
+  const countryToAirport = {
+    UAE: 'DXB',
+    USA: 'JFK',
+    UK: 'LHR',
+    Thailand: 'BKK',
+    Singapore: 'SIN',
+    Japan: 'NRT',
+    Canada: 'YYZ',
+    Australia: 'SYD'
+  };
+  
+  if (country) {
+    const matchedKey = Object.keys(countryToAirport).find(k => k.toLowerCase() === country.toLowerCase());
+    if (matchedKey) {
+      const select = document.getElementById('flight-to');
+      if (select) {
+        select.value = countryToAirport[matchedKey];
+      }
+    }
+  }
+};
+
+window.showPanel = function(target) {
+  const btn = document.querySelector(`.nav-icon-btn[data-target="${target}"]`);
+  if (btn) btn.click();
+};
+
+window.openTripModal = function() {
+  openModal("tripModal");
+};
+
+window.closeTripModal = function() {
+  closeModal("tripModal");
+};
+
+window.skipTripDetails = function() {
+  closeModal("tripModal");
+};
+
+window.saveTripDetails = async function() {
+  const destination = document.getElementById("trip-destination").value;
+  const tripPurpose = document.getElementById("trip-purpose").value;
+  const passportExpiry = document.getElementById("trip-passport-expiry").value;
+  const travelDateFrom = document.getElementById("trip-departure").value;
+  const travelDateTo = document.getElementById("trip-return").value;
+  const isFirstTimeAbroad = document.getElementById("trip-first-time").checked;
+  const errorDiv = document.getElementById("tripError");
+  if (errorDiv) errorDiv.textContent = "";
+
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No authorization token found. Please log in.");
+    }
+
+    const response = await fetch("/api/auth/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        destination,
+        tripPurpose,
+        passportExpiry: passportExpiry || undefined,
+        travelDateFrom: travelDateFrom || undefined,
+        travelDateTo: travelDateTo || undefined,
+        isFirstTimeAbroad
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to save trip details.");
+    }
+
+    // Save to localStorage for compatibility/backup
+    const tripData = {
+      destination,
+      purpose: tripPurpose,
+      passportExpiry,
+      departure: travelDateFrom,
+      returnDate: travelDateTo,
+      firstTime: isFirstTimeAbroad
+    };
+    localStorage.setItem("tripDetails", JSON.stringify(tripData));
+
+    setCurrentUser(data);
+    closeModal("tripModal");
+
+    renderAuthUI();
+    calculatePersonalizedAlerts();
+    showToast("Trip details saved successfully!", "success");
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    if (errorDiv) {
+      errorDiv.textContent = error.message;
+    } else {
+      alert(error.message);
+    }
+  }
+};
+
 function setupAuthHandlers() {
   const loginModal = document.getElementById("loginModal");
   const signupModal = document.getElementById("signupModal");
@@ -1281,16 +1939,9 @@ function setupAuthHandlers() {
   if (signupForm) {
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = document.getElementById("signupName").value.trim();
-      const email = document.getElementById("signupEmail").value.trim();
-      const password = document.getElementById("signupPassword").value;
-      const passportExpiry = document.getElementById("signupPassportExpiry").value;
-      const destination = document.getElementById("signupDestination").value;
-      const travelDateFrom = document.getElementById("signupTravelDateFrom").value;
-      const travelDateTo = document.getElementById("signupTravelDateTo").value;
-      const tripPurpose = document.getElementById("signupTripPurpose").value;
-      const budgetRange = "mid-range";
-      const isFirstTimeAbroad = document.getElementById("signupFirstTime").checked;
+      const name = document.getElementById("signup-name").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
       const errorDiv = document.getElementById("signupError");
       errorDiv.textContent = "";
 
@@ -1299,8 +1950,7 @@ function setupAuthHandlers() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name, email, password, passportExpiry, destination,
-            travelDateFrom, travelDateTo, tripPurpose, budgetRange, isFirstTimeAbroad
+            name, email, password
           })
         });
 
@@ -1317,6 +1967,11 @@ function setupAuthHandlers() {
         renderAuthUI();
         calculatePersonalizedAlerts();
         showToast("Account created successfully! Welcome to TravelEase.", "success");
+
+        // Open the Plan Your Trip modal after a short delay for smooth transition
+        setTimeout(() => {
+          openModal("tripModal");
+        }, 300);
       } catch (error) {
         errorDiv.textContent = error.message;
       }
@@ -1374,6 +2029,7 @@ function setupAuthHandlers() {
       closeModal("loginModal");
       closeModal("signupModal");
       closeModal("profileModal");
+      closeModal("tripModal");
       
       const sidebar = document.getElementById("sidebar");
       if (sidebar && sidebar.classList.contains("expanded")) {
@@ -1427,6 +2083,23 @@ function renderAuthUI() {
 
       const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "TR";
 
+      let bookedFlightsHTML = "";
+      if (user.bookedFlights && user.bookedFlights.length > 0) {
+        bookedFlightsHTML = `
+          <div class="booked-flights-summary" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 12px; text-align: left;">
+            <h4 style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 700;">✈️ My Booked Flights:</h4>
+            ${user.bookedFlights.map(flight => `
+              <div class="booked-flight-item" style="background: #f8f9fb; padding: 10px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 8px; font-size: 12px; color: #555;">
+                <div style="font-weight: 700; color: #1a73e8;">${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})</div>
+                <div><strong>Route:</strong> ${escapeHTML(flight.origin)} ➔ ${escapeHTML(flight.destination)}</div>
+                <div><strong>Departure:</strong> ${new Date(flight.departureTime).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })} at ${new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
+                <div><strong>PNR:</strong> <span style="font-weight: 700; color: #333;">${escapeHTML(flight.pnr)}</span> | <strong>Seat:</strong> ${escapeHTML(flight.seat)}</div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+
       profileWidget.innerHTML = `
         <div class="user-profile-dashboard">
           <div class="user-avatar-badge">${initials}</div>
@@ -1443,6 +2116,7 @@ function renderAuthUI() {
           </div>
 
           ${countdownHTML}
+          ${bookedFlightsHTML}
 
           <div class="profile-action-buttons">
             <button class="primary-button" id="editProfileBtn">Edit Details</button>
@@ -1519,7 +2193,9 @@ function calculatePersonalizedAlerts() {
 
   if (departureDate && user.destination) {
     const destCode = user.destination.toUpperCase();
-    const destination = DESTINATIONS[destCode];
+    // Case-insensitive lookup of destination from DESTINATIONS keys
+    const destKey = Object.keys(DESTINATIONS).find(k => k.toUpperCase() === destCode);
+    const destination = destKey ? DESTINATIONS[destKey] : null;
 
     if (destination) {
       const daysToTrip = Math.ceil((departureDate - today) / (1000 * 60 * 60 * 24));

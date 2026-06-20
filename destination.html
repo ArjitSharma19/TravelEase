@@ -7,6 +7,7 @@
   <title>TravelEase Destination Guide</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -27,6 +28,9 @@
       </button>
       <button class="nav-icon-btn" data-target="converter" aria-label="Currency Converter" title="Converter">
         <i class="fa-solid fa-calculator"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="flight" aria-label="Book Flight" title="Book Flight">
+        ✈️
       </button>
     </div>
 
@@ -127,6 +131,70 @@
               <p id="conversionCalculation">₹1000.00 =</p>
               <strong id="conversionResult">--</strong>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Flight Search -->
+      <div class="sidebar-panel" id="panel-flight">
+        <div class="widget-card-sidebar" id="flightWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-plane" aria-hidden="true"></i>
+            <h3>Search Flights</h3>
+          </div>
+          <p class="panel-subtitle">Find flights to your destination</p>
+          <div class="converter-form">
+            <div class="input-group">
+              <label for="flight-from">From</label>
+              <select id="flight-from">
+                <option value="DEL">Delhi (DEL)</option>
+                <option value="BOM">Mumbai (BOM)</option>
+                <option value="BLR">Bangalore (BLR)</option>
+                <option value="MAA">Chennai (MAA)</option>
+                <option value="HYD">Hyderabad (HYD)</option>
+                <option value="CCU">Kolkata (CCU)</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label for="flight-to">To</label>
+              <select id="flight-to">
+                <option value="DXB">Dubai, UAE</option>
+                <option value="JFK">New York, USA</option>
+                <option value="LHR">London, UK</option>
+                <option value="BKK">Bangkok, Thailand</option>
+                <option value="SIN">Singapore</option>
+                <option value="NRT">Tokyo, Japan</option>
+                <option value="YYZ">Toronto, Canada</option>
+                <option value="SYD">Sydney, Australia</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label for="flight-departure">Departure Date</label>
+              <input type="date" id="flight-departure">
+            </div>
+            
+            <div class="input-group">
+              <label for="flight-return">Return Date (optional)</label>
+              <input type="date" id="flight-return">
+            </div>
+            
+            <div class="input-group">
+              <label for="flight-travellers">Travellers</label>
+              <select id="flight-travellers">
+                <option value="1">1 Adult</option>
+                <option value="2">2 Adults</option>
+                <option value="3">3 Adults</option>
+                <option value="4">4 Adults</option>
+              </select>
+            </div>
+            
+            <button class="flight-search-btn" onclick="searchFlights()">
+              Search Flights
+            </button>
+            
+            <p class="flight-disclaimer">You'll be redirected to Google Flights to complete your search and booking.</p>
           </div>
         </div>
       </div>
@@ -287,32 +355,56 @@
       <button class="modal-close" id="signupCloseBtn" aria-label="Close modal">&times;</button>
       <h2>Create Traveler Account</h2>
       <p class="modal-subtitle">Register to customize your profile, trip dates, and alerts.</p>
+      
+      <!-- Google Sign In Button -->
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div id="g_id_onload"
+             data-client_id="YOUR_CLIENT_ID_HERE"
+             data-callback="handleGoogleLogin">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-width="300"></div>
+      </div>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
       <form id="signupForm">
         <div class="form-row-2">
           <div class="form-group">
-            <label for="signupName">Full Name</label>
-            <input type="text" id="signupName" placeholder="e.g. Arjit Sharma" required autocomplete="name">
+            <label for="signup-name">Full Name</label>
+            <input type="text" id="signup-name" placeholder="e.g. Arjit Sharma" required autocomplete="name">
           </div>
           <div class="form-group">
-            <label for="signupEmail">Email Address</label>
-            <input type="email" id="signupEmail" placeholder="e.g. arjit@example.com" required autocomplete="email">
-          </div>
-        </div>
-        <div class="form-row-2">
-          <div class="form-group">
-            <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" placeholder="Min. 6 characters" required
-              autocomplete="new-password">
-          </div>
-          <div class="form-group">
-            <label for="signupPassportExpiry">Passport Expiry Date</label>
-            <input type="date" id="signupPassportExpiry" required>
+            <label for="signup-email">Email Address</label>
+            <input type="email" id="signup-email" placeholder="e.g. arjit@example.com" required autocomplete="email">
           </div>
         </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" placeholder="Min. 6 characters" required
+            autocomplete="new-password">
+        </div>
+        <div class="form-error-msg" id="signupError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
+      </form>
+      <div class="modal-footer">
+        Already have an account? <button class="link-btn" id="switchToLoginBtn">Log in here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Your Trip Modal -->
+  <div class="modal-overlay" id="tripModal">
+    <div class="modal-content">
+      <button class="modal-close" id="tripCloseBtn" onclick="closeTripModal()" aria-label="Close modal">&times;</button>
+      <h2>Plan Your Trip</h2>
+      <p class="modal-subtitle">Add your trip details to get personalized alerts and tips.</p>
+      <form id="tripForm" onsubmit="event.preventDefault(); saveTripDetails();">
         <div class="form-row-2">
           <div class="form-group">
-            <label for="signupDestination">Destination Country</label>
-            <select id="signupDestination" required>
+            <label for="trip-destination">Destination Country</label>
+            <select id="trip-destination">
               <option value="">Select country...</option>
               <option value="UAE">United Arab Emirates (UAE)</option>
               <option value="USA">United States (USA)</option>
@@ -325,38 +417,44 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="signupTripPurpose">Trip Purpose</label>
-            <select id="signupTripPurpose" required>
+            <label for="trip-purpose">Trip Purpose</label>
+            <select id="trip-purpose">
               <option value="tourism">Tourism / Vacation</option>
               <option value="business">Business Trip</option>
               <option value="education">Education / Study</option>
-              <option value="other">Other Purpose</option>
+              <option value="other">Other / Visiting Family</option>
             </select>
           </div>
         </div>
         <div class="form-row-2">
           <div class="form-group">
-            <label for="signupTravelDateFrom">Departure Date</label>
-            <input type="date" id="signupTravelDateFrom" required>
+            <label for="trip-passport-expiry">Passport Expiry Date</label>
+            <input type="date" id="trip-passport-expiry">
           </div>
           <div class="form-group">
-            <label for="signupTravelDateTo">Return Date</label>
-            <input type="date" id="signupTravelDateTo" required>
+            <label for="trip-departure">Departure Date</label>
+            <input type="date" id="trip-departure">
           </div>
         </div>
-        <div class="form-group flex-checkbox">
-          <label class="checkbox-container">
-            <input type="checkbox" id="signupFirstTime">
-            <span class="checkmark"></span>
-            Travelling abroad first time?
-          </label>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="trip-return">Return Date</label>
+            <input type="date" id="trip-return">
+          </div>
+          <div class="form-group flex-checkbox" style="margin-top: 28px;">
+            <label class="checkbox-container">
+              <input type="checkbox" id="trip-first-time">
+              <span class="checkmark"></span>
+              Travelling abroad first time?
+            </label>
+          </div>
         </div>
-        <div class="form-error-msg" id="signupError"></div>
-        <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
+        <div class="form-error-msg" id="tripError"></div>
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button class="primary-button modal-submit-btn" type="submit" style="flex: 1;">Save Trip Details</button>
+          <button class="secondary-button" type="button" onclick="skipTripDetails()" style="flex: 1;">Skip for now</button>
+        </div>
       </form>
-      <div class="modal-footer">
-        Already have an account? <button class="link-btn" id="switchToLoginBtn">Log in here</button>
-      </div>
     </div>
   </div>
 
@@ -374,7 +472,7 @@
           </div>
           <div class="form-group">
             <label for="profilePassportExpiry">Passport Expiry Date</label>
-            <input type="date" id="profilePassportExpiry" required>
+            <input type="date" id="profilePassportExpiry">
           </div>
         </div>
         <div class="form-row-2">
@@ -404,11 +502,11 @@
         <div class="form-row-2">
           <div class="form-group">
             <label for="profileTravelDateFrom">Departure Date</label>
-            <input type="date" id="profileTravelDateFrom" required>
+            <input type="date" id="profileTravelDateFrom">
           </div>
           <div class="form-group">
             <label for="profileTravelDateTo">Return Date</label>
-            <input type="date" id="profileTravelDateTo" required>
+            <input type="date" id="profileTravelDateTo">
           </div>
         </div>
         <div class="form-group flex-checkbox">
@@ -421,6 +519,158 @@
         <div class="form-error-msg" id="profileError"></div>
         <button class="primary-button modal-submit-btn" type="submit">Save Changes</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Flight Search Results Modal -->
+  <div class="modal-overlay" id="flightResultsModal">
+    <div class="modal-content flight-results-content" style="max-width: 900px; width: 90%;">
+      <button class="modal-close" onclick="closeModal('flightResultsModal')" aria-label="Close flight results">&times;</button>
+      
+      <div class="flight-results-header">
+        <h2 id="flightResultsTitle">✈️ Available Flights</h2>
+        <p class="flight-search-summary" id="flightSearchSummary">Delhi (DEL) to Dubai (DXB) | 20 Jul 2026 | 1 Traveller</p>
+      </div>
+
+      <div class="flight-results-container">
+        <!-- Sidebar filters -->
+        <aside class="flight-filters-sidebar">
+          <h3>Filters</h3>
+          
+          <div class="filter-group">
+            <label>Stops</label>
+            <div class="filter-options">
+              <label class="radio-container">
+                <input type="radio" name="stopsFilter" value="all" checked onchange="filterFlights()">
+                <span class="checkmark"></span> All Flights
+              </label>
+              <label class="radio-container">
+                <input type="radio" name="stopsFilter" value="0" onchange="filterFlights()">
+                <span class="checkmark"></span> Non-stop only
+              </label>
+              <label class="radio-container">
+                <input type="radio" name="stopsFilter" value="1" onchange="filterFlights()">
+                <span class="checkmark"></span> 1 Stop max
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Airlines</label>
+            <div class="filter-options" id="airlineFilterContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Max Price (<span id="priceLimitVal">₹75000</span>)</label>
+            <input type="range" id="priceRangeFilter" min="5000" max="150000" step="1000" value="150000" oninput="updatePriceLimitLabel()" onchange="filterFlights()">
+          </div>
+        </aside>
+
+        <!-- Main results list -->
+        <main class="flight-results-main">
+          <div class="flight-sort-bar">
+            <span>Sort by:</span>
+            <button class="sort-btn active" id="sortCheapestBtn" onclick="sortFlights('cheapest')">Cheapest (₹)</button>
+            <button class="sort-btn" id="sortFastestBtn" onclick="sortFlights('fastest')">Fastest (Duration)</button>
+          </div>
+
+          <div class="flight-results-list" id="flightResultsList">
+            <!-- Flight cards populated dynamically -->
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flight Booking Modal -->
+  <div class="modal-overlay" id="flightBookingModal">
+    <div class="modal-content flight-booking-content" style="max-width: 600px; width: 90%;">
+      <button class="modal-close" onclick="closeModal('flightBookingModal')" aria-label="Close booking modal">&times;</button>
+      
+      <h2 id="flightBookingTitle">Confirm Your Flight Booking</h2>
+      <p class="booking-subtitle">Secure your ticket with TravelEase</p>
+
+      <div class="booking-layout">
+        <!-- Left: Form -->
+        <div class="booking-form-side" id="bookingFormSide">
+          <div class="booking-card-details" id="bookingFlightDetails">
+            <!-- Selected flight summary populated dynamically -->
+          </div>
+
+          <div class="booking-fields" style="margin-top: 15px;">
+            <label for="bookingPassengerName">Passenger Full Name</label>
+            <input type="text" id="bookingPassengerName" placeholder="e.g. Arjit Sharma" required style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
+
+            <label for="bookingSeatPref">Seat Preference</label>
+            <select id="bookingSeatPref" style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
+              <option value="12A (Window)">Window Seat (Standard)</option>
+              <option value="12B (Middle)">Middle Seat</option>
+              <option value="12C (Aisle)">Aisle Seat</option>
+              <option value="4A (Window - Premium)">Front Row Window (+₹1500)</option>
+              <option value="4C (Aisle - Premium)">Front Row Aisle (+₹1500)</option>
+            </select>
+
+            <div class="form-error-msg" id="bookingError" style="margin-top: 10px; color: red;"></div>
+
+            <button class="primary-button booking-confirm-btn" onclick="confirmFlightBooking()" style="margin-top: 15px; width: 100%;">
+              Confirm & Book Flight
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Success Boarding Pass (Hidden initially, shown after booking) -->
+        <div class="booking-success-side" id="bookingSuccessPanel" style="display: none; width: 100%;">
+          <div class="boarding-pass">
+            <div class="pass-header">
+              <span class="pass-logo">✈️ TravelEase</span>
+              <span class="pass-pnr-label">BOARDING PASS / PNR: <strong id="passPNR">XXXXXX</strong></span>
+            </div>
+            
+            <div class="pass-flight-info">
+              <div class="pass-airport">
+                <h3 id="passOrigin">DEL</h3>
+                <p>New Delhi</p>
+              </div>
+              <div class="pass-arrow">
+                <span id="passFlightNo" style="font-weight: 700;">EK 511</span>
+                <i class="fa-solid fa-plane" style="margin-top: 5px;"></i>
+              </div>
+              <div class="pass-airport text-right">
+                <h3 id="passDest">DXB</h3>
+                <p>Dubai</p>
+              </div>
+            </div>
+
+            <div class="pass-details-grid">
+              <div class="pass-detail-item">
+                <span>PASSENGER</span>
+                <strong id="passPassengerName">Arjit Sharma</strong>
+              </div>
+              <div class="pass-detail-item">
+                <span>SEAT</span>
+                <strong id="passSeat">12A</strong>
+              </div>
+              <div class="pass-detail-item">
+                <span>DATE</span>
+                <strong id="passDate">20 Jul 2026</strong>
+              </div>
+              <div class="pass-detail-item">
+                <span>DEPARTURE</span>
+                <strong id="passTime">08:30</strong>
+              </div>
+            </div>
+
+            <div class="pass-footer">
+              <div class="pass-barcode">
+                <div class="barcode-stripe"></div>
+              </div>
+              <button class="secondary-button close-success-btn" onclick="closeModal('flightBookingModal')" style="width: 100%; margin-top: 15px;">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
