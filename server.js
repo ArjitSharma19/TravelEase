@@ -16,6 +16,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+const flightRoutes = require('./routes/flights');
+app.use('/api/flights', flightRoutes);
+
 // Serve static files from the root directory
 app.use(express.static(__dirname));
 
