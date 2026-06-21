@@ -23,7 +23,7 @@ const DESTINATIONS = {
     },
     currency: {
       code: "AED",
-      rate: "1 AED ≈ ₹22.70",
+      rate: "1 AED ≈ ₹25.69",
       tip: "Cards work widely in cities, but keep AED 300-500 cash for taxis, tips, and small shops.",
       cashCard: "Use cards for hotels, malls, and restaurants; keep moderate cash for taxis, souks, and small shops.",
       atm: "ATMs are easy to find in malls, metro stations, hotels, and airport terminals.",

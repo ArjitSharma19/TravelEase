@@ -266,6 +266,8 @@ function renderDestinationPage() {
     tabContent.innerHTML = getTabMarkup(tabName, destination);
     if (tabName === "visa") {
       highlightVisaType(destination.visa.type);
+    } else if (tabName === "currency") {
+      updateCurrencyDisplay(destination.currency.code);
     }
     requestAnimationFrame(() => tabContent.classList.add("is-visible"));
   };
@@ -421,10 +423,16 @@ function getTabMarkup(tabName, destination) {
           <h2>Money plan before you fly</h2>
         </div>
       </div>
-      <article class="exchange-card">
-        <span>Approximate INR exchange rate</span>
-        <strong>${destination.currency.rate}</strong>
-        <p>${destination.currency.tip}</p>
+      <div class="currency-card">
+        <h3>Live Exchange Rate</h3>
+        <p class="rate-display">
+          1 ${destination.currency.code} = <span id="live-rate">Loading...</span>
+        </p>
+        <p class="rate-updated">Last updated: <span id="rate-timestamp"></span></p>
+      </div>
+      <article class="exchange-card" style="background: linear-gradient(135deg, #10b981, #1e3a8a); padding: 15px 20px; box-shadow: none;">
+        <span style="font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.9);">Money Tip</span>
+        <p style="margin-top: 6px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.95);">${destination.currency.tip}</p>
       </article>
       <div class="info-grid">
         <article class="info-card">
@@ -1077,53 +1085,101 @@ function sidebarChecklistController() {
   updateProgress();
 }
 
+// Frankfurter Live Currency Exchange Rate integration
+async function getLiveExchangeRate(targetCurrency) {
+  // Frankfurter API does not support AED (UAE Dirham). Provide fallback rate.
+  if (targetCurrency === 'AED') {
+    return 0.0389256; // Fallback rate: 1 AED ≈ ₹25.69 (1 INR ≈ 0.0389 AED)
+  }
+  
+  try {
+    const response = await fetch(`https://api.frankfurter.dev/v1/latest?from=INR&to=${targetCurrency}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data.rates && data.rates[targetCurrency]) {
+      return data.rates[targetCurrency];
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch live rate:', error);
+    return null;
+  }
+}
+
+async function updateCurrencyDisplay(currencyCode) {
+  const rateElement = document.getElementById('live-rate');
+  const timestampElement = document.getElementById('rate-timestamp');
+  if (!rateElement || !timestampElement) return;
+
+  const rate = await getLiveExchangeRate(currencyCode);
+
+  if (rate && rate > 0) {
+    const inrValue = (1 / rate).toFixed(2);
+    rateElement.textContent = `₹${parseFloat(inrValue).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    timestampElement.textContent = new Date().toLocaleString();
+  } else {
+    rateElement.textContent = 'Rate unavailable';
+    timestampElement.textContent = '';
+  }
+}
+
+async function convertCurrency() {
+  const amountElement = document.getElementById('converter-amount');
+  const currencyElement = document.getElementById('converter-currency');
+  const resultElement = document.getElementById('converter-result');
+  const calculationElement = document.getElementById('conversionCalculation');
+  
+  if (!amountElement || !currencyElement || !resultElement) return;
+
+  const amount = amountElement.value;
+  const targetCurrency = currencyElement.value;
+  
+  if (calculationElement) {
+    const parsedAmount = parseFloat(amount);
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      calculationElement.textContent = `₹${parsedAmount.toLocaleString("en-IN")} =`;
+    } else {
+      calculationElement.textContent = "Enter a valid amount";
+      resultElement.textContent = "--";
+      return;
+    }
+  }
+
+  const rate = await getLiveExchangeRate(targetCurrency);
+  
+  if (rate) {
+    const result = (amount * rate).toFixed(2);
+    
+    const symbols = {
+      AED: "AED",
+      USD: "$",
+      THB: "฿",
+      JPY: "¥",
+      SGD: "S$"
+    };
+    const symbol = symbols[targetCurrency] || targetCurrency;
+    
+    resultElement.textContent = `${symbol} ${parseFloat(result).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  } else {
+    resultElement.textContent = 'Unable to fetch rate';
+  }
+}
+
 function sidebarConverterController() {
   const converterWidget = document.getElementById("converterWidget");
   if (!converterWidget) return;
 
-  const amountInput = document.getElementById("converterAmount");
-  const targetSelect = document.getElementById("converterTarget");
-  const resultStrong = document.getElementById("conversionResult");
-  const calculationP = document.getElementById("conversionCalculation");
+  const amountInput = document.getElementById("converter-amount");
+  const targetSelect = document.getElementById("converter-currency");
 
-  const rates = {
-    AED: 0.044,
-    USD: 0.012,
-    THB: 0.44,
-    JPY: 1.88,
-    SGD: 0.016
-  };
+  if (!amountInput || !targetSelect) return;
 
-  const symbols = {
-    AED: "AED",
-    USD: "$",
-    THB: "฿",
-    JPY: "¥",
-    SGD: "S$"
-  };
+  amountInput.addEventListener("input", convertCurrency);
+  targetSelect.addEventListener("change", convertCurrency);
 
-  const calculate = () => {
-    const amount = parseFloat(amountInput.value);
-    const target = targetSelect.value;
-
-    if (isNaN(amount) || amount <= 0) {
-      resultStrong.textContent = "--";
-      calculationP.textContent = "Enter a valid amount";
-      return;
-    }
-
-    const rate = rates[target];
-    const converted = (amount * rate).toFixed(2);
-    const symbol = symbols[target];
-
-    calculationP.textContent = `₹${amount.toLocaleString("en-IN")} =`;
-    resultStrong.textContent = `${symbol} ${parseFloat(converted).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  amountInput.addEventListener("input", calculate);
-  targetSelect.addEventListener("change", calculate);
-
-  calculate();
+  convertCurrency();
 }
 
 function setupSidebarLayout() {
