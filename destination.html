@@ -308,6 +308,10 @@
 
         <!-- Comments List -->
         <div class="comments-list-container">
+          <div class="tips-search">
+            <input type="text" id="tips-search-input" placeholder="Ask a question — e.g. 'Where to buy SIM card?' or 'How long did visa take?'">
+            <button onclick="searchTips()">🔍 Search</button>
+          </div>
           <div class="comments-filters">
             <span class="filter-label">Filter by:</span>
             <button class="filter-chip active" data-filter="all">All</button>
@@ -316,6 +320,7 @@
             <button class="filter-chip" data-filter="sim">SIMs</button>
             <button class="filter-chip" data-filter="transport">Transport</button>
           </div>
+          <p id="tips-section-label" class="tips-label">Most Helpful Tips</p>
           <div class="comments-list" id="commentsList">
             <p class="no-comments">Loading community tips...</p>
           </div>

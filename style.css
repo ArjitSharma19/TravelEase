@@ -2100,6 +2100,78 @@ body.sidebar-expanded {
 }
 
 /* --- Community Comments & Reviews --- */
+.tips-search {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.tips-search input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.tips-search input:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+.tips-search button {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+.tips-search button:hover {
+  background: #1557b0;
+}
+.no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+}
+.no-results-sub {
+  font-size: 13px;
+  color: #999;
+  margin: 8px 0 16px;
+}
+.no-results button {
+  background: #f0f4fa;
+  border: 1px solid #1a73e8;
+  color: #1a73e8;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 180ms ease;
+}
+.no-results button:hover {
+  background: #e1eafd;
+}
+.tips-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .tips-search {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tips-search button {
+    width: 100%;
+  }
+}
+
 .community-section {
   width: min(1180px, calc(100% - 36px));
   margin: 68px auto 0;

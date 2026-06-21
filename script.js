@@ -846,10 +846,19 @@ async function setupCommentsSection(countryCode) {
     chip.addEventListener("click", () => {
       filterChips.forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
-      const filter = chip.dataset.filter;
-      renderComments(filter);
+      searchTips();
     });
   });
+
+  // Set up Search Input listener with debounce
+  const searchInput = document.getElementById("tips-search-input");
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(searchTips, 400);
+    });
+  }
 
   // Set up Comment Form Submission listener
   commentForm.addEventListener("submit", async (event) => {
@@ -966,15 +975,11 @@ async function loadComments(countryCode) {
   }
 }
 
-function renderComments(filter) {
+function renderCommentsList(commentsArray) {
   const commentsList = document.getElementById("commentsList");
   if (!commentsList) return;
 
-  const filtered = filter === "all"
-    ? currentComments
-    : currentComments.filter(c => c.category === filter);
-
-  if (filtered.length === 0) {
+  if (commentsArray.length === 0) {
     commentsList.innerHTML = `<p class="no-comments">No tips shared in this category yet. Be the first to share one!</p>`;
     return;
   }
@@ -989,7 +994,7 @@ function renderComments(filter) {
 
   const likedComments = JSON.parse(localStorage.getItem("likedComments") || "[]");
 
-  commentsList.innerHTML = filtered.map(comment => {
+  commentsList.innerHTML = commentsArray.map(comment => {
     const dateStr = new Date(comment.createdAt).toLocaleDateString("en-IN", {
       year: "numeric",
       month: "short",
@@ -1022,6 +1027,134 @@ function renderComments(filter) {
       </article>
     `;
   }).join("");
+}
+
+function getGeneralTips(allComments) {
+  // Pick top 4 comments with highest likes (Helpful count)
+  return [...allComments]
+    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    .slice(0, 4);
+}
+
+function renderDefaultView() {
+  const generalTips = getGeneralTips(currentComments);
+  renderCommentsList(generalTips);
+  const labelElement = document.getElementById('tips-section-label');
+  if (labelElement) {
+    labelElement.textContent = 'Most Helpful Tips';
+  }
+}
+
+function getCategoryName(category) {
+  const categoryNames = {
+    general: "General",
+    visa: "Visa",
+    currency: "Money",
+    sim: "SIMs",
+    transport: "Transport"
+  };
+  return categoryNames[category] || "General";
+}
+
+window.searchTips = function() {
+  const searchInput = document.getElementById('tips-search-input');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const activeChip = document.querySelector(".filter-chip.active");
+  const activeCategory = activeChip ? activeChip.dataset.filter : "all";
+
+  // Filter first by category, if category is not "all"
+  const categoryComments = activeCategory === "all"
+    ? currentComments
+    : currentComments.filter(c => c.category === activeCategory);
+
+  if (!query) {
+    if (activeCategory === "all") {
+      renderDefaultView();
+    } else {
+      renderCommentsList(categoryComments);
+      const labelElement = document.getElementById('tips-section-label');
+      if (labelElement) {
+        labelElement.textContent = `${getCategoryName(activeCategory)} Tips`;
+      }
+    }
+    return;
+  }
+
+  const labelElement = document.getElementById('tips-section-label');
+  if (labelElement) {
+    labelElement.textContent = `Showing results for "${query}"`;
+  }
+
+  // simple keyword matching — score each comment by relevance
+  const queryWords = query.split(' ').filter(w => w.length > 2);
+  if (queryWords.length === 0 && query.length > 0) {
+    queryWords.push(query);
+  }
+
+  const scoredComments = categoryComments.map(comment => {
+    const contentText = ((comment.text || '') + ' ' + (comment.category || '')).toLowerCase();
+    let score = 0;
+    queryWords.forEach(word => {
+      if (contentText.includes(word)) score++;
+    });
+    return { ...comment, relevanceScore: score };
+  });
+
+  const relevantComments = scoredComments
+    .filter(c => c.relevanceScore > 0)
+    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  if (relevantComments.length === 0) {
+    showNoResultsMessage(query);
+  } else {
+    renderCommentsList(relevantComments);
+  }
+}
+
+window.showNoResultsMessage = function(query) {
+  const commentsList = document.getElementById('commentsList');
+  if (!commentsList) return;
+  commentsList.innerHTML = `
+    <div class="no-results">
+      <p>No traveler tips found for "${escapeHTML(query)}" yet.</p>
+      <p class="no-results-sub">Be the first to share your experience on this topic, or browse general tips below.</p>
+      <button onclick="clearSearch()">Show All Tips</button>
+    </div>
+  `;
+}
+
+window.clearSearch = function() {
+  const searchInput = document.getElementById('tips-search-input');
+  if (searchInput) searchInput.value = '';
+  
+  const allChip = Array.from(document.querySelectorAll(".filter-chip")).find(c => c.dataset.filter === 'all');
+  if (allChip) {
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    allChip.classList.add("active");
+  }
+  
+  renderDefaultView();
+}
+
+window.renderComments = function(filter) {
+  const filterChips = document.querySelectorAll(".filter-chip");
+  if (filterChips.length > 0) {
+    filterChips.forEach(c => {
+      if (c.dataset.filter === filter) {
+        c.classList.add("active");
+      } else {
+        c.classList.remove("active");
+      }
+    });
+  }
+
+  if (filter === 'all') {
+    const searchInput = document.getElementById('tips-search-input');
+    if (searchInput) searchInput.value = '';
+  }
+
+  searchTips();
 }
 
 function escapeHTML(str) {
