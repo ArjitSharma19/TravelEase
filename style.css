@@ -924,6 +924,38 @@ h3 {
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
 
+/* Live Currency Card UI */
+.currency-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0e4ec;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.currency-card h3 {
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.rate-display {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.rate-updated {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+
 .warning-card {
   grid-column: 1 / -1;
   background: #fff8df;
@@ -3020,22 +3052,91 @@ body.sidebar-expanded {
 
 .filter-options .radio-container,
 .filter-options .checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 28px;
   font-size: 13px;
   color: #555;
   font-weight: 500;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
   user-select: none;
+  line-height: 18px;
+  min-height: 18px;
 }
 
-.filter-options input[type="radio"],
-.filter-options input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+.filter-options .radio-container input,
+.filter-options .checkbox-container input {
+  position: absolute;
+  opacity: 0;
   cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.filter-options .checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  transition: all 180ms ease;
+}
+
+.filter-options .radio-container .checkmark {
+  border-radius: 50%;
+}
+
+.filter-options .checkbox-container .checkmark {
+  border-radius: 4px;
+}
+
+.filter-options .radio-container:hover input ~ .checkmark,
+.filter-options .checkbox-container:hover input ~ .checkmark {
+  border-color: #1a73e8;
+}
+
+.filter-options .radio-container input:checked ~ .checkmark,
+.filter-options .checkbox-container input:checked ~ .checkmark {
+  background-color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+.filter-options .checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.filter-options .radio-container .checkmark::after {
+  left: 5px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.filter-options .checkbox-container .checkmark::after {
+  left: 6px;
+  top: 3px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.filter-options .radio-container input:checked ~ .checkmark::after,
+.filter-options .checkbox-container input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.filter-options .checkbox-container input:checked ~ span,
+.filter-options .checkbox-container input:checked ~ .checkmark + span {
+  text-decoration: none !important;
+  color: #555 !important;
 }
 
 .flight-results-main {
@@ -3084,7 +3185,7 @@ body.sidebar-expanded {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-right: 8px;
+  padding-right: 16px;
   padding-bottom: 20px;
 }
 
@@ -3165,6 +3266,7 @@ body.sidebar-expanded {
 
 .route-visualizer {
   flex: 0 1 150px;
+  min-width: 120px;
   position: relative;
   text-align: center;
 }
@@ -3208,14 +3310,13 @@ body.sidebar-expanded {
 }
 
 .stops-label {
+  display: block;
   font-size: 10px;
   color: #e53935;
   font-weight: 700;
-  position: absolute;
-  width: 100%;
-  bottom: -15px;
-  left: 0;
   text-transform: uppercase;
+  margin-top: 4px;
+  white-space: nowrap;
 }
 
 .stops-label.direct {
