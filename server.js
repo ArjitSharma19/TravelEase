@@ -28,7 +28,10 @@ app.use(express.static(__dirname));
 // Connect to MongoDB
 const dbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/travelease';
 mongoose.connect(dbUri)
-  .then(() => console.log('Successfully connected to MongoDB.'))
+  .then(async () => {
+    console.log('Successfully connected to MongoDB.');
+    await seedCommentsIfNeeded();
+  })
   .catch((err) => {
     console.error('MongoDB connection error:', err.message);
     console.log('Ensure MongoDB is installed and running on your system.');
@@ -366,3 +369,159 @@ app.post('/api/chat', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`TravelEase server running at http://localhost:${PORT}`);
 });
+
+// Database Seeder for Community Comments
+async function seedCommentsIfNeeded() {
+  try {
+    const count = await Comment.countDocuments();
+    if (count > 5) {
+      console.log('Comments database already contains data. Skipping seed.');
+      return;
+    }
+
+    console.log('Seeding initial community comments...');
+    const seedData = [
+      {
+        countryCode: 'THAILAND',
+        userName: 'Sujit Kumar',
+        tripPeriod: 'May 2026',
+        category: 'visa',
+        text: 'Indian passport holders currently get visa-free entry for up to 30 days. Immigration at Suvarnabhumi was very fast—just show your return ticket and passport valid for 6 months. Make sure you print a copy of your return flight ticket, they asked me for it.',
+        likes: 8
+      },
+      {
+        countryCode: 'THAILAND',
+        userName: 'Meera Nair',
+        tripPeriod: 'April 2026',
+        category: 'currency',
+        text: 'For Thailand, Forex cards work in major malls but local street vendors and night markets only take Cash (Thai Baht). Standard ATM withdrawal fee is 220 Baht per transaction, so withdraw larger amounts to save on fees. Also, Superrich exchange shops have the best rates.',
+        likes: 12
+      },
+      {
+        countryCode: 'THAILAND',
+        userName: 'Karan Johar',
+        tripPeriod: 'June 2026',
+        category: 'sim',
+        text: 'Buy an eSIM online before you land or get a physical DTAC tourist SIM at the airport. It costs about 299 Baht for unlimited 5G data for 8 days. Avoid hotel SIMs, they are double the price.',
+        likes: 5
+      },
+      {
+        countryCode: 'THAILAND',
+        userName: 'Anish G.',
+        tripPeriod: 'March 2026',
+        category: 'transport',
+        text: 'Download the Grab and Bolt apps before travelling. Taxis at tourist hubs like Bangkok Sukhumvit will try to quote flat rates instead of using the meter. Bolt is usually cheaper than Grab, but Grab has more drivers.',
+        likes: 7
+      },
+      {
+        countryCode: 'UAE',
+        userName: 'Rohan Gupta',
+        tripPeriod: 'May 2026',
+        category: 'visa',
+        text: 'Applied for the 30-day tourist e-visa. It got approved in less than 48 hours. Make sure you upload a clear color photo and passport front/back pages. Keep a printed copy with you when boarding, the airline checked it during counter check-in.',
+        likes: 15
+      },
+      {
+        countryCode: 'UAE',
+        userName: 'Kunal Shah',
+        tripPeriod: 'Feb 2026',
+        category: 'currency',
+        text: 'Dubai is heavily digital. My Niyo Forex card worked everywhere—from the metro stations to corner shawarma shops. Kept only 200 AED cash and barely used it. Tap-to-pay is accepted everywhere.',
+        likes: 9
+      },
+      {
+        countryCode: 'UAE',
+        userName: 'Sneha Patil',
+        tripPeriod: 'April 2026',
+        category: 'transport',
+        text: 'Buy a Silver Nol Card as soon as you land at Dubai Airport (DXB). The Dubai Metro is very clean, efficient, and cheap. Avoid cabs during rush hours (5-7 PM) near Downtown Dubai, traffic is gridlocked.',
+        likes: 11
+      },
+      {
+        countryCode: 'USA',
+        userName: 'Priyanka S.',
+        tripPeriod: 'April 2026',
+        category: 'visa',
+        text: 'Immigration officer at JFK asked to see my return flight details and hotel bookings. They also asked what business meetings I was attending. Be polite, direct, and keep all documents printed in a folder handy.',
+        likes: 21
+      },
+      {
+        countryCode: 'USA',
+        userName: 'Amit Patel',
+        tripPeriod: 'June 2026',
+        category: 'transport',
+        text: 'In NYC, do not bother with cabs. Just download the Transit app or Google Maps and use the MTA subway. You can pay directly at the turnstiles using contactless credit cards via OMNY. Much cheaper and faster.',
+        likes: 14
+      },
+      {
+        countryCode: 'UK',
+        userName: 'Vikram Malhotra',
+        tripPeriod: 'May 2026',
+        category: 'currency',
+        text: "London is completely cashless now! Many pubs and cafes have signs saying 'Card Only'. Don't convert too much cash. Forex card or standard contactless international card is all you need.",
+        likes: 18
+      },
+      {
+        countryCode: 'UK',
+        userName: 'Nisha Sharma',
+        tripPeriod: 'May 2026',
+        category: 'transport',
+        text: 'If you are planning to travel between London and cities like Edinburgh or Manchester, book your train tickets weeks in advance via LNER or Trainline. On-the-day tickets are outrageously expensive.',
+        likes: 13
+      },
+      {
+        countryCode: 'SINGAPORE',
+        userName: 'Arun Iyer',
+        tripPeriod: 'June 2026',
+        category: 'visa',
+        text: "Don't forget to submit the SG Arrival Card (SGAC) online within 3 days before your arrival. It's free of cost on the ICA website. Airlines will not let you check in without the email confirmation. Automated gates at Changi are amazing!",
+        likes: 16
+      },
+      {
+        countryCode: 'SINGAPORE',
+        userName: 'Rajesh M.',
+        tripPeriod: 'April 2026',
+        category: 'transport',
+        text: "Get the Ez-Link card or use your contactless international credit card directly on buses and the MRT. Singapore's transit system is top tier. Cabs are expensive, especially during peak hour surcharges.",
+        likes: 8
+      },
+      {
+        countryCode: 'JAPAN',
+        userName: 'Tanya Sen',
+        tripPeriod: 'May 2026',
+        category: 'sim',
+        text: 'Pocket Wi-Fi or eSIM is a MUST in Japan. Google Maps is essential for navigating the complex Tokyo subway exits and train lines. Picked up a Ninja WiFi pocket router at Narita airport and returned it at Haneda, very convenient.',
+        likes: 19
+      },
+      {
+        countryCode: 'JAPAN',
+        userName: 'Rahul Verma',
+        tripPeriod: 'May 2026',
+        category: 'currency',
+        text: 'Japan is still a cash-heavy country despite modern appearances. Small ramen shops, coin lockers, and shrines only take coins/cash. Load cash onto a Suica or Pasmo card on your phone (Apple Wallet) to easily pay at convenience stores.',
+        likes: 25
+      },
+      {
+        countryCode: 'CANADA',
+        userName: 'Girish Rawat',
+        tripPeriod: 'May 2026',
+        category: 'general',
+        text: 'If visiting national parks like Banff, buy your park passes online in advance. Also, check weather notices daily as mountain conditions change in minutes. Layers are your best friend!',
+        likes: 10
+      },
+      {
+        countryCode: 'AUSTRALIA',
+        userName: 'Deepa Rao',
+        tripPeriod: 'March 2026',
+        category: 'general',
+        text: 'Australia biosecurity rules are incredibly strict. Declare all food items, seeds, and wooden souvenirs at customs. Fines are very high for undeclared fresh food or plants.',
+        likes: 14
+      }
+    ];
+
+    await Comment.insertMany(seedData);
+    console.log(`Successfully seeded ${seedData.length} community comments.`);
+  } catch (error) {
+    console.error('Error seeding comments database:', error);
+  }
+}
