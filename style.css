@@ -2984,6 +2984,7 @@ body.sidebar-expanded {
   flex-direction: column;
   max-height: 90vh;
   padding: 30px;
+  overflow: hidden;
 }
 
 .flight-results-header {
@@ -3215,8 +3216,9 @@ body.sidebar-expanded {
 .flight-airline-info {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 180px;
+  gap: 10px;
+  flex: 0 1 140px;
+  min-width: 110px;
 }
 
 .flight-logo {
@@ -3241,14 +3243,15 @@ body.sidebar-expanded {
 .flight-time-info {
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex: 1;
+  gap: 12px;
+  flex: 1 1 auto;
   justify-content: center;
+  min-width: 200px;
 }
 
 .time-block {
   text-align: center;
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .time-block h4 {
@@ -3265,8 +3268,8 @@ body.sidebar-expanded {
 }
 
 .route-visualizer {
-  flex: 0 1 150px;
-  min-width: 120px;
+  flex: 0 1 120px;
+  min-width: 70px;
   position: relative;
   text-align: center;
 }
@@ -3325,7 +3328,7 @@ body.sidebar-expanded {
 
 .flight-price-action {
   text-align: right;
-  min-width: 130px;
+  flex: 0 0 100px;
 }
 
 .price-text {
@@ -3493,7 +3496,7 @@ body.sidebar-expanded {
   margin-bottom: 12px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 850px) {
   .flight-results-container {
     flex-direction: column;
     overflow-y: auto;
@@ -3501,7 +3504,21 @@ body.sidebar-expanded {
   .flight-filters-sidebar {
     flex: 0 0 auto;
     max-height: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 15px;
   }
+  .flight-filters-sidebar h3 {
+    display: none;
+  }
+  .filter-group {
+    margin-bottom: 0;
+    flex: 1 1 180px;
+  }
+}
+
+@media (max-width: 600px) {
   .flight-card-summary {
     flex-direction: column;
     gap: 16px;
