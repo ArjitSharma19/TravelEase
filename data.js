@@ -434,3 +434,49 @@ const DESTINATIONS = {
 };
 
 const POPULAR_COUNTRIES = ["UAE", "USA", "UK", "Thailand", "Singapore", "Japan", "Canada", "Australia"];
+
+const checklistTemplates = {
+  tourist: [
+    "Passport valid for 6+ months",
+    "e-Visa or Visa on Arrival confirmation",
+    "Return flight tickets",
+    "Hotel booking confirmation",
+    "Travel insurance",
+    "Local currency or forex card"
+  ],
+  student: [
+    "Passport valid for 6+ months",
+    "Student visa approval letter",
+    "University admission letter",
+    "Proof of funds / scholarship letter",
+    "Accommodation proof (hostel/PG)",
+    "Medical insurance"
+  ],
+  business: [
+    "Passport valid for 6+ months",
+    "Business visa documents",
+    "Company invitation letter",
+    "Return flight tickets",
+    "Proof of business funds / corporate card",
+    "Travel insurance"
+  ],
+  family: [
+    "Passport valid for 6+ months",
+    "Visa confirmation for all travellers",
+    "Return flight tickets",
+    "Hotel booking confirmation",
+    "Travel insurance for family",
+    "Local currency or family forex card"
+  ]
+};
+
+const extraChecklistItems = {
+  UAE: [],
+  USA: ["Complete visa interview confirmation printout"],
+  UK: [],
+  Thailand: ["Fill TM6 arrival card if applicable"],
+  Singapore: ["Submit SG Arrival Card within 3 days of arrival"],
+  Japan: ["Fill out Visit Japan Web before departure"],
+  Canada: [],
+  Australia: ["Complete Incoming Passenger Card"]
+};
