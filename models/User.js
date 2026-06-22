@@ -85,6 +85,21 @@ const UserSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  checklist: [
+    {
+      id: String,
+      text: String,
+      completed: { type: Boolean, default: false }
+    }
+  ],
+  tripDetails: {
+    destination: String,
+    purpose: String,
+    departureDate: Date,
+    returnDate: Date,
+    passportExpiry: Date,
+    firstTimeAbroad: Boolean
+  },
   createdAt: {
     type: Date,
     default: Date.now
