@@ -1,0 +1,2647 @@
+const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderHomePage();
+  renderDestinationPage();
+  setupChatWidget();
+  setupSidebarWidgets();
+  setupHomepageTipToasts();
+});
+
+function renderHomePage() {
+  const grid = document.getElementById("destinationGrid");
+  if (!grid) return;
+
+  grid.innerHTML = POPULAR_COUNTRIES.map((code) => {
+    const destination = DESTINATIONS[code];
+    return `
+      <a class="destination-card" href="destination.html?country=${encodeURIComponent(code)}" aria-label="Open ${destination.name} guide">
+        <span class="flag" aria-hidden="true">${destination.flag}</span>
+        <span>
+          <strong>${code}</strong>
+          <p>${destination.summary}</p>
+        </span>
+      </a>
+    `;
+  }).join("");
+
+  setupSearch();
+}
+
+function setupSearch() {
+  const form = document.getElementById("searchForm");
+  const input = document.getElementById("countrySearch");
+  const suggestions = document.getElementById("suggestions");
+  if (!form || !input || !suggestions) return;
+
+  const findMatches = (value) => {
+    const query = value.trim().toLowerCase();
+    if (!query) return POPULAR_COUNTRIES;
+    return POPULAR_COUNTRIES.filter((code) => {
+      const destination = DESTINATIONS[code];
+      return code.toLowerCase().includes(query) || destination.name.toLowerCase().includes(query);
+    });
+  };
+
+  const showSuggestions = () => {
+    const matches = findMatches(input.value).slice(0, 6);
+    suggestions.classList.toggle("show", matches.length > 0);
+    suggestions.innerHTML = matches.map((code) => {
+      const destination = DESTINATIONS[code];
+      return `
+        <button class="suggestion-item" type="button" data-country="${code}">
+          <span>${destination.flag}</span>
+          <strong>${destination.name}</strong>
+        </button>
+      `;
+    }).join("");
+  };
+
+  input.addEventListener("input", showSuggestions);
+  input.addEventListener("focus", showSuggestions);
+
+  suggestions.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-country]");
+    if (!button) return;
+    goToCountry(button.dataset.country);
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const match = findMatches(input.value)[0];
+    if (match) goToCountry(match);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) suggestions.classList.remove("show");
+  });
+}
+
+function goToCountry(countryCode) {
+  window.location.href = `destination.html?country=${encodeURIComponent(countryCode)}`;
+}
+
+const SERVICE_LINKS = {
+  BookMyForex: "https://www.bookmyforex.com",
+  Wise: "https://wise.com",
+  "Wise Card": "https://wise.com",
+  "Niyo Global": "https://www.goniyo.com",
+  "Niyo Card": "https://www.goniyo.com",
+  Revolut: "https://www.revolut.com",
+  "Airalo eSIM": "https://www.airalo.com",
+  "Holafly eSIM": "https://esim.holafly.com",
+  Uber: "https://www.uber.com",
+  Grab: "https://www.grab.com",
+  Careem: "https://www.careem.com",
+  Lyft: "https://www.lyft.com",
+  Gojek: "https://www.gojek.com"
+};
+
+const CAB_APP_META = {
+  Uber: { icon: "🚗", url: SERVICE_LINKS.Uber },
+  Grab: { icon: "🟢", url: SERVICE_LINKS.Grab },
+  Careem: { icon: "🚕", url: SERVICE_LINKS.Careem },
+  Lyft: { icon: "🚘", url: SERVICE_LINKS.Lyft },
+  Gojek: { icon: "🛵", url: SERVICE_LINKS.Gojek }
+};
+
+const countryImages = {
+  UAE: [
+    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1400",
+    "https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1400",
+    "https://images.unsplash.com/photo-1582672060674-bc2bd808a8b5?w=1400",
+    "https://images.unsplash.com/photo-1547234935-80c7145ec969?w=1400",
+    "https://images.unsplash.com/photo-1526495124232-a04e1849168c?w=1400",
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400"
+  ],
+  USA: [
+    "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=1400",
+    "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1400",
+    "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1400",
+    "https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=1400",
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400",
+    "https://images.unsplash.com/photo-1490077476659-095159692ab5?w=1400"
+  ],
+  UK: [
+    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1400",
+    "https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=1400",
+    "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1400",
+    "https://images.unsplash.com/photo-1520986606214-8b456906c813?w=1400",
+    "https://images.unsplash.com/photo-1543832923-44667a44c804?w=1400",
+    "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1400"
+  ],
+  Thailand: [
+    "https://images.unsplash.com/photo-1528181304800-259b08848526?w=1400",
+    "https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=1400",
+    "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=1400",
+    "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=1400",
+    "https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=1400",
+    "https://images.unsplash.com/photo-1562602833-0f4ab2fc46e3?w=1400"
+  ],
+  Singapore: [
+    "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1400",
+    "https://images.unsplash.com/photo-1508964942454-1a56651d54ac?w=1400",
+    "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=1400",
+    "https://images.unsplash.com/photo-1570789210967-2cac24afeb00?w=1400",
+    "https://images.unsplash.com/photo-1548391350-968f58dedaed?w=1400",
+    "https://images.unsplash.com/photo-1574227492706-f65b24c3688a?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  ],
+  Japan: [
+    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400",
+    "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1400",
+    "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=1400",
+    "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=1400",
+    "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=1400",
+    "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=1400"
+  ],
+  Canada: [
+    "https://images.unsplash.com/photo-1517935706615-2717063c2225?w=1400",
+    "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?w=1400",
+    "https://images.unsplash.com/photo-1444044205806-38f3ed106c10?w=1400",
+    "https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=1400",
+    "https://images.unsplash.com/photo-1559521783-1d1599583485?w=1400"
+  ],
+  Australia: [
+    "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1400",
+    "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1400",
+    "https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?w=1400",
+    "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=1400",
+    "https://images.unsplash.com/photo-1528072164453-f4e8ef0d475a?w=1400",
+    "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1400"
+  ]
+};
+
+let currentSlide = 0;
+let slideInterval;
+
+function initSlideshow(country) {
+  const images = countryImages[country];
+  if (!images) return;
+  const container = document.getElementById('slides-container');
+  const dotsContainer = document.getElementById('slide-dots');
+  if (!container || !dotsContainer) return;
+
+  container.innerHTML = '';
+  dotsContainer.innerHTML = '';
+  currentSlide = 0;
+
+  images.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.className = 'slide' + (i === 0 ? ' active' : '');
+    container.appendChild(img);
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    dotsContainer.appendChild(dot);
+  });
+
+  if (slideInterval) clearInterval(slideInterval);
+  slideInterval = setInterval(() => changeSlide(1), 4000);
+
+  const slideshow = document.querySelector('.hero-slideshow');
+  if (slideshow) {
+    slideshow.onmouseenter = () => clearInterval(slideInterval);
+    slideshow.onmouseleave = () => {
+      clearInterval(slideInterval);
+      slideInterval = setInterval(() => changeSlide(1), 4000);
+    };
+  }
+}
+
+function changeSlide(direction) {
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  if (slides.length === 0) return;
+  slides[currentSlide].classList.remove('active');
+  dots[currentSlide].classList.remove('active');
+  currentSlide = (currentSlide + direction + slides.length) % slides.length;
+  slides[currentSlide].classList.add('active');
+  dots[currentSlide].classList.add('active');
+}
+
+function goToSlide(index) {
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  if (slides.length === 0) return;
+  slides[currentSlide].classList.remove('active');
+  dots[currentSlide].classList.remove('active');
+  currentSlide = index;
+  slides[currentSlide].classList.add('active');
+  dots[currentSlide].classList.add('active');
+}
+
+function renderDestinationPage() {
+  const tabContent = document.getElementById("tabContent");
+  if (!tabContent) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const requestedCountry = (params.get("country") || "UAE").trim();
+  const countryCode = Object.keys(DESTINATIONS).find((code) => code.toLowerCase() === requestedCountry.toLowerCase());
+  const destination = DESTINATIONS[countryCode] || DESTINATIONS.UAE;
+  const activeCode = countryCode || "UAE";
+  document.title = `${destination.name} Guide | TravelEase`;
+
+  const destFlag = document.getElementById("dest-flag");
+  const destName = document.getElementById("dest-name");
+  const destDesc = document.getElementById("dest-description");
+
+  if (destFlag) destFlag.textContent = destination.flag;
+  if (destName) destName.textContent = destination.name;
+  if (destDesc) destDesc.textContent = destination.summary;
+
+  initSlideshow(activeCode);
+
+  renderQuickSummary(destination);
+  setupShareGuide();
+
+  const buttons = Array.from(document.querySelectorAll(".tab-button"));
+  const renderTab = (tabName) => {
+    buttons.forEach((button) => {
+      const isActive = button.dataset.tab === tabName;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
+    tabContent.classList.remove("is-visible");
+    tabContent.innerHTML = getTabMarkup(tabName, destination);
+    if (tabName === "visa") {
+      highlightVisaType(destination.visa.type);
+    } else if (tabName === "currency") {
+      updateCurrencyDisplay(destination.currency.code);
+    }
+    requestAnimationFrame(() => tabContent.classList.add("is-visible"));
+  };
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => renderTab(button.dataset.tab));
+  });
+
+  renderTab("visa");
+  setupCommentsSection(activeCode);
+  setupDestinationTipToasts(activeCode);
+  prefillFlightDestination();
+}
+
+function renderQuickSummary(destination) {
+  const grid = document.getElementById("quickSummaryGrid");
+  if (!grid) return;
+
+  const facts = [
+    { icon: "fa-passport", label: "Visa type", value: destination.visa.type },
+    { icon: "fa-money-bill-wave", label: "Currency", value: destination.currency.code || destination.currency.rate },
+    { icon: "fa-language", label: "Language", value: destination.language },
+    { icon: "fa-sun", label: "Best time", value: destination.bestTime || destination.essentials.bestTime }
+  ];
+
+  grid.innerHTML = facts.map((fact) => `
+    <article class="summary-card">
+      <i class="fa-solid ${fact.icon}" aria-hidden="true"></i>
+      <span>${fact.label}</span>
+      <strong>${fact.value}</strong>
+    </article>
+  `).join("");
+}
+
+function setupShareGuide() {
+  const button = document.getElementById("shareGuideBtn");
+  if (!button || button.dataset.ready) return;
+  button.dataset.ready = "true";
+  button.addEventListener("click", async () => {
+    const original = button.innerHTML;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      button.innerHTML = `<i class="fa-solid fa-check" aria-hidden="true"></i> Link copied`;
+    } catch (error) {
+      button.innerHTML = `<i class="fa-solid fa-link" aria-hidden="true"></i> Copy failed`;
+    }
+    window.setTimeout(() => {
+      button.innerHTML = original;
+    }, 1800);
+  });
+}
+
+function getTabMarkup(tabName, destination) {
+  const templates = {
+    visa: () => `
+      <div class="visa-education">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="margin: 0;">📘 New to visas? Here's what you need to know</h3>
+          <button class="secondary-button" id="toggle-visa-edu-btn" onclick="toggleVisaEducation()" style="min-height: 32px; padding: 0 14px; font-size: 12px; height: auto;">Show Less</button>
+        </div>
+        <p class="subtitle">Different countries and trip purposes require different visa types. Here's a simple breakdown:</p>
+        
+        <div class="visa-types-grid" id="visa-types-grid">
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🆓</span>
+            <h4>Visa Free</h4>
+            <p>No visa needed at all. Just show your passport and return ticket at immigration. Easiest option.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🛂</span>
+            <h4>Visa on Arrival</h4>
+            <p>You get your visa stamped at the airport when you land. Pay the fee there, no pre-application needed.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">💻</span>
+            <h4>e-Visa</h4>
+            <p>Apply online before you travel. You get an approval email/PDF — no need to visit an embassy. Usually takes a few days.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">📋</span>
+            <h4>Sticker Visa</h4>
+            <p>A physical visa sticker pasted in your passport. Requires visiting the embassy or VFS center in person, submitting documents and biometrics. Takes weeks.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🎓</span>
+            <h4>Student Visa</h4>
+            <p>For studying abroad. Needs admission letter from university, proof of funds, and is usually valid for the full course duration.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">💼</span>
+            <h4>Work Visa</h4>
+            <p>For employment abroad. Requires a job offer letter and sponsorship from the employer in that country.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">✈️</span>
+            <h4>Tourist Visa</h4>
+            <p>For vacation or visiting purposes only. Cannot work or study on this visa. Most common type for first-time travellers.</p>
+          </div>
+          
+          <div class="visa-type-card">
+            <span class="visa-icon">🔁</span>
+            <h4>Transit Visa</h4>
+            <p>Needed only if your flight has a layover in a country and you plan to leave the airport during that layover.</p>
+          </div>
+          
+        </div>
+        
+        <div class="visa-tip-box">
+          <strong>💡 Which one applies to you?</strong>
+          <p>For this destination, you'll need a <span id="highlighted-visa-type"></span> — see the full details below.</p>
+        </div>
+      </div>
+
+      <div class="tab-header">
+        <div>
+          <p class="eyebrow">Visa</p>
+          <h2>Entry requirements for Indian passport holders</h2>
+        </div>
+        <span class="badge ${destination.visa.badge}">${destination.visa.type}</span>
+      </div>
+      <div class="key-value">
+        <div class="mini-stat"><i class="fa-regular fa-clock" aria-hidden="true"></i><span>Processing time</span><strong>${destination.visa.processingTime}</strong></div>
+        <div class="mini-stat"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i><span>Cost in INR</span><strong>${destination.visa.cost}</strong></div>
+      </div>
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>Documents checklist</h3>
+          <ul class="checklist">${listItems(destination.visa.documents)}</ul>
+        </article>
+        <article class="info-card">
+          <h3>Application</h3>
+          <p>Check the latest rules before applying because visa policies and appointment availability can change.</p>
+          <a class="primary-button" href="${destination.visa.applyUrl}" target="_blank" rel="noopener">Apply Now</a>
+        </article>
+        <article class="info-card warning-card">
+          <h3><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Important warnings</h3>
+          <p>Common reasons Indian travellers face delays or rejections:</p>
+          <ul>${listItems(destination.visa.warnings || ["Incomplete documents", "Unclear travel purpose", "Insufficient proof of funds"])}</ul>
+        </article>
+      </div>
+    `,
+    currency: () => `
+      <div class="tab-header">
+        <div>
+          <p class="eyebrow">Currency</p>
+          <h2>Money plan before you fly</h2>
+        </div>
+      </div>
+      <div class="currency-card">
+        <h3>Live Exchange Rate</h3>
+        <p class="rate-display">
+          1 ${destination.currency.code} = <span id="live-rate">Loading...</span>
+        </p>
+        <p class="rate-updated">Last updated: <span id="rate-timestamp"></span></p>
+      </div>
+      <article class="exchange-card" style="background: linear-gradient(135deg, #10b981, #1e3a8a); padding: 15px 20px; box-shadow: none;">
+        <span style="font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.9);">Money Tip</span>
+        <p style="margin-top: 6px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.95);">${destination.currency.tip}</p>
+      </article>
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>Cash vs card</h3>
+          <p>${destination.currency.cashCard || destination.currency.tip}</p>
+        </article>
+        <article class="info-card">
+          <h3>ATM availability</h3>
+          <p>${destination.currency.atm || "ATMs are available in major cities and airports; check card fees before withdrawing."}</p>
+        </article>
+        <article class="info-card">
+          <h3>UPI abroad tip</h3>
+          <p>${destination.upiAccepted ? "UPI may work at select tourist merchants, but keep cards and cash as your primary payment options." : "UPI is not a dependable payment option here. Use an international card and local currency."}</p>
+        </article>
+        <article class="info-card">
+          <h3>Forex and travel card services</h3>
+          <div class="service-grid">${serviceCards(["BookMyForex", "Wise Card", "Niyo Card", "Revolut"], "Visit")}</div>
+        </article>
+      </div>
+    `,
+    sim: () => `
+      <div class="tab-header">
+        <div>
+          <p class="eyebrow">SIM</p>
+          <h2>Stay connected from day one</h2>
+        </div>
+      </div>
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>Local SIM options</h3>
+          <ul>${listItems(destination.sim.carriers || [destination.sim.local])}</ul>
+        </article>
+        <article class="info-card">
+          <h3>eSIM options</h3>
+          <div class="service-grid">${serviceCards(["Airalo eSIM", "Holafly eSIM"], "Buy Now")}</div>
+        </article>
+        <article class="info-card">
+          <h3>Data plan advice</h3>
+          <p>${destination.sim.advice}</p>
+        </article>
+        <article class="info-card">
+          <h3>Airport vs city</h3>
+          <p>${destination.sim.airportTip || "Airport SIMs are convenient on arrival; city stores can be cheaper for longer stays."}</p>
+        </article>
+      </div>
+    `,
+    transport: () => `
+      <div class="tab-header">
+        <div>
+          <p class="eyebrow">Transport</p>
+          <h2>Getting around after arrival</h2>
+        </div>
+      </div>
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>Local cab apps</h3>
+          <div class="app-pills">${transportPills(destination.transport.apps || destination.transport.cabs)}</div>
+        </article>
+        <article class="info-card">
+          <h3>Airport transfers</h3>
+          <p><strong>${destination.transport.airportCost || "Costs vary by airport and city."}</strong></p>
+          <p>${destination.transport.airportTip}</p>
+        </article>
+        <article class="info-card">
+          <h3>Public transport note</h3>
+          <p>${destination.transport.publicNote}</p>
+        </article>
+      </div>
+    `,
+    essentials: () => `
+      <div class="tab-header">
+        <div>
+          <p class="eyebrow">Essentials</p>
+          <h2>Important numbers and local notes</h2>
+        </div>
+      </div>
+      <div class="key-value">
+        <div class="mini-stat emergency-stat"><span>Emergency number</span><strong>${destination.essentials.emergency}</strong></div>
+        <div class="mini-stat"><span>${destination.essentials.embassyName || "Indian embassy"}</span><strong>${destination.essentials.embassy}</strong><a class="text-link" href="tel:${destination.essentials.embassy.replace(/[^+\d]/g, "")}">Call embassy</a></div>
+      </div>
+      <div class="info-grid">
+        <article class="info-card success-card">
+          <h3>Cultural do's</h3>
+          <ul>${listItems(destination.essentials.dos || destination.essentials.tips)}</ul>
+        </article>
+        <article class="info-card danger-card">
+          <h3>Cultural don'ts</h3>
+          <ul>${listItems(destination.essentials.donts || [])}</ul>
+        </article>
+        <article class="info-card">
+          <h3>Weather and best time</h3>
+          <p><strong>${destination.bestTime || destination.essentials.bestTime}</strong></p>
+          <p>${destination.weather || ""}</p>
+        </article>
+        <article class="info-card">
+          <h3>Medical care</h3>
+          <p>${destination.hospitalTip}</p>
+        </article>
+        <article class="info-card">
+          <h3>Electricity plug</h3>
+          <p>${destination.plugType}</p>
+        </article>
+        <article class="info-card">
+          <h3>Tipping culture</h3>
+          <p>${destination.tipping}</p>
+        </article>
+      </div>
+    `
+  };
+
+  return templates[tabName]();
+}
+
+function listItems(items) {
+  return items.map((item) => `<li>${item}</li>`).join("");
+}
+
+function serviceCards(names, buttonLabel) {
+  return names.map((name) => `
+    <article class="service-card">
+      <div class="service-logo" aria-hidden="true">${name.charAt(0)}</div>
+      <strong>${name}</strong>
+      <a href="${SERVICE_LINKS[name]}" target="_blank" rel="noopener">${buttonLabel}</a>
+    </article>
+  `).join("");
+}
+
+function transportPills(apps) {
+  return apps.map((app) => {
+    const meta = CAB_APP_META[app] || { icon: "🚕", url: "https://www.uber.com" };
+    return `<a class="app-pill" href="${meta.url}" target="_blank" rel="noopener"><span aria-hidden="true">${meta.icon}</span>${app}</a>`;
+  }).join("");
+}
+
+const homepageTipToasts = [
+  {
+    key: "home-visa",
+    icon: "✈️",
+    title: "First-Time Tip",
+    message: "First time abroad? Start by checking visa requirements for your destination"
+  },
+  {
+    key: "home-forex",
+    icon: "💳",
+    title: "Money Tip",
+    message: "Tip: Carry a Niyo or Wise card to avoid forex charges abroad"
+  },
+  {
+    key: "home-esim",
+    icon: "📱",
+    title: "Connectivity Tip",
+    message: "Buy an eSIM before you travel - works in 190+ countries"
+  }
+];
+
+const countryTips = {
+  USA: [
+    "⚠️ US visa takes 45-60 days - apply well in advance",
+    "💳 Cards accepted everywhere - carry minimal cash"
+  ],
+  UAE: [
+    "✅ Indians get visa on arrival - no pre-apply needed",
+    "🚕 Use Careem app - cheaper than regular taxis"
+  ],
+  UK: [
+    "⚠️ UK visa rejection rate is high - prepare strong bank statements",
+    "🚇 Buy Oyster card for cheap tube travel"
+  ],
+  Thailand: [
+    "✅ No visa needed for Indians - just show return ticket",
+    "🚕 Always use Grab app - avoid tuk tuk overcharging"
+  ],
+  Singapore: [
+    "✅ Visa free for Indians - very easy entry",
+    "🚇 Buy EZ-Link card - cheapest way to get around"
+  ],
+  Japan: [
+    "⚠️ Japan visa takes 5-7 working days - apply early",
+    "💴 Japan is still very cash-heavy - carry Yen"
+  ],
+  Canada: [
+    "⚠️ Canada visa takes 8-10 weeks - apply very early",
+    "🌨️ Check weather before packing - varies greatly by season"
+  ],
+  Australia: [
+    "📋 Apply for ETA visa online - takes 1-3 days",
+    "🦘 Declare all food items at customs - strict rules"
+  ]
+};
+
+let activeTipToast = null;
+let activeTipTimer = null;
+
+function setupHomepageTipToasts() {
+  if (!document.getElementById("destinationGrid")) return;
+  const shownCount = Number(sessionStorage.getItem("traveleaseHomeToastCount") || "0");
+  if (shownCount >= 3) return;
+
+  const pendingToasts = homepageTipToasts.filter((toast) => !sessionStorage.getItem(`traveleaseToastDismissed:${toast.key}`));
+  if (!pendingToasts.length) return;
+
+  window.setTimeout(() => {
+    playTipToastQueue(pendingToasts.slice(0, 3 - shownCount), "traveleaseHomeToastCount");
+  }, 3000);
+}
+
+function setupDestinationTipToasts(countryCode) {
+  const tips = countryTips[countryCode];
+  if (!tips || !tips.length) return;
+
+  tips.slice(0, 2).forEach((tip, index) => {
+    const key = `destination-${countryCode}-${index}`;
+    if (sessionStorage.getItem(`traveleaseToastDismissed:${key}`)) return;
+    window.setTimeout(() => {
+      showTravelTipToast({
+        key,
+        icon: tip.slice(0, 2).trim(),
+        title: `${countryCode} Travel Tip`,
+        message: tip.replace(/^(\S+)\s*/, "")
+      });
+    }, index === 0 ? 2000 : 8000);
+  });
+}
+
+function playTipToastQueue(toasts, countKey) {
+  const [nextToast, ...remainingToasts] = toasts;
+  if (!nextToast) return;
+
+  showTravelTipToast(nextToast, () => {
+    if (countKey) {
+      const nextCount = Math.min(3, Number(sessionStorage.getItem(countKey) || "0") + 1);
+      sessionStorage.setItem(countKey, String(nextCount));
+      if (nextCount >= 3) return;
+    }
+    if (remainingToasts.length) {
+      window.setTimeout(() => playTipToastQueue(remainingToasts, countKey), 600);
+    }
+  });
+}
+
+function showTravelTipToast({ key, icon, title, message }, onDismiss) {
+  dismissToast(false);
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.id = "toast";
+  toast.dataset.toastKey = key;
+  toast.innerHTML = `
+    <div class="toast-icon">${escapeHTML(icon)}</div>
+    <div class="toast-content">
+      <p class="toast-title">${escapeHTML(title)}</p>
+      <p class="toast-message">${escapeHTML(message)}</p>
+    </div>
+    <button class="toast-close" type="button" onclick="dismissToast()" aria-label="Close notification">✕</button>
+  `;
+
+  document.body.appendChild(toast);
+  activeTipToast = toast;
+  toast.querySelector(".toast-close").addEventListener("click", () => dismissToast(true));
+  requestAnimationFrame(() => toast.classList.add("show"));
+
+  activeTipTimer = window.setTimeout(() => dismissToast(true), 5000);
+  toast.addEventListener("toast-dismissed", () => {
+    if (typeof onDismiss === "function") onDismiss();
+  }, { once: true });
+}
+
+function dismissToast(markSession = true) {
+  const toast = activeTipToast || document.getElementById("toast");
+  if (!toast) return;
+
+  if (activeTipTimer) {
+    window.clearTimeout(activeTipTimer);
+    activeTipTimer = null;
+  }
+
+  if (markSession && toast.dataset.toastKey) {
+    sessionStorage.setItem(`traveleaseToastDismissed:${toast.dataset.toastKey}`, "1");
+  }
+
+  toast.classList.remove("show");
+  window.setTimeout(() => {
+    if (toast.parentElement) toast.remove();
+    if (activeTipToast === toast) activeTipToast = null;
+    toast.dispatchEvent(new CustomEvent("toast-dismissed"));
+  }, 420);
+}
+
+window.dismissToast = dismissToast;
+
+function setupChatWidget() {
+  const root = document.getElementById("chatRoot");
+  if (!root) return;
+
+  const isEmbedded = root.classList.contains("chat-widget");
+
+  if (isEmbedded) {
+    root.innerHTML = `
+      <div class="widget-header">
+        <i class="fa-solid fa-robot" aria-hidden="true"></i>
+        <h3>AI Travel Assistant</h3>
+      </div>
+      <div class="sidebar-chat-box">
+        <div class="chat-log" id="chatLog">
+          <div class="chat-message">Hi! Ask me any travel questions for Indian passport holders.</div>
+        </div>
+        <form class="chat-form" id="chatForm">
+          <label class="sr-only" for="chatInput">Ask a travel question</label>
+          <input id="chatInput" type="text" placeholder="Ask visa, SIM, money..." autocomplete="off">
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    `;
+  } else {
+    root.innerHTML = `
+      <button class="chat-toggle" type="button" aria-label="Open travel assistant">Ask AI ✈️</button>
+      <section class="chat-panel" aria-label="Travel assistant chat">
+        <div class="chat-header">
+          <div>
+            <strong>TravelEase Assistant</strong>
+            <span>Visa, currency, SIM and transport help</span>
+          </div>
+          <button class="chat-close" type="button" aria-label="Close chat">&times;</button>
+        </div>
+        <div class="chat-log" id="chatLog">
+          <div class="chat-message">Hi! Ask me a travel question for Indian passport holders.</div>
+        </div>
+        <form class="chat-form" id="chatForm">
+          <label class="sr-only" for="chatInput">Ask a travel question</label>
+          <input id="chatInput" type="text" placeholder="Ask about visa, SIM, money..." autocomplete="off">
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    `;
+
+    const toggle = root.querySelector(".chat-toggle");
+    const panel = root.querySelector(".chat-panel");
+    const close = root.querySelector(".chat-close");
+
+    toggle.addEventListener("click", () => panel.classList.toggle("open"));
+    close.addEventListener("click", () => panel.classList.remove("open"));
+  }
+
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("chatInput");
+  const log = document.getElementById("chatLog");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const userMessage = input.value.trim();
+    if (!userMessage) return;
+
+    appendMessage(log, userMessage, "user");
+    input.value = "";
+
+    const waitingMessage = appendMessage(log, "Checking that for you...", "assistant");
+
+    try {
+      const answer = await askClaude(userMessage);
+      waitingMessage.textContent = answer;
+    } catch (error) {
+      waitingMessage.textContent = error.message || "Sorry, I could not reach the travel assistant right now. Please try again in a moment.";
+    }
+  });
+}
+
+function appendMessage(log, message, sender) {
+  const bubble = document.createElement("div");
+  bubble.className = `chat-message ${sender === "user" ? "user" : ""}`;
+  bubble.textContent = message;
+  log.appendChild(bubble);
+  log.scrollTop = log.scrollHeight;
+  return bubble;
+}
+
+async function askClaude(userMessage) {
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      system: CHAT_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }]
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Server error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.text;
+}
+
+let currentComments = [];
+
+async function setupCommentsSection(countryCode) {
+  const commentForm = document.getElementById("commentForm");
+  const commentsList = document.getElementById("commentsList");
+  const filterChips = document.querySelectorAll(".filter-chip");
+
+  if (!commentForm || !commentsList) return;
+
+  // Load comments from backend
+  await loadComments(countryCode);
+
+  // Set up Filter Chips listeners
+  filterChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      filterChips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      searchTips();
+    });
+  });
+
+  // Set up Search Input listener with debounce
+  const searchInput = document.getElementById("tips-search-input");
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(searchTips, 400);
+    });
+  }
+
+  // Set up Comment Form Submission listener
+  commentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const userName = document.getElementById("commentName").value.trim();
+    const tripPeriod = document.getElementById("commentPeriod").value.trim();
+    const category = document.getElementById("commentCategory").value;
+    const text = document.getElementById("commentText").value.trim();
+
+    try {
+      const response = await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          countryCode,
+          userName,
+          category,
+          text,
+          tripPeriod
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to post comment.");
+      }
+
+      // Reset form fields
+      document.getElementById("commentPeriod").value = "";
+      document.getElementById("commentText").value = "";
+
+      // Reload comments and reset filter to all
+      await loadComments(countryCode);
+      const allChip = Array.from(filterChips).find(c => c.dataset.filter === 'all');
+      if (allChip) allChip.click();
+
+      showToast("Your travel tip has been posted successfully!", "success");
+
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+      showToast("Could not post your comment right now. Please try again.", "error");
+    }
+  });
+
+  // Set up Like/Upvote Click Delegation
+  commentsList.addEventListener("click", async (event) => {
+    const likeBtn = event.target.closest(".like-btn");
+    if (!likeBtn) return;
+
+    const commentId = likeBtn.dataset.id;
+    const likedComments = JSON.parse(localStorage.getItem("likedComments") || "[]");
+    if (likedComments.includes(commentId)) {
+      showToast("You have already voted this tip as helpful!", "info");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/comments/${commentId}/like`, {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to like comment.");
+      }
+
+      const updatedComment = await response.json();
+
+      // Update local array and save to localStorage
+      const commentIdx = currentComments.findIndex(c => c._id === commentId);
+      if (commentIdx !== -1) {
+        currentComments[commentIdx].likes = updatedComment.likes;
+      }
+
+      likedComments.push(commentId);
+      localStorage.setItem("likedComments", JSON.stringify(likedComments));
+
+      // Update UI elements on button
+      likeBtn.classList.add("liked");
+      likeBtn.setAttribute("disabled", "true");
+
+      const icon = likeBtn.querySelector("i");
+      if (icon) {
+        icon.className = "fa-solid fa-thumbs-up";
+      }
+
+      const countSpan = likeBtn.querySelector(".like-count");
+      if (countSpan) {
+        countSpan.textContent = updatedComment.likes;
+      }
+
+      showToast("Voted as helpful!", "success");
+
+    } catch (error) {
+      console.error("Error upvoting comment:", error);
+      showToast("Failed to vote. Please try again.", "error");
+    }
+  });
+}
+
+async function loadComments(countryCode) {
+  const commentsList = document.getElementById("commentsList");
+  try {
+    const response = await fetch(`/api/comments/${countryCode}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch comments.");
+    }
+    currentComments = await response.json();
+    renderComments("all");
+  } catch (error) {
+    console.error("Error loading comments:", error);
+    commentsList.innerHTML = `<p class="no-comments">Could not load community tips right now.</p>`;
+  }
+}
+
+function renderCommentsList(commentsArray) {
+  const commentsList = document.getElementById("commentsList");
+  if (!commentsList) return;
+
+  if (commentsArray.length === 0) {
+    commentsList.innerHTML = `<p class="no-comments">No tips shared in this category yet. Be the first to share one!</p>`;
+    return;
+  }
+
+  const categoryNames = {
+    general: "General",
+    visa: "Visa Update",
+    currency: "Money & Forex",
+    sim: "SIM & Data",
+    transport: "Taxis & Transit"
+  };
+
+  const likedComments = JSON.parse(localStorage.getItem("likedComments") || "[]");
+
+  commentsList.innerHTML = commentsArray.map(comment => {
+    const dateStr = new Date(comment.createdAt).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+
+    const countryKey = Object.keys(DESTINATIONS).find(k => k.toLowerCase() === comment.countryCode.toLowerCase());
+    const dest = DESTINATIONS[countryKey];
+    const destName = dest ? `${dest.flag} ${dest.name}` : comment.countryCode;
+
+    const isLiked = likedComments.includes(comment._id);
+    const likeClass = isLiked ? "like-btn liked" : "like-btn";
+    const thumbsIcon = isLiked ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+
+    return `
+      <article class="comment-card">
+        <header class="comment-card-header">
+          <div class="comment-author-info">
+            <strong>${escapeHTML(comment.userName)}</strong>
+            <span>Visited ${escapeHTML(comment.tripPeriod)} &bull; For <strong>${escapeHTML(destName)}</strong> &bull; Posted on ${dateStr}</span>
+          </div>
+          <span class="comment-category-badge ${comment.category}">${categoryNames[comment.category] || "General"}</span>
+        </header>
+        <div class="comment-card-body">${escapeHTML(comment.text)}</div>
+        <footer class="comment-card-footer">
+          <button class="${likeClass}" type="button" data-id="${comment._id}" aria-label="Upvote this tip" ${isLiked ? "disabled" : ""}>
+            <i class="${thumbsIcon}" aria-hidden="true"></i> Helpful (<span class="like-count">${comment.likes}</span>)
+          </button>
+        </footer>
+      </article>
+    `;
+  }).join("");
+}
+
+function getGeneralTips(allComments) {
+  // Pick top 4 comments with highest likes (Helpful count)
+  return [...allComments]
+    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    .slice(0, 4);
+}
+
+function renderDefaultView() {
+  const generalTips = getGeneralTips(currentComments);
+  renderCommentsList(generalTips);
+  const labelElement = document.getElementById('tips-section-label');
+  if (labelElement) {
+    labelElement.textContent = 'Most Helpful Tips';
+  }
+}
+
+function getCategoryName(category) {
+  const categoryNames = {
+    general: "General",
+    visa: "Visa",
+    currency: "Money",
+    sim: "SIMs",
+    transport: "Transport"
+  };
+  return categoryNames[category] || "General";
+}
+
+window.searchTips = function() {
+  const searchInput = document.getElementById('tips-search-input');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const activeChip = document.querySelector(".filter-chip.active");
+  const activeCategory = activeChip ? activeChip.dataset.filter : "all";
+
+  // Filter first by category, if category is not "all"
+  const categoryComments = activeCategory === "all"
+    ? currentComments
+    : currentComments.filter(c => c.category === activeCategory);
+
+  if (!query) {
+    if (activeCategory === "all") {
+      renderDefaultView();
+    } else {
+      renderCommentsList(categoryComments);
+      const labelElement = document.getElementById('tips-section-label');
+      if (labelElement) {
+        labelElement.textContent = `${getCategoryName(activeCategory)} Tips`;
+      }
+    }
+    return;
+  }
+
+  const labelElement = document.getElementById('tips-section-label');
+  if (labelElement) {
+    labelElement.textContent = `Showing results for "${query}"`;
+  }
+
+  // simple keyword matching — score each comment by relevance
+  const queryWords = query.split(' ').filter(w => w.length > 2);
+  if (queryWords.length === 0 && query.length > 0) {
+    queryWords.push(query);
+  }
+
+  const scoredComments = categoryComments.map(comment => {
+    const contentText = ((comment.text || '') + ' ' + (comment.category || '')).toLowerCase();
+    let score = 0;
+    queryWords.forEach(word => {
+      if (contentText.includes(word)) score++;
+    });
+    return { ...comment, relevanceScore: score };
+  });
+
+  const relevantComments = scoredComments
+    .filter(c => c.relevanceScore > 0)
+    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  if (relevantComments.length === 0) {
+    showNoResultsMessage(query);
+  } else {
+    renderCommentsList(relevantComments);
+  }
+}
+
+window.showNoResultsMessage = function(query) {
+  const commentsList = document.getElementById('commentsList');
+  if (!commentsList) return;
+  commentsList.innerHTML = `
+    <div class="no-results">
+      <p>No traveler tips found for "${escapeHTML(query)}" yet.</p>
+      <p class="no-results-sub">Be the first to share your experience on this topic, or browse general tips below.</p>
+      <button onclick="clearSearch()">Show All Tips</button>
+    </div>
+  `;
+}
+
+window.clearSearch = function() {
+  const searchInput = document.getElementById('tips-search-input');
+  if (searchInput) searchInput.value = '';
+  
+  const allChip = Array.from(document.querySelectorAll(".filter-chip")).find(c => c.dataset.filter === 'all');
+  if (allChip) {
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    allChip.classList.add("active");
+  }
+  
+  renderDefaultView();
+}
+
+window.renderComments = function(filter) {
+  const filterChips = document.querySelectorAll(".filter-chip");
+  if (filterChips.length > 0) {
+    filterChips.forEach(c => {
+      if (c.dataset.filter === filter) {
+        c.classList.add("active");
+      } else {
+        c.classList.remove("active");
+      }
+    });
+  }
+
+  if (filter === 'all') {
+    const searchInput = document.getElementById('tips-search-input');
+    if (searchInput) searchInput.value = '';
+  }
+
+  searchTips();
+}
+
+function escapeHTML(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function setupSidebarWidgets() {
+  sidebarChecklistController();
+  sidebarConverterController();
+  setupSidebarLayout();
+  setupAuthHandlers();
+  renderAuthUI();
+  calculatePersonalizedAlerts();
+}
+
+/* --- Collapsible Sidebar Layout Setup --- */
+function sidebarChecklistController() {
+  // Initial check on load
+  window.loadChecklist();
+}
+
+window.generateChecklist = function(country, purpose) {
+  const normalizedPurpose = purpose ? purpose.toLowerCase() : 'tourist';
+  const baseItems = checklistTemplates[normalizedPurpose] || checklistTemplates.tourist;
+  const extraItems = extraChecklistItems[country] || [];
+  const allItems = [...baseItems, ...extraItems];
+  
+  return allItems.map((item, index) => ({
+    id: `${country}-${index}`,
+    text: item,
+    completed: false
+  }));
+};
+
+window.loadChecklist = function() {
+  const tripDetails = JSON.parse(localStorage.getItem('tripDetails'));
+  const user = getCurrentUser();
+  
+  let destination = null;
+  let purpose = null;
+  
+  if (tripDetails && tripDetails.destination) {
+    destination = tripDetails.destination;
+    purpose = tripDetails.purpose;
+  } else if (user && user.destination) {
+    destination = user.destination;
+    purpose = user.tripPurpose;
+  }
+  
+  if (!destination) {
+    window.showEmptyChecklistState();
+    return;
+  }
+  
+  let checklist = window.generateChecklist(destination, purpose);
+  
+  if (user && user.email) {
+    window.fetchChecklistFromServer(user.email).then(savedChecklist => {
+      if (savedChecklist && savedChecklist.length > 0) {
+        const matchesCurrent = savedChecklist.every(item => item.id && item.id.startsWith(destination));
+        if (matchesCurrent) {
+          checklist = savedChecklist;
+        } else {
+          window.saveChecklistToServer(user.email, checklist);
+        }
+      } else {
+        window.saveChecklistToServer(user.email, checklist);
+      }
+      localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+      window.renderChecklist(checklist);
+    });
+  } else {
+    const savedLocal = JSON.parse(localStorage.getItem('currentChecklist'));
+    if (savedLocal && savedLocal.length > 0 && savedLocal.every(item => item.id && item.id.startsWith(destination))) {
+      checklist = savedLocal;
+    } else {
+      localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+    }
+    window.renderChecklist(checklist);
+  }
+};
+
+window.renderChecklist = function(checklist) {
+  const container = document.getElementById('checklist-items');
+  if (!container) return;
+  
+  const completedCount = checklist.filter(item => item.completed).length;
+  
+  const completedSpan = document.getElementById('checklistCompleted');
+  const totalSpan = document.getElementById('checklistTotal');
+  if (completedSpan && totalSpan) {
+    completedSpan.textContent = completedCount;
+    totalSpan.textContent = checklist.length;
+  }
+  
+  const progress = document.getElementById('checklistProgress');
+  if (progress) {
+    const percentage = checklist.length ? (completedCount / checklist.length) * 100 : 0;
+    progress.style.width = `${percentage}%`;
+  }
+  
+  container.innerHTML = checklist.map(item => `
+    <li>
+      <label class="checkbox-container">
+        <input type="checkbox" 
+               id="${item.id}" 
+               ${item.completed ? 'checked' : ''} 
+               onchange="toggleChecklistItem('${item.id}')">
+        <span class="checkmark"></span>
+        ${escapeHTML(item.text)}
+      </label>
+    </li>
+  `).join('');
+};
+
+window.toggleChecklistItem = function(itemId) {
+  let checklist = JSON.parse(localStorage.getItem('currentChecklist')) || [];
+  const item = checklist.find(i => i.id === itemId);
+  if (item) {
+    item.completed = !item.completed;
+  }
+  
+  localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+  window.renderChecklist(checklist);
+  
+  const user = getCurrentUser();
+  if (user && user.email) {
+    window.saveChecklistToServer(user.email, checklist);
+  }
+};
+
+window.showEmptyChecklistState = function() {
+  const container = document.getElementById('checklist-items');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <p class="empty-state" style="font-size: 0.86rem; color: var(--muted); text-align: center; padding: 20px 0;">
+      Plan a trip first to see your personalized checklist
+    </p>
+  `;
+  
+  const completedSpan = document.getElementById('checklistCompleted');
+  const totalSpan = document.getElementById('checklistTotal');
+  if (completedSpan && totalSpan) {
+    completedSpan.textContent = '0';
+    totalSpan.textContent = '0';
+  }
+  const progress = document.getElementById('checklistProgress');
+  if (progress) {
+    progress.style.width = '0%';
+  }
+};
+
+window.fetchChecklistFromServer = async function(email) {
+  try {
+    const res = await fetch(`/api/checklist/${encodeURIComponent(email)}`);
+    const data = await res.json();
+    return data.checklist;
+  } catch (error) {
+    console.error('Failed to fetch checklist:', error);
+    return null;
+  }
+};
+
+window.saveChecklistToServer = async function(email, checklist) {
+  try {
+    await fetch(`/api/checklist/${encodeURIComponent(email)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checklist })
+    });
+  } catch (error) {
+    console.error('Failed to save checklist:', error);
+  }
+};
+
+// Frankfurter Live Currency Exchange Rate integration
+async function getLiveExchangeRate(targetCurrency) {
+  // Frankfurter API does not support AED (UAE Dirham). Provide fallback rate.
+  if (targetCurrency === 'AED') {
+    return 0.0389256; // Fallback rate: 1 AED ≈ ₹25.69 (1 INR ≈ 0.0389 AED)
+  }
+  
+  try {
+    const response = await fetch(`https://api.frankfurter.dev/v1/latest?from=INR&to=${targetCurrency}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data.rates && data.rates[targetCurrency]) {
+      return data.rates[targetCurrency];
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch live rate:', error);
+    return null;
+  }
+}
+
+async function updateCurrencyDisplay(currencyCode) {
+  const rateElement = document.getElementById('live-rate');
+  const timestampElement = document.getElementById('rate-timestamp');
+  if (!rateElement || !timestampElement) return;
+
+  const rate = await getLiveExchangeRate(currencyCode);
+
+  if (rate && rate > 0) {
+    const inrValue = (1 / rate).toFixed(2);
+    rateElement.textContent = `₹${parseFloat(inrValue).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    timestampElement.textContent = new Date().toLocaleString();
+  } else {
+    rateElement.textContent = 'Rate unavailable';
+    timestampElement.textContent = '';
+  }
+}
+
+async function convertCurrency() {
+  const amountElement = document.getElementById('converter-amount');
+  const currencyElement = document.getElementById('converter-currency');
+  const resultElement = document.getElementById('converter-result');
+  const calculationElement = document.getElementById('conversionCalculation');
+  
+  if (!amountElement || !currencyElement || !resultElement) return;
+
+  const amount = amountElement.value;
+  const targetCurrency = currencyElement.value;
+  
+  if (calculationElement) {
+    const parsedAmount = parseFloat(amount);
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      calculationElement.textContent = `₹${parsedAmount.toLocaleString("en-IN")} =`;
+    } else {
+      calculationElement.textContent = "Enter a valid amount";
+      resultElement.textContent = "--";
+      return;
+    }
+  }
+
+  const rate = await getLiveExchangeRate(targetCurrency);
+  
+  if (rate) {
+    const result = (amount * rate).toFixed(2);
+    
+    const symbols = {
+      AED: "AED",
+      USD: "$",
+      THB: "฿",
+      JPY: "¥",
+      SGD: "S$"
+    };
+    const symbol = symbols[targetCurrency] || targetCurrency;
+    
+    resultElement.textContent = `${symbol} ${parseFloat(result).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  } else {
+    resultElement.textContent = 'Unable to fetch rate';
+  }
+}
+
+function sidebarConverterController() {
+  const converterWidget = document.getElementById("converterWidget");
+  if (!converterWidget) return;
+
+  const amountInput = document.getElementById("converter-amount");
+  const targetSelect = document.getElementById("converter-currency");
+
+  if (!amountInput || !targetSelect) return;
+
+  amountInput.addEventListener("input", convertCurrency);
+  targetSelect.addEventListener("change", convertCurrency);
+
+  convertCurrency();
+}
+
+function setupSidebarLayout() {
+  const sidebar = document.getElementById("sidebar");
+  const toggleBtn = document.getElementById("sidebarToggle");
+  const navBtns = document.querySelectorAll(".nav-icon-btn");
+  const panels = document.querySelectorAll(".sidebar-panel");
+
+  if (!sidebar || !toggleBtn) return;
+
+  // Create mobile elements dynamically
+  let backdrop = document.getElementById("sidebarBackdrop");
+  let fab = document.getElementById("mobileToolsFab");
+
+  if (window.innerWidth <= 768) {
+    if (!backdrop) {
+      backdrop = document.createElement("div");
+      backdrop.className = "sidebar-backdrop";
+      backdrop.id = "sidebarBackdrop";
+      document.body.appendChild(backdrop);
+    }
+    if (!fab) {
+      fab = document.createElement("button");
+      fab.className = "mobile-tools-fab";
+      fab.id = "mobileToolsFab";
+      fab.innerHTML = `<i class="fa-solid fa-toolbox"></i> Tools`;
+      fab.setAttribute("aria-label", "Open Checklist and Tools");
+      document.body.appendChild(fab);
+    }
+  }
+
+  const updateSidebarState = (isExpanded) => {
+    if (isExpanded) {
+      sidebar.classList.add("expanded");
+      document.body.classList.add("sidebar-expanded");
+      if (backdrop) backdrop.classList.add("show");
+    } else {
+      sidebar.classList.remove("expanded");
+      document.body.classList.remove("sidebar-expanded");
+      if (backdrop) backdrop.classList.remove("show");
+    }
+
+    // Toggle icon direction
+    const icon = toggleBtn.querySelector("i");
+    if (icon) {
+      if (isExpanded) {
+        icon.className = "fa-solid fa-chevron-left";
+      } else {
+        icon.className = "fa-solid fa-chevron-right";
+      }
+    }
+  };
+
+  toggleBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const isExpanded = sidebar.classList.contains("expanded");
+    updateSidebarState(!isExpanded);
+  });
+
+  if (fab) {
+    fab.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isExpanded = sidebar.classList.contains("expanded");
+      updateSidebarState(!isExpanded);
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", (e) => {
+      e.preventDefault();
+      updateSidebarState(false);
+    });
+  }
+
+  navBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const target = btn.dataset.target;
+      const isExpanded = sidebar.classList.contains("expanded");
+      const isActive = btn.classList.contains("active");
+
+      // Switch active class on nav buttons
+      navBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      // Switch active class on panels
+      panels.forEach(p => {
+        p.classList.toggle("active", p.id === `panel-${target}`);
+      });
+
+      if (target === 'checklist') {
+        window.loadChecklist();
+      }
+
+      if (!isExpanded) {
+        // Expand if collapsed
+        updateSidebarState(true);
+      } else if (isActive) {
+        // Collapse if clicking active tab while already expanded
+        updateSidebarState(false);
+      }
+    });
+  });
+}
+
+function getToken() {
+  return localStorage.getItem("travelease_token");
+}
+
+function setToken(token) {
+  if (token) {
+    localStorage.setItem("travelease_token", token);
+  } else {
+    localStorage.removeItem("travelease_token");
+  }
+}
+
+function getCurrentUser() {
+  const user = localStorage.getItem("travelease_user");
+  return user ? JSON.parse(user) : null;
+}
+
+function setCurrentUser(user) {
+  if (user) {
+    localStorage.setItem("travelease_user", JSON.stringify(user));
+  } else {
+    localStorage.removeItem("travelease_user");
+  }
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add("open");
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove("open");
+}
+
+window.handleGoogleLogin = async function(response) {
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      setToken(data.token);
+      setCurrentUser(data.user);
+      closeModal("signupModal");
+      closeModal("loginModal");
+      
+      renderAuthUI();
+      calculatePersonalizedAlerts();
+      showToast(`Welcome, ${data.user.name.split(' ')[0]}!`, "success");
+
+      // Open Plan Your Trip modal after a short delay for smooth transition
+      setTimeout(() => {
+        openTripModal();
+      }, 300);
+    } else {
+      alert(data.message || 'Google sign-in failed. Please try again.');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Something went wrong. Please try again.');
+  }
+};
+window.highlightVisaType = function(visaType) {
+  const highlightSpan = document.getElementById('highlighted-visa-type');
+  const tipBox = document.querySelector('.visa-tip-box');
+  const user = getCurrentUser();
+  
+  // Reset all highlights
+  const cards = document.querySelectorAll('.visa-type-card');
+  cards.forEach(card => card.classList.remove('highlighted'));
+
+  // Default highlight for the country's standard visa type
+  cards.forEach(card => {
+    const cardTitle = card.querySelector('h4').textContent;
+    if (visaType.toLowerCase().includes(cardTitle.toLowerCase()) || cardTitle.toLowerCase().includes(visaType.toLowerCase())) {
+      card.classList.add('highlighted');
+    }
+  });
+
+  if (highlightSpan) highlightSpan.textContent = visaType;
+
+  // Personalize based on logged-in user's trip purpose
+  if (user && user.tripPurpose === 'education') {
+    // Highlight the Student Visa card too
+    cards.forEach(card => {
+      const cardTitle = card.querySelector('h4').textContent;
+      if (cardTitle.toLowerCase() === 'student visa') {
+        card.classList.add('highlighted');
+      }
+    });
+
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>🎓 Studying Abroad?</strong>
+        <p>While this destination generally requires a <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> for tourist visits, you will need a formal <strong>Student Visa</strong> for academic courses. Student visas require an official university admission letter (e.g. CAS for UK, I-20 for USA), proof of academic qualifications, and proof of sufficient funds to cover your tuition and living expenses.</p>
+      `;
+    }
+  } else if (user && user.tripPurpose === 'business') {
+    // Highlight the Work Visa card too
+    cards.forEach(card => {
+      const cardTitle = card.querySelector('h4').textContent;
+      if (cardTitle.toLowerCase() === 'work visa') {
+        card.classList.add('highlighted');
+      }
+    });
+
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>💼 Travelling for Business?</strong>
+        <p>For temporary business trips (meetings, conferences, or negotiations), a standard <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> or business visitor visa is usually sufficient. However, if you are taking up employment or long-term contract work in the country, you must apply for a sponsored <strong>Work Visa</strong>.</p>
+      `;
+    }
+  } else {
+    // Default Tourism / Guest message
+    if (tipBox) {
+      tipBox.innerHTML = `
+        <strong>💡 Which one applies to you?</strong>
+        <p>For this destination, you'll need a <span id="highlighted-visa-type" style="font-weight: 700; color: #1a73e8;">${escapeHTML(visaType)}</span> — see the full entry checklist and requirements below.</p>
+      `;
+    }
+  }
+};
+
+window.toggleVisaEducation = function() {
+  const grid = document.getElementById('visa-types-grid');
+  const subtitle = document.querySelector('.visa-education .subtitle');
+  const btn = document.getElementById('toggle-visa-edu-btn');
+  if (!grid || !btn) return;
+
+  if (grid.style.display === 'none') {
+    grid.style.display = 'grid';
+    if (subtitle) subtitle.style.display = 'block';
+    btn.textContent = 'Show Less';
+  } else {
+    grid.style.display = 'none';
+    if (subtitle) subtitle.style.display = 'none';
+    btn.textContent = 'Show More';
+  }
+};
+
+window.searchFlights = async function() {
+  const from = document.getElementById('flight-from').value;
+  const to = document.getElementById('flight-to').value;
+  const departure = document.getElementById('flight-departure').value;
+  const returnDate = document.getElementById('flight-return').value;
+  const travellers = document.getElementById('flight-travellers').value;
+  
+  if (!departure) {
+    alert('Please select a departure date');
+    return;
+  }
+
+  const searchBtn = document.querySelector('.flight-search-btn');
+  const originalText = searchBtn.textContent;
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Searching...';
+
+  try {
+    const res = await fetch(`/api/flights/search?origin=${from}&destination=${to}&departure=${departure}&returnDate=${returnDate || ''}&adults=${travellers}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to search flights');
+    }
+
+    window.allFlights = data.data;
+    window.currentSort = 'cheapest';
+    
+    // Reset filters
+    const radioAll = document.querySelector('input[name="stopsFilter"][value="all"]');
+    if (radioAll) radioAll.checked = true;
+    
+    const priceRange = document.getElementById('priceRangeFilter');
+    if (priceRange) {
+      const maxPrice = window.allFlights.length > 0 ? Math.max(...window.allFlights.map(f => f.price)) : 150000;
+      priceRange.max = Math.max(maxPrice, 50000);
+      priceRange.value = priceRange.max;
+      document.getElementById('priceLimitVal').textContent = `₹${priceRange.max}`;
+    }
+
+    // Populate airline filter options dynamically
+    const airlines = [...new Set(window.allFlights.map(f => f.airline))];
+    const airlineContainer = document.getElementById('airlineFilterContainer');
+    if (airlineContainer) {
+      airlineContainer.innerHTML = airlines.map(airline => `
+        <label class="checkbox-container">
+          <input type="checkbox" name="airlineFilter" value="${escapeHTML(airline)}" checked onchange="filterFlights()">
+          <span class="checkmark"></span> ${escapeHTML(airline)}
+        </label>
+      `).join('');
+    }
+
+    // Set header summary details
+    const searchSummary = document.getElementById('flightSearchSummary');
+    if (searchSummary) {
+      const fromLabel = document.getElementById('flight-from').options[document.getElementById('flight-from').selectedIndex].text.split('(')[0].trim();
+      const toLabel = document.getElementById('flight-to').options[document.getElementById('flight-to').selectedIndex].text.split('(')[0].trim();
+      searchSummary.textContent = `${fromLabel} (${from}) to ${toLabel} (${to}) | ${new Date(departure).toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'})} | ${travellers} Traveller${travellers > 1 ? 's' : ''}`;
+    }
+
+    openModal('flightResultsModal');
+    window.renderFlightResults();
+
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = originalText;
+  }
+};
+
+window.updatePriceLimitLabel = function() {
+  const val = document.getElementById('priceRangeFilter').value;
+  document.getElementById('priceLimitVal').textContent = `₹${val}`;
+};
+
+window.filterFlights = function() {
+  window.renderFlightResults();
+};
+
+window.sortFlights = function(type) {
+  window.currentSort = type;
+  document.getElementById('sortCheapestBtn').classList.toggle('active', type === 'cheapest');
+  document.getElementById('sortFastestBtn').classList.toggle('active', type === 'fastest');
+  window.renderFlightResults();
+};
+
+window.renderFlightResults = function() {
+  const container = document.getElementById('flightResultsList');
+  if (!container) return;
+
+  if (!window.allFlights || window.allFlights.length === 0) {
+    container.innerHTML = `
+      <div class="no-flights-msg">
+        <i class="fa-solid fa-plane-slash"></i>
+        <p>No flights found matching your search parameters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const stopsVal = document.querySelector('input[name="stopsFilter"]:checked').value;
+  const priceVal = parseFloat(document.getElementById('priceRangeFilter').value);
+  
+  const airlineCheckboxes = document.querySelectorAll('input[name="airlineFilter"]:checked');
+  const allowedAirlines = Array.from(airlineCheckboxes).map(cb => cb.value);
+
+  let filtered = window.allFlights.filter(flight => {
+    if (stopsVal !== 'all') {
+      if (flight.stops !== parseInt(stopsVal)) return false;
+    }
+    if (flight.price > priceVal) return false;
+    if (allowedAirlines.length > 0 && !allowedAirlines.includes(flight.airline)) return false;
+    return true;
+  });
+
+  const durationToMinutes = (durStr) => {
+    if (!durStr) return 0;
+    const matches = durStr.match(/(?:(\d+)h)?\s*(?:(\d+)m)?/);
+    if (!matches) return 9999;
+    const h = matches[1] ? parseInt(matches[1]) : 0;
+    const m = matches[2] ? parseInt(matches[2]) : 0;
+    return (h * 60) + m;
+  };
+
+  if (window.currentSort === 'cheapest') {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (window.currentSort === 'fastest') {
+    filtered.sort((a, b) => {
+      const durA = durationToMinutes(a.itineraries[0]?.duration);
+      const durB = durationToMinutes(b.itineraries[0]?.duration);
+      return durA - durB;
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="no-flights-msg">
+        <i class="fa-solid fa-filter"></i>
+        <p>No flights match your filter criteria. Try expanding your search options.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(flight => {
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+    const carrierCodeOut = flight.flightNumber ? flight.flightNumber.substring(0, 2) : 'FL';
+    
+    let inboundHTML = "";
+    if (inbound) {
+      const carrierCodeIn = inbound.flightNumber ? inbound.flightNumber.substring(0, 2) : carrierCodeOut;
+      inboundHTML = `
+        <div class="flight-card-summary" style="margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px;">
+          <div class="flight-airline-info">
+            <img class="flight-logo" src="${inbound.airlineLogo || flight.airlineLogo}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="flight-logo-fallback" style="display: none; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; background: #eef4ff; color: #1a73e8; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+              ${carrierCodeIn}
+            </div>
+            <div>
+              <div class="airline-name">${escapeHTML(inbound.airline || flight.airline)}</div>
+              <div class="flight-number">${escapeHTML(inbound.flightNumber || flight.flightNumber)}</div>
+            </div>
+          </div>
+          <div class="flight-time-info">
+            <div class="time-block">
+              <h4>${inbound.departure.time}</h4>
+              <p>${inbound.departure.iata}</p>
+            </div>
+            <div class="route-visualizer">
+              <span class="duration-text">${inbound.duration}</span>
+              <div class="route-line"></div>
+              <span class="stops-label ${inbound.stops === 0 ? 'direct' : ''}">
+                ${inbound.stops === 0 ? 'Direct' : `${inbound.stops} Stop${inbound.stops > 1 ? 's' : ''} (${inbound.layovers.join(', ')})`}
+              </span>
+            </div>
+            <div class="time-block">
+              <h4>${inbound.arrival.time}</h4>
+              <p>${inbound.arrival.iata}</p>
+            </div>
+          </div>
+          <div class="flight-price-action" style="visibility: hidden;"></div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="flight-card">
+        <div class="flight-card-summary">
+          <div class="flight-airline-info">
+            <img class="flight-logo" src="${flight.airlineLogo}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="flight-logo-fallback" style="display: none; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; background: #eef4ff; color: #1a73e8; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+              ${carrierCodeOut}
+            </div>
+            <div>
+              <div class="airline-name">${escapeHTML(flight.airline)}</div>
+              <div class="flight-number">${escapeHTML(flight.flightNumber)}</div>
+            </div>
+          </div>
+          <div class="flight-time-info">
+            <div class="time-block">
+              <h4>${outbound.departure.time}</h4>
+              <p>${outbound.departure.iata}</p>
+            </div>
+            <div class="route-visualizer">
+              <span class="duration-text">${outbound.duration}</span>
+              <div class="route-line"></div>
+              <span class="stops-label ${flight.stops === 0 ? 'direct' : ''}">
+                ${flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''} (${outbound.layovers.join(', ')})`}
+              </span>
+            </div>
+            <div class="time-block">
+              <h4>${outbound.arrival.time}</h4>
+              <p>${outbound.arrival.iata}</p>
+            </div>
+          </div>
+          <div class="flight-price-action">
+            <div class="price-text">₹${flight.price}</div>
+            <button class="book-btn" onclick="openBookingFlow('${flight.id}')">Book Flight</button>
+          </div>
+        </div>
+        ${inboundHTML}
+      </div>
+    `;
+  }).join('');
+};
+
+window.openBookingFlow = function(flightId) {
+  const flight = window.allFlights.find(f => f.id === flightId);
+  if (!flight) return;
+
+  window.selectedFlight = flight;
+  
+  const user = getCurrentUser();
+  const passengerInput = document.getElementById('bookingPassengerName');
+  if (passengerInput) {
+    passengerInput.value = user ? user.name : '';
+  }
+
+  const detailsContainer = document.getElementById('bookingFlightDetails');
+  if (detailsContainer) {
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+    
+    let summaryText = `
+      <div style="font-weight: 700; color: #1a73e8; margin-bottom: 6px;">
+        ${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})
+      </div>
+      <div><strong>Outbound:</strong> ${escapeHTML(outbound.departure.iata)} ➔ ${escapeHTML(outbound.arrival.iata)} (${outbound.departure.time} - ${outbound.arrival.time}) on ${outbound.departure.date}</div>
+    `;
+
+    if (inbound) {
+      summaryText += `
+        <div style="margin-top: 5px;"><strong>Inbound:</strong> ${escapeHTML(inbound.departure.iata)} ➔ ${escapeHTML(inbound.arrival.iata)} (${inbound.departure.time} - ${inbound.arrival.time}) on ${inbound.departure.date}</div>
+      `;
+    }
+
+    summaryText += `<div style="margin-top: 8px; font-weight: 700; color: #333;">Total Cost: ₹${flight.price}</div>`;
+
+    detailsContainer.innerHTML = summaryText;
+  }
+
+  document.getElementById('bookingError').textContent = '';
+  document.getElementById('bookingFormSide').style.display = 'block';
+  document.getElementById('bookingSuccessPanel').style.display = 'none';
+
+  closeModal('flightResultsModal');
+  openModal('flightBookingModal');
+};
+
+window.confirmFlightBooking = async function() {
+  const passengerName = document.getElementById('bookingPassengerName').value.trim();
+  const seatPref = document.getElementById('bookingSeatPref').value;
+  const errorDiv = document.getElementById('bookingError');
+  
+  if (!passengerName) {
+    errorDiv.textContent = 'Please enter passenger full name';
+    return;
+  }
+
+  const flight = window.selectedFlight;
+  if (!flight) return;
+
+  const confirmBtn = document.querySelector('.booking-confirm-btn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Booking...';
+
+  try {
+    const token = getToken();
+    let bookingData;
+
+    const outbound = flight.itineraries[0] || {};
+    const inbound = flight.itineraries[1];
+
+    if (token) {
+      const res = await fetch('/api/flights/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          airline: flight.airline,
+          flightNumber: flight.flightNumber,
+          origin: outbound.departure.iata,
+          destination: outbound.arrival.iata,
+          departureTime: outbound.departure.rawDateTime || `${outbound.departure.date}T${outbound.departure.time}:00`,
+          arrivalTime: outbound.arrival.rawDateTime || `${outbound.arrival.date}T${outbound.arrival.time}:00`,
+          price: flight.price,
+          currency: flight.currency,
+          seat: seatPref,
+          passengerName
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to confirm booking');
+      }
+
+      bookingData = data.booking;
+      setCurrentUser(data.user);
+      renderAuthUI();
+      showToast("Flight booked and ticket issued!", "success");
+    } else {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let pnr = '';
+      for (let i = 0; i < 6; i++) {
+        pnr += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      bookingData = {
+        airline: flight.airline,
+        flightNumber: flight.flightNumber,
+        origin: outbound.departure.iata,
+        destination: outbound.arrival.iata,
+        departureTime: new Date(`${outbound.departure.date}T${outbound.departure.time}:00`),
+        price: flight.price,
+        seat: seatPref,
+        pnr,
+        passengerName
+      };
+      
+      showToast("Flight booked successfully (Guest Checkout)!", "success");
+    }
+
+    document.getElementById('passPNR').textContent = bookingData.pnr;
+    document.getElementById('passOrigin').textContent = bookingData.origin;
+    document.getElementById('passDest').textContent = bookingData.destination;
+    document.getElementById('passFlightNo').textContent = bookingData.flightNumber;
+    document.getElementById('passPassengerName').textContent = bookingData.passengerName;
+    document.getElementById('passSeat').textContent = bookingData.seat.split(' ')[0];
+    
+    const depDate = new Date(bookingData.departureTime);
+    document.getElementById('passDate').textContent = depDate.toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'});
+    document.getElementById('passTime').textContent = depDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+
+    document.getElementById('bookingFormSide').style.display = 'none';
+    document.getElementById('bookingSuccessPanel').style.display = 'block';
+
+  } catch (error) {
+    errorDiv.textContent = error.message;
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm & Book Flight';
+  }
+};
+
+window.prefillFlightDestination = function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const country = urlParams.get('country') || urlParams.get('code');
+  
+  const countryToAirport = {
+    UAE: 'DXB',
+    USA: 'JFK',
+    UK: 'LHR',
+    Thailand: 'BKK',
+    Singapore: 'SIN',
+    Japan: 'NRT',
+    Canada: 'YYZ',
+    Australia: 'SYD'
+  };
+  
+  if (country) {
+    const matchedKey = Object.keys(countryToAirport).find(k => k.toLowerCase() === country.toLowerCase());
+    if (matchedKey) {
+      const select = document.getElementById('flight-to');
+      if (select) {
+        select.value = countryToAirport[matchedKey];
+      }
+    }
+  }
+};
+
+window.showPanel = function(target) {
+  const btn = document.querySelector(`.nav-icon-btn[data-target="${target}"]`);
+  if (btn) btn.click();
+};
+
+window.openTripModal = function() {
+  openModal("tripModal");
+};
+
+window.closeTripModal = function() {
+  closeModal("tripModal");
+};
+
+window.skipTripDetails = function() {
+  closeModal("tripModal");
+};
+
+window.saveTripDetails = async function() {
+  const destination = document.getElementById("trip-destination").value;
+  const tripPurpose = document.getElementById("trip-purpose").value;
+  const passportExpiry = document.getElementById("trip-passport-expiry").value;
+  const travelDateFrom = document.getElementById("trip-departure").value;
+  const travelDateTo = document.getElementById("trip-return").value;
+  const isFirstTimeAbroad = document.getElementById("trip-first-time").checked;
+  const errorDiv = document.getElementById("tripError");
+  if (errorDiv) errorDiv.textContent = "";
+
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No authorization token found. Please log in.");
+    }
+
+    const response = await fetch("/api/auth/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        destination,
+        tripPurpose,
+        passportExpiry: passportExpiry || undefined,
+        travelDateFrom: travelDateFrom || undefined,
+        travelDateTo: travelDateTo || undefined,
+        isFirstTimeAbroad
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to save trip details.");
+    }
+
+    // Save to localStorage for compatibility/backup
+    const tripData = {
+      destination,
+      purpose: tripPurpose,
+      passportExpiry,
+      departure: travelDateFrom,
+      returnDate: travelDateTo,
+      firstTime: isFirstTimeAbroad
+    };
+    localStorage.setItem("tripDetails", JSON.stringify(tripData));
+
+    setCurrentUser(data);
+    closeModal("tripModal");
+
+    renderAuthUI();
+    calculatePersonalizedAlerts();
+    showToast("Trip details saved successfully!", "success");
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    if (errorDiv) {
+      errorDiv.textContent = error.message;
+    } else {
+      alert(error.message);
+    }
+  }
+};
+
+function setupAuthHandlers() {
+  const loginModal = document.getElementById("loginModal");
+  const signupModal = document.getElementById("signupModal");
+  const profileModal = document.getElementById("profileModal");
+
+  const headerAuthArea = document.getElementById("headerAuthArea");
+  const sidebarLoginBtn = document.getElementById("sidebarLoginBtn");
+  const sidebarSignupBtn = document.getElementById("sidebarSignupBtn");
+
+  const loginCloseBtn = document.getElementById("loginCloseBtn");
+  const signupCloseBtn = document.getElementById("signupCloseBtn");
+  const profileCloseBtn = document.getElementById("profileCloseBtn");
+
+  const switchToSignup = document.getElementById("switchToSignupBtn");
+  const switchToLogin = document.getElementById("switchToLoginBtn");
+
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+  const profileForm = document.getElementById("profileForm");
+
+  if (sidebarLoginBtn) sidebarLoginBtn.addEventListener("click", () => openModal("loginModal"));
+  if (sidebarSignupBtn) sidebarSignupBtn.addEventListener("click", () => openModal("signupModal"));
+
+  if (headerAuthArea) {
+    headerAuthArea.addEventListener("click", (e) => {
+      const loginBtn = e.target.closest("#headerLoginBtn");
+      const profileBtn = e.target.closest("#headerProfileBtn");
+      if (loginBtn) {
+        openModal("loginModal");
+      } else if (profileBtn) {
+        const profileNavBtn = document.querySelector(".nav-icon-btn[data-target='profile']");
+        if (profileNavBtn) profileNavBtn.click();
+      }
+    });
+  }
+
+  if (loginCloseBtn) loginCloseBtn.addEventListener("click", () => closeModal("loginModal"));
+  if (signupCloseBtn) signupCloseBtn.addEventListener("click", () => closeModal("signupModal"));
+  if (profileCloseBtn) profileCloseBtn.addEventListener("click", () => closeModal("profileModal"));
+
+  if (switchToSignup) {
+    switchToSignup.addEventListener("click", () => {
+      closeModal("loginModal");
+      openModal("signupModal");
+    });
+  }
+  if (switchToLogin) {
+    switchToLogin.addEventListener("click", () => {
+      closeModal("signupModal");
+      openModal("loginModal");
+    });
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      const errorDiv = document.getElementById("loginError");
+      errorDiv.textContent = "";
+
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Login failed.");
+        }
+
+        setToken(data.token);
+        setCurrentUser(data.user);
+        closeModal("loginModal");
+        loginForm.reset();
+
+        renderAuthUI();
+        calculatePersonalizedAlerts();
+        showToast(`Welcome back, ${data.user.name.split(' ')[0]}!`, "success");
+      } catch (error) {
+        errorDiv.textContent = error.message;
+      }
+    });
+  }
+
+  if (signupForm) {
+    signupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("signup-name").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const errorDiv = document.getElementById("signupError");
+      errorDiv.textContent = "";
+
+      try {
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name, email, password
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Signup failed.");
+        }
+
+        setToken(data.token);
+        setCurrentUser(data.user);
+        closeModal("signupModal");
+        signupForm.reset();
+
+        renderAuthUI();
+        calculatePersonalizedAlerts();
+        showToast("Account created successfully! Welcome to TravelEase.", "success");
+
+        // Open the Plan Your Trip modal after a short delay for smooth transition
+        setTimeout(() => {
+          openModal("tripModal");
+        }, 300);
+      } catch (error) {
+        errorDiv.textContent = error.message;
+      }
+    });
+  }
+
+  if (profileForm) {
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("profileName").value.trim();
+      const passportExpiry = document.getElementById("profilePassportExpiry").value;
+      const destination = document.getElementById("profileDestination").value;
+      const travelDateFrom = document.getElementById("profileTravelDateFrom").value;
+      const travelDateTo = document.getElementById("profileTravelDateTo").value;
+      const tripPurpose = document.getElementById("profileTripPurpose").value;
+      const budgetRange = "mid-range";
+      const isFirstTimeAbroad = document.getElementById("profileFirstTime").checked;
+      const errorDiv = document.getElementById("profileError");
+      errorDiv.textContent = "";
+
+      try {
+        const token = getToken();
+        const response = await fetch("/api/auth/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name, passportExpiry, destination,
+            travelDateFrom, travelDateTo, tripPurpose, budgetRange, isFirstTimeAbroad
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Profile update failed.");
+        }
+
+        setCurrentUser(data);
+        closeModal("profileModal");
+
+        renderAuthUI();
+        calculatePersonalizedAlerts();
+        showToast("Travel details and preferences updated successfully!", "success");
+      } catch (error) {
+        errorDiv.textContent = error.message;
+      }
+    });
+  }
+
+  // Escape key global listener for modal and sidebar closing accessibility
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeModal("loginModal");
+      closeModal("signupModal");
+      closeModal("profileModal");
+      closeModal("tripModal");
+      
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar && sidebar.classList.contains("expanded")) {
+        const toggleBtn = document.getElementById("sidebarToggle");
+        if (toggleBtn) {
+          toggleBtn.click();
+        }
+      }
+    }
+  });
+}
+
+function renderAuthUI() {
+  const headerAuthArea = document.getElementById("headerAuthArea");
+  const profileWidget = document.getElementById("profileWidget");
+  const user = getCurrentUser();
+
+  if (headerAuthArea) {
+    if (user) {
+      headerAuthArea.innerHTML = `
+        <button class="header-auth-btn" id="headerProfileBtn">
+          <i class="fa-solid fa-user-astronaut"></i> Hi, ${escapeHTML(user.name.split(' ')[0])}
+        </button>
+      `;
+    } else {
+      headerAuthArea.innerHTML = `
+        <button class="header-auth-btn" id="headerLoginBtn">
+          <i class="fa-solid fa-circle-user"></i> Log In
+        </button>
+      `;
+    }
+  }
+
+  if (profileWidget) {
+    if (user) {
+      let countdownHTML = "";
+      if (user.travelDateFrom) {
+        const daysLeft = Math.ceil((new Date(user.travelDateFrom) - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysLeft > 0) {
+          countdownHTML = `<div class="trip-countdown">✈️ ${daysLeft} days until departure!</div>`;
+        } else if (daysLeft === 0) {
+          countdownHTML = `<div class="trip-countdown">✈️ Departure is today! Bon Voyage!</div>`;
+        } else {
+          countdownHTML = `<div class="trip-countdown">Hope you had a safe trip!</div>`;
+        }
+      }
+
+      const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+      const fromDateStr = user.travelDateFrom ? new Date(user.travelDateFrom).toLocaleDateString("en-IN", dateOptions) : "Not set";
+      const expiryDateStr = user.passportExpiry ? new Date(user.passportExpiry).toLocaleDateString("en-IN", dateOptions) : "Not set";
+
+      const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "TR";
+
+      let bookedFlightsHTML = "";
+      if (user.bookedFlights && user.bookedFlights.length > 0) {
+        bookedFlightsHTML = `
+          <div class="booked-flights-summary" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 12px; text-align: left;">
+            <h4 style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 700;">✈️ My Booked Flights:</h4>
+            ${user.bookedFlights.map(flight => `
+              <div class="booked-flight-item" style="background: #f8f9fb; padding: 10px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 8px; font-size: 12px; color: #555;">
+                <div style="font-weight: 700; color: #1a73e8;">${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})</div>
+                <div><strong>Route:</strong> ${escapeHTML(flight.origin)} ➔ ${escapeHTML(flight.destination)}</div>
+                <div><strong>Departure:</strong> ${new Date(flight.departureTime).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })} at ${new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
+                <div><strong>PNR:</strong> <span style="font-weight: 700; color: #333;">${escapeHTML(flight.pnr)}</span> | <strong>Seat:</strong> ${escapeHTML(flight.seat)}</div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      profileWidget.innerHTML = `
+        <div class="user-profile-dashboard">
+          <div class="user-avatar-badge">${initials}</div>
+          <div class="profile-info">
+            <div class="profile-name">${escapeHTML(user.name)}</div>
+            <div class="profile-email">${escapeHTML(user.email)}</div>
+          </div>
+          
+          <div class="trip-summary-box">
+            <div><strong>Destination:</strong> ${escapeHTML(user.destination || "Not set")}</div>
+            <div><strong>Departure:</strong> ${fromDateStr}</div>
+            <div><strong>Passport Expiry:</strong> ${expiryDateStr}</div>
+            <div><strong>First-Time Abroad:</strong> ${user.isFirstTimeAbroad ? "Yes" : "No"}</div>
+          </div>
+
+          ${countdownHTML}
+          ${bookedFlightsHTML}
+
+          <div class="profile-action-buttons">
+            <button class="primary-button" id="editProfileBtn">Edit Details</button>
+            <button class="secondary-button" id="logoutBtn">Log Out</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("editProfileBtn").addEventListener("click", () => {
+        document.getElementById("profileName").value = user.name || "";
+        document.getElementById("profilePassportExpiry").value = user.passportExpiry ? user.passportExpiry.substring(0, 10) : "";
+        document.getElementById("profileDestination").value = user.destination || "";
+        document.getElementById("profileTravelDateFrom").value = user.travelDateFrom ? user.travelDateFrom.substring(0, 10) : "";
+        document.getElementById("profileTravelDateTo").value = user.travelDateTo ? user.travelDateTo.substring(0, 10) : "";
+        document.getElementById("profileTripPurpose").value = user.tripPurpose || "tourism";
+        document.getElementById("profileFirstTime").checked = !!user.isFirstTimeAbroad;
+
+        openModal("profileModal");
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        setToken(null);
+        setCurrentUser(null);
+        renderAuthUI();
+        calculatePersonalizedAlerts();
+      });
+
+    } else {
+      profileWidget.innerHTML = `
+        <div class="guest-profile">
+          <i class="fa-solid fa-circle-user guest-avatar"></i>
+          <h3>Welcome, Guest</h3>
+          <p>Sign in to unlock personalized travel alerts and save your trip details.</p>
+          <div class="auth-buttons">
+            <button class="primary-button" id="sidebarLoginBtn">Log In</button>
+            <button class="secondary-button" id="sidebarSignupBtn">Register</button>
+          </div>
+        </div>
+      `;
+      document.getElementById("sidebarLoginBtn").addEventListener("click", () => openModal("loginModal"));
+      document.getElementById("sidebarSignupBtn").addEventListener("click", () => openModal("signupModal"));
+    }
+  }
+}
+
+function calculatePersonalizedAlerts() {
+  const container = document.getElementById("alertsContainer");
+  if (!container) return;
+
+  const user = getCurrentUser();
+  if (!user) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const alerts = [];
+  const today = new Date();
+  const departureDate = user.travelDateFrom ? new Date(user.travelDateFrom) : null;
+  const passportExpiry = user.passportExpiry ? new Date(user.passportExpiry) : null;
+
+  if (departureDate && passportExpiry) {
+    const timeDiff = passportExpiry - departureDate;
+    const monthsDiff = timeDiff / (1000 * 60 * 60 * 24 * 30.4375);
+
+    if (monthsDiff < 6) {
+      alerts.push({
+        type: "danger",
+        icon: "fa-solid fa-triangle-exclamation",
+        title: "Critical Passport Expiry Risk",
+        desc: `Your passport expires on ${passportExpiry.toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' })}, which is less than 6 months from your travel date (${departureDate.toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' })}). Most countries enforce a strict 6-month validity rule. You must renew your passport before flying.`
+      });
+    }
+  }
+
+  if (departureDate && user.destination) {
+    const destCode = user.destination.toUpperCase();
+    // Case-insensitive lookup of destination from DESTINATIONS keys
+    const destKey = Object.keys(DESTINATIONS).find(k => k.toUpperCase() === destCode);
+    const destination = destKey ? DESTINATIONS[destKey] : null;
+
+    if (destination) {
+      const daysToTrip = Math.ceil((departureDate - today) / (1000 * 60 * 60 * 24));
+
+      let minDaysRequired = 5;
+      let details = "";
+
+      if (destCode === "UAE") {
+        minDaysRequired = 7;
+        details = "ICP e-visa processing averages 3 to 5 working days.";
+      } else if (destCode === "USA" || destCode === "UK" || destCode === "CANADA") {
+        minDaysRequired = 45;
+        details = "Sticker visas take several weeks to schedule and process.";
+      } else if (destCode === "SINGAPORE" || destCode === "JAPAN") {
+        minDaysRequired = 10;
+        details = "Processing averages 3 to 7 working days.";
+      } else if (destCode === "THAILAND") {
+        minDaysRequired = 2;
+        details = "Clearance is done upon arrival, but documentation is required beforehand.";
+      } else if (destCode === "AUSTRALIA") {
+        minDaysRequired = 28;
+        details = "Visitor e-visas can take 2 to 4 weeks.";
+      }
+
+      if (daysToTrip >= 0 && daysToTrip < minDaysRequired) {
+        alerts.push({
+          type: "warning",
+          icon: "fa-solid fa-hourglass-half",
+          title: "Visa Application Lead-Time Risk",
+          desc: `Your trip to ${destination.name} starts in ${daysToTrip} days, but standard visa prep/processing typically requires at least ${minDaysRequired} days. ${details} Please submit your application immediately.`
+        });
+      }
+    }
+  }
+
+  if (user.isFirstTimeAbroad) {
+    alerts.push({
+      type: "info",
+      icon: "fa-solid fa-circle-info",
+      title: "First-Time Flyer Essential Tip",
+      desc: "Ensure you keep physical printouts of your visa confirmation, hotel vouchers, confirmed return flight tickets, and travel insurance. Indian immigration and foreign airport authorities frequently request these documents before granting entry clearance."
+    });
+  }
+
+  if (user.budgetRange) {
+    if (user.budgetRange === "budget") {
+      alerts.push({
+        type: "success",
+        icon: "fa-solid fa-wallet",
+        title: "Smart Budget Forex Tip",
+        desc: "Save on currency markups: avoid exchanging money at airport counters. We recommend getting a zero-forex card (e.g. Niyo Global, Wise) and swiping locally. Carry only a tiny amount of local cash (₹3,000 - ₹5,000 equivalent) for backup."
+      });
+    } else if (user.budgetRange === "luxury") {
+      alerts.push({
+        type: "success",
+        icon: "fa-solid fa-star",
+        title: "Premium Traveler Advice",
+        desc: "Make your transit smooth: pre-book private airport transfers (via cab apps or hotel shuttle) and pre-purchase airport lounge access to bypass lines and rest between flights."
+      });
+    } else {
+      alerts.push({
+        type: "success",
+        icon: "fa-solid fa-money-bill-transfer",
+        title: "Forex & Cab Suggestion",
+        desc: "We recommend a 70/30 split: load 70% of your funds onto a multi-currency forex card for swiping, and keep 30% in local physical currency for street markets and cab applications."
+      });
+    }
+  }
+
+  if (alerts.length === 0) {
+    container.innerHTML = `
+      <div class="alerts-banner-container">
+        <div class="alert-banner-card alert-success">
+          <i class="fa-solid fa-circle-check"></i>
+          <div class="alert-banner-content">
+            <h4>Itinerary Safe & Verified!</h4>
+            <p>Your passport validity is sufficient, and your travel timeline looks good. Enjoy preparing for your trip!</p>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="alerts-banner-container">
+        ${alerts.map(a => `
+          <div class="alert-banner-card alert-${a.type}">
+            <i class="${a.icon}"></i>
+            <div class="alert-banner-content">
+              <h4>${escapeHTML(a.title)}</h4>
+              <p>${escapeHTML(a.desc)}</p>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+}
+
+function showToast(message, type = 'info') {
+  const existing = document.querySelector(".app-toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `toast app-toast toast-${type}`;
+
+  let iconClass = 'fa-solid fa-circle-info';
+  if (type === 'success') iconClass = 'fa-solid fa-circle-check';
+  if (type === 'error' || type === 'danger') iconClass = 'fa-solid fa-triangle-exclamation';
+  if (type === 'warning') iconClass = 'fa-solid fa-hourglass-half';
+
+  toast.innerHTML = `
+    <div class="toast-icon"><i class="${iconClass}" aria-hidden="true"></i></div>
+    <div class="toast-content">
+      <p class="toast-title">TravelEase</p>
+      <p class="toast-message">${escapeHTML(message)}</p>
+    </div>
+    <button class="toast-close" type="button" aria-label="Close notification">&times;</button>
+  `;
+
+  const removeToast = () => {
+    toast.classList.remove("show");
+    window.setTimeout(() => toast.remove(), 420);
+  };
+
+  toast.querySelector('.toast-close').addEventListener('click', () => {
+    removeToast();
+  });
+
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
+
+  setTimeout(() => {
+    if (toast.parentElement) {
+      removeToast();
+    }
+  }, 5000);
+}
