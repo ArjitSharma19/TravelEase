@@ -1178,45 +1178,164 @@ function setupSidebarWidgets() {
 
 /* --- Collapsible Sidebar Layout Setup --- */
 function sidebarChecklistController() {
-  const checklistWidget = document.getElementById("checklistWidget");
-  if (!checklistWidget) return;
-
-  const checkboxes = checklistWidget.querySelectorAll("input[type='checkbox']");
-  const progress = document.getElementById("checklistProgress");
-  const completedSpan = document.getElementById("checklistCompleted");
-  const totalSpan = document.getElementById("checklistTotal");
-
-  const savedStates = JSON.parse(localStorage.getItem("flyerChecklist") || "{}");
-
-  const updateProgress = () => {
-    let completedCount = 0;
-    checkboxes.forEach(cb => {
-      const index = cb.dataset.index;
-      if (savedStates[index]) {
-        cb.checked = true;
-        completedCount++;
-      } else {
-        cb.checked = false;
-      }
-    });
-
-    const percentage = checkboxes.length ? (completedCount / checkboxes.length) * 100 : 0;
-    progress.style.width = `${percentage}%`;
-    completedSpan.textContent = completedCount;
-    totalSpan.textContent = checkboxes.length;
-  };
-
-  checkboxes.forEach(cb => {
-    cb.addEventListener("change", () => {
-      const index = cb.dataset.index;
-      savedStates[index] = cb.checked;
-      localStorage.setItem("flyerChecklist", JSON.stringify(savedStates));
-      updateProgress();
-    });
-  });
-
-  updateProgress();
+  // Initial check on load
+  window.loadChecklist();
 }
+
+window.generateChecklist = function(country, purpose) {
+  const normalizedPurpose = purpose ? purpose.toLowerCase() : 'tourist';
+  const baseItems = checklistTemplates[normalizedPurpose] || checklistTemplates.tourist;
+  const extraItems = extraChecklistItems[country] || [];
+  const allItems = [...baseItems, ...extraItems];
+  
+  return allItems.map((item, index) => ({
+    id: `${country}-${index}`,
+    text: item,
+    completed: false
+  }));
+};
+
+window.loadChecklist = function() {
+  const tripDetails = JSON.parse(localStorage.getItem('tripDetails'));
+  const user = getCurrentUser();
+  
+  let destination = null;
+  let purpose = null;
+  
+  if (tripDetails && tripDetails.destination) {
+    destination = tripDetails.destination;
+    purpose = tripDetails.purpose;
+  } else if (user && user.destination) {
+    destination = user.destination;
+    purpose = user.tripPurpose;
+  }
+  
+  if (!destination) {
+    window.showEmptyChecklistState();
+    return;
+  }
+  
+  let checklist = window.generateChecklist(destination, purpose);
+  
+  if (user && user.email) {
+    window.fetchChecklistFromServer(user.email).then(savedChecklist => {
+      if (savedChecklist && savedChecklist.length > 0) {
+        const matchesCurrent = savedChecklist.every(item => item.id && item.id.startsWith(destination));
+        if (matchesCurrent) {
+          checklist = savedChecklist;
+        } else {
+          window.saveChecklistToServer(user.email, checklist);
+        }
+      } else {
+        window.saveChecklistToServer(user.email, checklist);
+      }
+      localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+      window.renderChecklist(checklist);
+    });
+  } else {
+    const savedLocal = JSON.parse(localStorage.getItem('currentChecklist'));
+    if (savedLocal && savedLocal.length > 0 && savedLocal.every(item => item.id && item.id.startsWith(destination))) {
+      checklist = savedLocal;
+    } else {
+      localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+    }
+    window.renderChecklist(checklist);
+  }
+};
+
+window.renderChecklist = function(checklist) {
+  const container = document.getElementById('checklist-items');
+  if (!container) return;
+  
+  const completedCount = checklist.filter(item => item.completed).length;
+  
+  const completedSpan = document.getElementById('checklistCompleted');
+  const totalSpan = document.getElementById('checklistTotal');
+  if (completedSpan && totalSpan) {
+    completedSpan.textContent = completedCount;
+    totalSpan.textContent = checklist.length;
+  }
+  
+  const progress = document.getElementById('checklistProgress');
+  if (progress) {
+    const percentage = checklist.length ? (completedCount / checklist.length) * 100 : 0;
+    progress.style.width = `${percentage}%`;
+  }
+  
+  container.innerHTML = checklist.map(item => `
+    <li>
+      <label class="checkbox-container">
+        <input type="checkbox" 
+               id="${item.id}" 
+               ${item.completed ? 'checked' : ''} 
+               onchange="toggleChecklistItem('${item.id}')">
+        <span class="checkmark"></span>
+        ${escapeHTML(item.text)}
+      </label>
+    </li>
+  `).join('');
+};
+
+window.toggleChecklistItem = function(itemId) {
+  let checklist = JSON.parse(localStorage.getItem('currentChecklist')) || [];
+  const item = checklist.find(i => i.id === itemId);
+  if (item) {
+    item.completed = !item.completed;
+  }
+  
+  localStorage.setItem('currentChecklist', JSON.stringify(checklist));
+  window.renderChecklist(checklist);
+  
+  const user = getCurrentUser();
+  if (user && user.email) {
+    window.saveChecklistToServer(user.email, checklist);
+  }
+};
+
+window.showEmptyChecklistState = function() {
+  const container = document.getElementById('checklist-items');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <p class="empty-state" style="font-size: 0.86rem; color: var(--muted); text-align: center; padding: 20px 0;">
+      Plan a trip first to see your personalized checklist
+    </p>
+  `;
+  
+  const completedSpan = document.getElementById('checklistCompleted');
+  const totalSpan = document.getElementById('checklistTotal');
+  if (completedSpan && totalSpan) {
+    completedSpan.textContent = '0';
+    totalSpan.textContent = '0';
+  }
+  const progress = document.getElementById('checklistProgress');
+  if (progress) {
+    progress.style.width = '0%';
+  }
+};
+
+window.fetchChecklistFromServer = async function(email) {
+  try {
+    const res = await fetch(`/api/checklist/${encodeURIComponent(email)}`);
+    const data = await res.json();
+    return data.checklist;
+  } catch (error) {
+    console.error('Failed to fetch checklist:', error);
+    return null;
+  }
+};
+
+window.saveChecklistToServer = async function(email, checklist) {
+  try {
+    await fetch(`/api/checklist/${encodeURIComponent(email)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checklist })
+    });
+  } catch (error) {
+    console.error('Failed to save checklist:', error);
+  }
+};
 
 // Frankfurter Live Currency Exchange Rate integration
 async function getLiveExchangeRate(targetCurrency) {
@@ -1402,6 +1521,10 @@ function setupSidebarLayout() {
       panels.forEach(p => {
         p.classList.toggle("active", p.id === `panel-${target}`);
       });
+
+      if (target === 'checklist') {
+        window.loadChecklist();
+      }
 
       if (!isExpanded) {
         // Expand if collapsed
