@@ -22,6 +22,9 @@ app.use('/api/auth', authRoutes);
 const flightRoutes = require('./routes/flights');
 app.use('/api/flights', flightRoutes);
 
+const checklistRoutes = require('./routes/checklist');
+app.use('/api/checklist', checklistRoutes);
+
 // Serve static files from the root directory
 app.use(express.static(__dirname));
 
