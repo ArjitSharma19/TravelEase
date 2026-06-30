@@ -354,7 +354,7 @@ h3 {
   overflow: hidden;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 178px 18px 20px;
+  padding: 0 0 20px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -362,55 +362,93 @@ h3 {
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
 
-.destination-card::before {
+.destination-card-image-container {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background: var(--card);
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+}
+
+.destination-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 320ms ease;
+  transform-origin: center;
+}
+
+.destination-card:hover .destination-card-img {
+  transform: scale(1.05);
+}
+
+.destination-card-image-container::after {
+  content: "";
   position: absolute;
   top: 0;
   right: 0;
+  bottom: 0;
   left: 0;
-  height: 150px;
-  background: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), var(--card);
-  background-position: center;
-  background-size: cover;
-  content: "";
-  transition: transform 320ms ease;
-  transform-origin: center;
+  background: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34));
+  pointer-events: none;
+}
+
+.destination-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--blue-soft), var(--blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.destination-card-placeholder i {
+  color: white;
+  font-size: 2.2rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-loading {
+  background: linear-gradient(90deg, #f0f3f8 25%, #e1e7f0 50%, #f0f3f8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.slide-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--blue-soft), var(--blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.slide-placeholder.active {
+  opacity: 1;
 }
 
 .destination-card>* {
   position: relative;
   z-index: 1;
-}
-
-.destination-card[href*="UAE"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400");
-}
-
-.destination-card[href*="USA"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=400");
-}
-
-.destination-card[href*="UK"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400");
-}
-
-.destination-card[href*="Thailand"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1528181304800-259b08848526?w=400");
-}
-
-.destination-card[href*="Singapore"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400");
-}
-
-.destination-card[href*="Japan"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400");
-}
-
-.destination-card[href*="Canada"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1517935706615-2717063c2225?w=400");
-}
-
-.destination-card[href*="Australia"]::before {
-  background-image: linear-gradient(180deg, rgba(9, 31, 69, 0.1), rgba(9, 31, 69, 0.34)), url("https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400");
 }
 
 .destination-card:hover {
@@ -419,25 +457,28 @@ h3 {
   box-shadow: 0 24px 52px rgba(20, 39, 74, 0.18);
 }
 
-.destination-card:hover::before {
-  transform: scale(1.05);
-}
-
-.flag {
+.destination-card > .flag {
   position: absolute;
   top: 124px;
   left: 18px;
-  z-index: 1;
+  z-index: 2;
   display: grid;
-  width: 58px;
-  height: 58px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   background: #fff;
   border: 3px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 10px 22px rgba(20, 39, 74, 0.16);
-  font-size: 40px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  font-size: 26px;
   line-height: 1;
+}
+
+.destination-card > span:last-of-type {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px 0;
+  flex-grow: 1;
 }
 
 .destination-card strong {
