@@ -1,11 +1,47 @@
 const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
 
+function getCountryCode2(code) {
+  const mapping = {
+    UAE: 'ae',
+    USA: 'us',
+    UK: 'gb',
+    Thailand: 'th',
+    Singapore: 'sg',
+    Japan: 'jp',
+    Canada: 'ca',
+    Australia: 'au'
+  };
+  return mapping[code] || 'in';
+}
+window.getCountryCode2 = getCountryCode2;
+
 document.addEventListener("DOMContentLoaded", () => {
   renderHomePage();
   renderDestinationPage();
   setupChatWidget();
   setupSidebarWidgets();
   setupHomepageTipToasts();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('login') === 'true') {
+    setTimeout(() => {
+      openModal('loginModal');
+      showToast("Please log in to view your trip details.", "warning");
+    }, 300);
+  }
+  if (urlParams.get('action') === 'searchFlights') {
+    setTimeout(() => {
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) {
+        sidebar.classList.add("expanded");
+        document.body.classList.add("sidebar-expanded");
+        const toggleIcon = document.getElementById("toggleIcon");
+        if (toggleIcon) toggleIcon.className = "fa-solid fa-chevron-left";
+        const flightBtn = document.querySelector('.nav-icon-btn[data-target="flight"]');
+        if (flightBtn) flightBtn.click();
+      }
+    }, 300);
+  }
 });
 
 function renderHomePage() {
@@ -16,7 +52,15 @@ function renderHomePage() {
     const destination = DESTINATIONS[code];
     return `
       <a class="destination-card" href="destination.html?country=${encodeURIComponent(code)}" aria-label="Open ${destination.name} guide">
-        <span class="flag" aria-hidden="true">${destination.flag}</span>
+        <div class="destination-card-image-container shimmer-loading">
+          <img class="destination-card-img" src="${destination.heroImage}" alt="${destination.name}" loading="lazy" onload="this.style.opacity='1'; this.parentNode.classList.remove('shimmer-loading');" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.parentNode.classList.remove('shimmer-loading');">
+          <div class="destination-card-placeholder" style="display: none;">
+            <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
+          </div>
+        </div>
+        <span class="flag" aria-hidden="true">
+          <img src="https://flagcdn.com/h40/${getCountryCode2(code)}.png" alt="" style="width: 24px; height: auto; border-radius: 2px;">
+        </span>
         <span>
           <strong>${code}</strong>
           <p>${destination.summary}</p>
@@ -24,6 +68,16 @@ function renderHomePage() {
       </a>
     `;
   }).join("");
+
+  // Handle already-cached image onload race conditions
+  grid.querySelectorAll('.destination-card-img').forEach(img => {
+    if (img.complete) {
+      img.style.opacity = '1';
+      if (img.parentNode) {
+        img.parentNode.classList.remove('shimmer-loading');
+      }
+    }
+  });
 
   setupSearch();
 }
@@ -46,11 +100,11 @@ function setupSearch() {
   const showSuggestions = () => {
     const matches = findMatches(input.value).slice(0, 6);
     suggestions.classList.toggle("show", matches.length > 0);
-    suggestions.innerHTML = matches.map((code) => {
+      suggestions.innerHTML = matches.map((code) => {
       const destination = DESTINATIONS[code];
       return `
         <button class="suggestion-item" type="button" data-country="${code}">
-          <span>${destination.flag}</span>
+          <span><img src="https://flagcdn.com/h24/${getCountryCode2(code)}.png" alt="" style="height: 14px; width: auto; vertical-align: middle; border-radius: 1px;"></span>
           <strong>${destination.name}</strong>
         </button>
       `;
@@ -68,8 +122,27 @@ function setupSearch() {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const match = findMatches(input.value)[0];
-    if (match) goToCountry(match);
+    const query = input.value.trim();
+    if (!query) return;
+
+    // Check exact match first
+    const exactMatch = POPULAR_COUNTRIES.find(
+      (code) => code.toLowerCase() === query.toLowerCase() || DESTINATIONS[code].name.toLowerCase() === query.toLowerCase()
+    );
+    if (exactMatch) {
+      goToCountry(exactMatch);
+      return;
+    }
+
+    // Check partial matches next
+    const partialMatch = POPULAR_COUNTRIES.find(
+      (code) => code.toLowerCase().includes(query.toLowerCase()) || DESTINATIONS[code].name.toLowerCase().includes(query.toLowerCase())
+    );
+    if (partialMatch) {
+      goToCountry(partialMatch);
+    } else {
+      window.location.href = `destination.html?country=${encodeURIComponent(query)}`;
+    }
   });
 
   document.addEventListener("click", (event) => {
@@ -144,7 +217,7 @@ const countryImages = {
     "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=1400",
     "https://images.unsplash.com/photo-1570789210967-2cac24afeb00?w=1400",
     "https://images.unsplash.com/photo-1548391350-968f58dedaed?w=1400",
-    "https://images.unsplash.com/photo-1574227492706-f65b24c3688a?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    "https://images.unsplash.com/photo-1574227492706-f65b24c3688a?w=1400"
   ],
   Japan: [
     "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400",
@@ -189,6 +262,11 @@ function initSlideshow(country) {
     const img = document.createElement('img');
     img.src = src;
     img.className = 'slide' + (i === 0 ? ' active' : '');
+    img.setAttribute('loading', 'lazy');
+    img.onerror = () => {
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      img.style.background = 'linear-gradient(135deg, var(--blue-soft), var(--blue))';
+    };
     container.appendChild(img);
     const dot = document.createElement('div');
     dot.className = 'dot' + (i === 0 ? ' active' : '');
@@ -238,15 +316,23 @@ function renderDestinationPage() {
   const params = new URLSearchParams(window.location.search);
   const requestedCountry = (params.get("country") || "UAE").trim();
   const countryCode = Object.keys(DESTINATIONS).find((code) => code.toLowerCase() === requestedCountry.toLowerCase());
-  const destination = DESTINATIONS[countryCode] || DESTINATIONS.UAE;
-  const activeCode = countryCode || "UAE";
+
+  if (!countryCode) {
+    loadExplorePage(requestedCountry);
+    return;
+  }
+
+  const destination = DESTINATIONS[countryCode];
+  const activeCode = countryCode;
   document.title = `${destination.name} Guide | TravelEase`;
 
   const destFlag = document.getElementById("dest-flag");
   const destName = document.getElementById("dest-name");
   const destDesc = document.getElementById("dest-description");
 
-  if (destFlag) destFlag.textContent = destination.flag;
+  if (destFlag) {
+    destFlag.innerHTML = `<img src="https://flagcdn.com/h60/${getCountryCode2(activeCode)}.png" alt="" style="height: 38px; width: auto; vertical-align: middle; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">`;
+  }
   if (destName) destName.textContent = destination.name;
   if (destDesc) destDesc.textContent = destination.summary;
 
@@ -276,7 +362,9 @@ function renderDestinationPage() {
     button.addEventListener("click", () => renderTab(button.dataset.tab));
   });
 
-  renderTab("visa");
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTab = urlParams.get("tab") || "visa";
+  renderTab(activeTab);
   setupCommentsSection(activeCode);
   setupDestinationTipToasts(activeCode);
   prefillFlightDestination();
@@ -1003,7 +1091,7 @@ function renderCommentsList(commentsArray) {
 
     const countryKey = Object.keys(DESTINATIONS).find(k => k.toLowerCase() === comment.countryCode.toLowerCase());
     const dest = DESTINATIONS[countryKey];
-    const destName = dest ? `${dest.flag} ${dest.name}` : comment.countryCode;
+    const destName = dest ? `<img src="https://flagcdn.com/h20/${getCountryCode2(countryKey)}.png" alt="" style="height: 14px; width: auto; vertical-align: middle; margin-right: 4px; border-radius: 1px;"> ${dest.name}` : comment.countryCode;
 
     const isLiked = likedComments.includes(comment._id);
     const likeClass = isLiked ? "like-btn liked" : "like-btn";
@@ -2359,6 +2447,11 @@ function renderAuthUI() {
   const profileWidget = document.getElementById("profileWidget");
   const user = getCurrentUser();
 
+  const navMyTrip = document.getElementById("navMyTrip");
+  if (navMyTrip) {
+    navMyTrip.style.display = user ? "inline-block" : "none";
+  }
+
   if (headerAuthArea) {
     if (user) {
       headerAuthArea.innerHTML = `
@@ -2644,4 +2737,320 @@ function showToast(message, type = 'info') {
       removeToast();
     }
   }, 5000);
+}
+async function loadExplorePage(countryName) {
+  const tabContent = document.getElementById("tabContent");
+  const destFlag = document.getElementById("dest-flag");
+  const destName = document.getElementById("dest-name");
+  const destDesc = document.getElementById("dest-description");
+  const quickSummaryGrid = document.getElementById("quickSummaryGrid");
+  const slideshowContainer = document.getElementById("slides-container");
+  const slideshowDots = document.getElementById("slide-dots");
+
+  document.title = `${countryName} Guide | TravelEase`;
+  if (destName) destName.textContent = countryName;
+  if (destDesc) destDesc.textContent = "Loading travel guidelines...";
+  if (destFlag) destFlag.textContent = "🌍";
+
+  // Render a clean loading spinner inside tabContent
+  tabContent.innerHTML = `
+    <div id="exploreLoading" style="text-align: center; padding: 100px 20px;">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 3.5rem; color: var(--blue); margin-bottom: 20px;"></i>
+      <h2>Compiling Travel Guide for ${escapeHTML(countryName)}...</h2>
+      <p style="color: var(--muted); margin-top: 10px;">Fetching country profiles and generating AI travel guidelines for Indian passport holders.</p>
+    </div>
+  `;
+  tabContent.classList.add("is-visible");
+
+  // Show a nice generic image in slideshow
+  if (slideshowContainer) {
+    slideshowContainer.innerHTML = `
+      <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400" class="slide active" alt="${escapeHTML(countryName)} background" style="opacity: 1; filter: brightness(0.65); width: 100%; height: 100%; object-fit: cover;">
+    `;
+  }
+  if (slideshowDots) slideshowDots.innerHTML = "";
+
+  const cacheKey = `travelease_explore_${countryName.toLowerCase()}`;
+  const cached = localStorage.getItem(cacheKey);
+
+  let destinationData;
+  if (cached) {
+    try {
+      destinationData = JSON.parse(cached);
+      // Invalidate old bad cache from previous runs if name or capital is N/A or Country Not Found
+      if (destinationData && (destinationData.name === "Country Not Found" || destinationData.capital === "N/A")) {
+        destinationData = null;
+        localStorage.removeItem(cacheKey);
+      }
+    } catch (e) {
+      console.error("Failed to parse cached explore guide", e);
+    }
+  }
+
+  if (!destinationData) {
+    try {
+      // 1. Fetch REST Countries API (with graceful fallback on failure/deprecation)
+      let restData = null;
+      try {
+        const restRes = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+        if (restRes.ok) {
+          const restList = await restRes.json();
+          // Ensure it's not the deprecation error JSON (which doesn't have cca2)
+          if (restList && Array.isArray(restList) && restList[0] && restList[0].cca2) {
+            restData = restList[0];
+          }
+        }
+      } catch (e) {
+        console.warn("REST Countries API failed or deprecated, falling back to Gemini database", e);
+      }
+
+      // 2. Fetch Gemini backend API
+      const systemPrompt = `You are a travel assistant for Indian passport holders. You MUST return ONLY a raw JSON object (no markdown code blocks, no backticks, just raw JSON text) with the exact structure below. Do not wrap the JSON in backticks or markdown formatting.
+      If the requested country is invalid, not a real country, or misspelled beyond recognition, you MUST return a JSON containing only: { "error": true }.
+      {
+        "officialName": "Official full name of the country (e.g. 'French Republic')",
+        "capital": "Capital city (e.g. 'Paris')",
+        "region": "Continent/Region (e.g. 'Europe')",
+        "cca2": "2-letter country code (ISO 3166-1 alpha-2, e.g., 'FR' for France, 'DE' for Germany)",
+        "languages": "Main spoken languages (comma-separated list, e.g. 'French')",
+        "currencyCode": "3-letter currency code (e.g. 'EUR')",
+        "currencyName": "Currency name (e.g. 'Euro')",
+        "currencySymbol": "Currency symbol (e.g. '€')",
+        "visaType": "e-Visa / Visa on Arrival / Visa Required / Visa Free",
+        "visaCostINR": "Estimated cost in INR or 'Free'",
+        "processingTime": "Typical processing time (e.g. '3-5 business days')",
+        "requiredDocuments": ["Passport valid for 6+ months", "Return ticket", "Hotel booking"],
+        "simOptions": "Brief local SIM details (e.g., 'OperatorA and OperatorB are top carriers. eSIMs available.')",
+        "transportApps": "Local taxi/ride-sharing apps (e.g., 'Uber, TaxiApp')",
+        "emergencyNumber": "Local emergency contact number (e.g. '112')"
+      }`;
+
+      // Use the actual target country name if we fetched it, otherwise countryName
+      const searchName = restData ? restData.name.common : countryName;
+      const userPrompt = `Generate travel visa and local guidelines for Indian passport holders visiting ${searchName}.`;
+
+      const chatRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }]
+        })
+      });
+
+      if (!chatRes.ok) {
+        throw new Error(`Gemini API returned status ${chatRes.status}`);
+      }
+
+      const chatData = await chatRes.json();
+      
+      // Resilient JSON parsing
+      let cleanText = chatData.text.trim();
+      if (cleanText.startsWith("```json")) {
+        cleanText = cleanText.substring(7);
+      } else if (cleanText.startsWith("```")) {
+        cleanText = cleanText.substring(3);
+      }
+      if (cleanText.endsWith("```")) {
+        cleanText = cleanText.substring(0, cleanText.length - 3);
+      }
+      cleanText = cleanText.trim();
+      
+      const geminiData = JSON.parse(cleanText);
+      if (geminiData.error) {
+        throw new Error("Invalid country name requested");
+      }
+
+      // Build the destination structure
+      destinationData = buildExploreDestination(restData, geminiData, countryName);
+      
+      // Cache the result
+      localStorage.setItem(cacheKey, JSON.stringify(destinationData));
+    } catch (error) {
+      console.error("Explore guide compilation failed:", error);
+      showExploreError(countryName);
+      return;
+    }
+  }
+
+  // Render the explore page with loaded data!
+  renderExploreGuide(destinationData);
+}
+
+function buildExploreDestination(restData, geminiData, countryName) {
+  const commonName = restData ? restData.name.common : countryName;
+  const officialName = restData ? restData.name.official : (geminiData.officialName || countryName);
+  const capital = restData ? (restData.capital ? restData.capital[0] : "N/A") : (geminiData.capital || "N/A");
+  const region = restData ? restData.region : (geminiData.region || "N/A");
+  const cca2 = restData ? restData.cca2 : (geminiData.cca2 || "us");
+  
+  // Extract currency details
+  let currencyCode = "USD", currencySymbol = "$", currencyName = "US Dollar";
+  if (restData) {
+    const currencies = restData.currencies || {};
+    const curKey = Object.keys(currencies)[0] || "";
+    if (curKey) {
+      currencyCode = curKey;
+      currencySymbol = currencies[curKey].symbol || "";
+      currencyName = currencies[curKey].name || curKey;
+    }
+  } else {
+    currencyCode = geminiData.currencyCode || "USD";
+    currencySymbol = geminiData.currencySymbol || "$";
+    currencyName = geminiData.currencyName || "US Dollar";
+  }
+
+  // Extract languages
+  const languageList = restData 
+    ? (Object.values(restData.languages || {}).join(", ") || "English") 
+    : (geminiData.languages || "English");
+
+  // Build the unified structure
+  return {
+    name: commonName,
+    isAI: true, // Tag it as AI-generated
+    cca2: cca2,
+    flag: restData ? (restData.flag || "🌍") : "🌍",
+    summary: `${commonName} is a beautiful destination in ${region}. Official Name: ${officialName}. Capital: ${capital}.`,
+    hero: `Explore ${commonName}`,
+    heroImage: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400", // Standard beautiful travel backdrop
+    language: languageList,
+    bestTime: "Varies by region; check local seasonal forecasts.",
+    plugType: "Standard plug types.",
+    upiAccepted: false,
+    tipping: "Standard local customs apply.",
+    hospitalTip: "Comprehensive travel insurance is strongly recommended for medical emergencies.",
+    weather: `Typical regional weather for ${region}.`,
+    visa: {
+      type: geminiData.visaType || "Visa Required",
+      badge: (geminiData.visaType || "").toLowerCase().includes("free") ? "green" : "blue",
+      documents: geminiData.requiredDocuments || ["Passport valid for 6+ months", "Return ticket", "Hotel booking"],
+      processingTime: geminiData.processingTime || "N/A",
+      cost: geminiData.visaCostINR || "N/A",
+      applyUrl: "https://www.google.com/search?q=" + encodeURIComponent(`${commonName} official visa application portal`),
+      warnings: ["Always check official government sources for sudden visa policy changes.", "Ensure your passport has at least 2 blank pages."]
+    },
+    currency: {
+      code: currencyCode,
+      rate: `1 ${currencyCode} = (Calculated live)`,
+      tip: `The local currency is ${currencyName} (${currencyCode} - ${currencySymbol}). Cards are accepted in cities, but cash is recommended for local markets.`,
+      cashCard: `Carry some local currency cash for small purchases; credit cards work in major establishments.`,
+      atm: `ATMs are widely available in the capital, ${capital}, and major tourist hubs.`,
+      services: ["BookMyForex", "Wise Card", "Niyo Card"]
+    },
+    sim: {
+      local: geminiData.simOptions || "Local SIM cards are available at airports and city centers.",
+      carriers: (geminiData.simOptions || "").split(/[.,;]/).slice(0, 3).map(s => s.trim()).filter(Boolean),
+      esim: "Airalo eSIM, Holafly eSIM",
+      advice: "Buy a local tourist SIM or an international eSIM before departure for seamless connectivity.",
+      airportTip: "SIM counters are located in international arrival terminals; passport registration is required."
+    },
+    transport: {
+      cabs: (geminiData.transportApps || "").split(/[.,;]/).slice(0, 3).map(s => s.trim()).filter(Boolean),
+      apps: (geminiData.transportApps || "").split(/[.,;]/).slice(0, 3).map(s => s.trim()).filter(Boolean),
+      airportTip: `Pre-paid taxis and public transit link airport terminals to central ${capital}.`,
+      airportCost: "Varies depending on transport method chosen.",
+      publicNote: `Local transport options include ride-sharing (${geminiData.transportApps || "taxi apps"}) and public transit.`
+    },
+    essentials: {
+      emergency: geminiData.emergencyNumber || "112",
+      embassy: "Check online for the nearest Embassy of India.",
+      embassyName: `Embassy of India in ${commonName} / nearby region`,
+      dos: ["Respect local cultural norms, dress codes, and religious sites.", "Keep digital and printed copies of your passport and visa."],
+      donts: ["Do not violate local customs or laws.", "Avoid carrying excessive cash in crowded areas."],
+      tips: ["Be mindful of local laws and customs.", "Register with MADAD (Ministry of External Affairs portal) before travelling."],
+      bestTime: "Varies by region"
+    }
+  };
+}
+
+function renderExploreGuide(destination) {
+  const tabContent = document.getElementById("tabContent");
+  const destFlag = document.getElementById("dest-flag");
+  const destName = document.getElementById("dest-name");
+  const destDesc = document.getElementById("dest-description");
+
+  if (destName) destName.textContent = destination.name;
+  if (destDesc) destDesc.textContent = destination.summary;
+  if (destFlag) {
+    const cca2 = (destination.cca2 || "us").toLowerCase();
+    destFlag.innerHTML = `<img src="https://flagcdn.com/h60/${cca2}.png" alt="" style="height: 38px; width: auto; vertical-align: middle; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">`;
+  }
+
+  renderQuickSummary(destination);
+  setupShareGuide();
+
+  // Overriding tab buttons click listeners for explore guide
+  const buttons = Array.from(document.querySelectorAll(".tab-button"));
+  const renderExploreTab = (tabName) => {
+    buttons.forEach((button) => {
+      const isActive = button.dataset.tab === tabName;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
+    tabContent.classList.remove("is-visible");
+    
+    // Construct tab markup and append disclaimer banner
+    const disclaimer = `
+      <div class="ai-disclaimer-banner" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 12px 18px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.1rem; color: #b58105;"></i>
+        <span><strong>AI-Generated Guide:</strong> This travel information is dynamically compiled using artificial intelligence and the REST Countries API. Always verify entry conditions and fees on official embassy websites before booking your travel.</span>
+      </div>
+    `;
+
+    tabContent.innerHTML = disclaimer + getTabMarkup(tabName, destination);
+    
+    if (tabName === "visa") {
+      highlightVisaType(destination.visa.type);
+    } else if (tabName === "currency") {
+      updateCurrencyDisplay(destination.currency.code);
+    }
+    requestAnimationFrame(() => tabContent.classList.add("is-visible"));
+  };
+
+  // Re-bind listeners for explore mode tabs
+  buttons.forEach((button) => {
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    newButton.addEventListener("click", () => renderExploreTab(newButton.dataset.tab));
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTab = urlParams.get("tab") || "visa";
+  renderExploreTab(activeTab);
+
+  // Hide the comments section on non-curated explore pages
+  const commentsSection = document.querySelector(".comments-section");
+  if (commentsSection) {
+    commentsSection.style.display = "none";
+  }
+}
+
+function showExploreError(countryName) {
+  const tabContent = document.getElementById("tabContent");
+  const destFlag = document.getElementById("dest-flag");
+  const destName = document.getElementById("dest-name");
+  const destDesc = document.getElementById("dest-description");
+  const quickSummaryGrid = document.getElementById("quickSummaryGrid");
+  const commentsSection = document.querySelector(".comments-section");
+
+  if (destName) destName.textContent = countryName;
+  if (destDesc) destDesc.textContent = "Compilation failed.";
+  if (destFlag) destFlag.innerHTML = "🌍";
+  if (quickSummaryGrid) quickSummaryGrid.innerHTML = "";
+  if (commentsSection) commentsSection.style.display = "none";
+
+  if (tabContent) {
+    tabContent.innerHTML = `
+      <div class="error-card" style="padding: 50px 20px; text-align: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 500px; margin: 40px auto;">
+        <i class="fa-solid fa-circle-exclamation" style="font-size: 3.5rem; color: var(--red); margin-bottom: 20px;"></i>
+        <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 10px;">Couldn't fetch travel info</h3>
+        <p style="color: var(--muted); margin-bottom: 24px; line-height: 1.5;">We were unable to retrieve the country profile or generate travel guidelines for <strong>${escapeHTML(countryName)}</strong>. Please verify the spelling or try again.</p>
+        <button class="primary-button" onclick="window.location.reload()" style="display: inline-flex; align-items: center; justify-content: center;">
+          <i class="fa-solid fa-arrows-rotate" style="margin-right: 8px;"></i> Try Again
+        </button>
+      </div>
+    `;
+    tabContent.classList.add("is-visible");
+  }
 }
