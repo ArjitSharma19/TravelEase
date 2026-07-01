@@ -53,6 +53,11 @@ app.get('/destination.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'destination.html'));
 });
 
+// Route for serving the explore.html file
+app.get('/explore.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'explore.html'));
+});
+
 // Authentication Middleware
 const requireAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -315,6 +320,227 @@ async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
     throw error;
   }
 }
+
+// Proxy route for fetching country details securely via REST Countries v5 API
+app.get('/api/countries/:countryName', async (req, res) => {
+  const { countryName } = req.params;
+  const apiKey = process.env.REST_COUNTRIES_API_KEY;
+
+  // Fallback to public v3.1 API if API key is not configured
+  if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
+    console.log(`REST Countries API key not configured, falling back to public v3.1 for: ${countryName}`);
+    try {
+      const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Failed to fetch country details from public API' });
+      }
+      const data = await response.json();
+      return res.json(data);
+    } catch (error) {
+      console.error('Error fetching public REST Countries v3.1 data:', error);
+      return res.status(500).json({ error: 'Failed to fetch country details' });
+    }
+  }
+
+  try {
+    const url = `https://api.restcountries.com/countries/v5/names.common/${encodeURIComponent(countryName)}`;
+    console.log(`Fetching from REST Countries v5: ${url}`);
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`REST Countries v5 API returned status ${response.status}: ${errText}. Falling back to public v3.1.`);
+      
+      // Fallback to public v3.1
+      const publicResponse = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+      if (publicResponse.ok) {
+        const publicData = await publicResponse.json();
+        return res.json(publicData);
+      }
+      return res.status(response.status).json({ error: `REST Countries API returned error: ${response.statusText}` });
+    }
+
+    const result = await response.json();
+
+    // Normalise v5 response format `{"data":{"objects":[...]}}` to match v3.1 format `[...]`
+    if (result && result.data && result.data.objects && Array.isArray(result.data.objects)) {
+      const normalized = result.data.objects.map(country => {
+        const normalizedCountry = {
+          name: country.names ? {
+            common: country.names.common || '',
+            official: country.names.official || ''
+          } : undefined,
+          cca2: country.codes ? country.codes.alpha_2 : undefined,
+          capital: Array.isArray(country.capitals) ? country.capitals.map(c => c.name) : undefined,
+          region: country.region,
+          languages: {},
+          currencies: {},
+          flag: country.flag ? country.flag.emoji : undefined
+        };
+
+        if (Array.isArray(country.languages)) {
+          country.languages.forEach(l => {
+            if (l.name) {
+              normalizedCountry.languages[l.bcp47 || l.name] = l.name;
+            }
+          });
+        }
+
+        if (Array.isArray(country.currencies)) {
+          country.currencies.forEach(c => {
+            if (c.code) {
+              normalizedCountry.currencies[c.code] = {
+                name: c.name || '',
+                symbol: c.symbol || ''
+              };
+            }
+          });
+        }
+
+        return normalizedCountry;
+      });
+
+      return res.json(normalized);
+    }
+
+    res.json([]);
+  } catch (error) {
+    console.error('Error calling REST Countries API proxy:', error);
+    // Attempt last-resort fallback to public v3.1
+    try {
+      const publicResponse = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+      if (publicResponse.ok) {
+        const publicData = await publicResponse.json();
+        return res.json(publicData);
+      }
+    } catch (fallbackError) {
+      console.error('Last-resort fallback to public v3.1 failed:', fallbackError);
+    }
+    res.status(500).json({ error: 'Failed to retrieve country details' });
+  }
+});
+
+// Proxy route for fetching high-quality landscape photos from Unsplash
+app.get('/api/images/:query', async (req, res) => {
+  const { query } = req.params;
+  const apiKey = process.env.UNSPLASH_API_KEY;
+
+  if (!apiKey || apiKey === 'YOUR_UNSPLASH_API_KEY' || apiKey.trim() === '') {
+    console.warn("Unsplash API key not configured, returning empty image list.");
+    return res.json([]);
+  }
+
+  try {
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query + ' travel landscape')}&per_page=6&orientation=landscape`;
+    console.log(`Fetching photos from Unsplash for: ${query}`);
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Client-ID ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`Unsplash API Error (${response.status}):`, errText);
+      return res.json([]);
+    }
+
+    const data = await response.json();
+    if (data && Array.isArray(data.results)) {
+      const imageUrls = data.results.map(img => img.urls.regular || img.urls.full);
+      return res.json(imageUrls);
+    }
+    res.json([]);
+  } catch (error) {
+    console.error('Error fetching from Unsplash API:', error);
+    res.json([]);
+  }
+});
+
+// Cache for the full countries list to avoid querying the external API on every page load
+let countriesCache = null;
+
+app.get('/api/countries-list', async (req, res) => {
+  if (countriesCache) {
+    return res.json(countriesCache);
+  }
+
+  const apiKey = process.env.REST_COUNTRIES_API_KEY;
+
+  // Fallback static list of countries if key not configured or API fails
+  const staticFallback = [
+    { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪" },
+    { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸" },
+    { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧" },
+    { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭" },
+    { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬" },
+    { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵" },
+    { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦" },
+    { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺" },
+    { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪" },
+    { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷" },
+    { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹" },
+    { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸" },
+    { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭" },
+    { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦" },
+    { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳" }
+  ];
+
+  if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
+    console.log("REST Countries API key not configured, returning static fallback list.");
+    return res.json(staticFallback);
+  }
+
+  try {
+    const allObjects = [];
+    const limit = 100;
+    
+    // Paginate through REST Countries v5 API
+    for (let offset = 0; offset < 300; offset += limit) {
+      const url = `https://api.restcountries.com/countries/v5?limit=${limit}&offset=${offset}`;
+      console.log(`Caching countries from REST Countries v5 offset ${offset}...`);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`REST Countries API returned status ${response.status}`);
+      }
+      
+      const result = await response.json();
+      if (result && result.data && Array.isArray(result.data.objects)) {
+        allObjects.push(...result.data.objects);
+        if (result.data.objects.length < limit) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+
+    if (allObjects.length > 0) {
+      countriesCache = allObjects.map(country => ({
+        name: country.names?.common || '',
+        officialName: country.names?.official || '',
+        cca2: country.codes?.alpha_2 || '',
+        flag: country.flag?.emoji || '🌍'
+      })).filter(c => c.name !== '');
+      console.log(`Cached ${countriesCache.length} countries successfully.`);
+      return res.json(countriesCache);
+    }
+
+    res.json(staticFallback);
+  } catch (error) {
+    console.error('Error fetching countries list from API, using fallback:', error);
+    res.json(staticFallback);
+  }
+});
 
 // Proxy route for communicating with the Google Gemini API
 app.post('/api/chat', async (req, res) => {
