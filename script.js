@@ -15,7 +15,40 @@ function getCountryCode2(code) {
 }
 window.getCountryCode2 = getCountryCode2;
 
+let allCountriesList = [];
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Fetch full countries list as early as possible
+  fetch("/api/countries-list")
+    .then((res) => {
+      if (res.ok) return res.json();
+      throw new Error("Failed to load countries list");
+    })
+    .then((data) => {
+      allCountriesList = data;
+    })
+    .catch((err) => {
+      console.warn("Autocomplete list fetch failed, falling back to static popular list", err);
+      // Hardcoded fallback list in the frontend as a safety net
+      allCountriesList = [
+        { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪" },
+        { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸" },
+        { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧" },
+        { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭" },
+        { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬" },
+        { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵" },
+        { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦" },
+        { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺" },
+        { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪" },
+        { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷" },
+        { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹" },
+        { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸" },
+        { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭" },
+        { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦" },
+        { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳" }
+      ];
+    });
+
   renderHomePage();
   renderDestinationPage();
   setupChatWidget();
@@ -88,65 +121,153 @@ function setupSearch() {
   const suggestions = document.getElementById("suggestions");
   if (!form || !input || !suggestions) return;
 
+  // Create inline error message element if not already present
+  let searchError = document.getElementById("searchError");
+  if (!searchError) {
+    searchError = document.createElement("div");
+    searchError.id = "searchError";
+    searchError.className = "search-error-msg";
+    searchError.style.display = "none";
+    form.parentNode.insertBefore(searchError, form.nextSibling);
+  }
+
+  let highlightedIndex = -1;
+  let currentMatches = [];
+
   const findMatches = (value) => {
     const query = value.trim().toLowerCase();
-    if (!query) return POPULAR_COUNTRIES;
-    return POPULAR_COUNTRIES.filter((code) => {
-      const destination = DESTINATIONS[code];
-      return code.toLowerCase().includes(query) || destination.name.toLowerCase().includes(query);
+    if (query.length < 2) return [];
+    return allCountriesList.filter((country) => {
+      const nameMatch = (country.name || "").toLowerCase().includes(query);
+      const officialMatch = (country.officialName || "").toLowerCase().includes(query);
+      return nameMatch || officialMatch;
     });
   };
 
   const showSuggestions = () => {
-    const matches = findMatches(input.value).slice(0, 6);
-    suggestions.classList.toggle("show", matches.length > 0);
-      suggestions.innerHTML = matches.map((code) => {
-      const destination = DESTINATIONS[code];
+    // Hide error when user modifies search
+    searchError.style.display = "none";
+    
+    currentMatches = findMatches(input.value).slice(0, 8);
+    highlightedIndex = -1;
+    
+    if (currentMatches.length === 0) {
+      suggestions.classList.remove("show");
+      suggestions.innerHTML = "";
+      return;
+    }
+
+    suggestions.innerHTML = currentMatches.map((country) => {
       return `
-        <button class="suggestion-item" type="button" data-country="${code}">
-          <span><img src="https://flagcdn.com/h24/${getCountryCode2(code)}.png" alt="" style="height: 14px; width: auto; vertical-align: middle; border-radius: 1px;"></span>
-          <strong>${destination.name}</strong>
+        <button class="suggestion-item" type="button" data-country-name="${country.name}">
+          <span style="font-size: 1.2rem; vertical-align: middle;">${country.flag || '🌍'}</span>
+          <strong>${country.name}</strong>
         </button>
       `;
     }).join("");
+    suggestions.classList.add("show");
+  };
+
+  const updateHighlight = () => {
+    const items = suggestions.querySelectorAll(".suggestion-item");
+    items.forEach((item, idx) => {
+      if (idx === highlightedIndex) {
+        item.classList.add("highlighted");
+        item.scrollIntoView({ block: "nearest" });
+      } else {
+        item.classList.remove("highlighted");
+      }
+    });
+  };
+
+  const selectSuggestion = (name) => {
+    input.value = name;
+    suggestions.classList.remove("show");
+    suggestions.innerHTML = "";
+    highlightedIndex = -1;
+    performSearch(name);
+  };
+
+  const performSearch = (queryVal) => {
+    const query = queryVal.trim();
+    if (!query) return;
+
+    // Check case-insensitive match against allCountriesList
+    const matchedCountry = allCountriesList.find(
+      (c) => c.name.toLowerCase() === query.toLowerCase() || c.officialName.toLowerCase() === query.toLowerCase()
+    );
+
+    if (!matchedCountry) {
+      searchError.textContent = "Country not found — please select from suggestions";
+      searchError.style.display = "block";
+      return;
+    }
+
+    searchError.style.display = "none";
+    
+    // Curated countries to route to destination.html
+    const curatedCountries = ["UAE", "USA", "UK", "Thailand", "Singapore", "Japan", "Canada", "Australia"];
+    const matchedCurated = curatedCountries.find(
+      (curated) => curated.toLowerCase() === matchedCountry.name.toLowerCase()
+    );
+
+    if (matchedCurated) {
+      window.location.href = `destination.html?country=${encodeURIComponent(matchedCurated)}`;
+    } else {
+      window.location.href = `explore.html?country=${encodeURIComponent(matchedCountry.name)}`;
+    }
   };
 
   input.addEventListener("input", showSuggestions);
   input.addEventListener("focus", showSuggestions);
 
+  // Keyboard navigation
+  input.addEventListener("keydown", (event) => {
+    if (!suggestions.classList.contains("show")) return;
+
+    const items = suggestions.querySelectorAll(".suggestion-item");
+    if (items.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      highlightedIndex = (highlightedIndex + 1) % items.length;
+      updateHighlight();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+      updateHighlight();
+    } else if (event.key === "Enter") {
+      if (highlightedIndex >= 0) {
+        event.preventDefault();
+        const selectedName = items[highlightedIndex].dataset.countryName;
+        selectSuggestion(selectedName);
+      }
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      suggestions.classList.remove("show");
+      suggestions.innerHTML = "";
+      highlightedIndex = -1;
+    }
+  });
+
+  // Clicking outside to close
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) {
+      suggestions.classList.remove("show");
+      highlightedIndex = -1;
+    }
+  });
+
+  // Click handler on suggestions container
   suggestions.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-country]");
+    const button = event.target.closest(".suggestion-item");
     if (!button) return;
-    goToCountry(button.dataset.country);
+    selectSuggestion(button.dataset.countryName);
   });
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const query = input.value.trim();
-    if (!query) return;
-
-    // Check exact match first
-    const exactMatch = POPULAR_COUNTRIES.find(
-      (code) => code.toLowerCase() === query.toLowerCase() || DESTINATIONS[code].name.toLowerCase() === query.toLowerCase()
-    );
-    if (exactMatch) {
-      goToCountry(exactMatch);
-      return;
-    }
-
-    // Check partial matches next
-    const partialMatch = POPULAR_COUNTRIES.find(
-      (code) => code.toLowerCase().includes(query.toLowerCase()) || DESTINATIONS[code].name.toLowerCase().includes(query.toLowerCase())
-    );
-    if (partialMatch) {
-      goToCountry(partialMatch);
-    } else {
-      window.location.href = `destination.html?country=${encodeURIComponent(query)}`;
-    }
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!form.contains(event.target)) suggestions.classList.remove("show");
+    performSearch(input.value);
   });
 }
 
@@ -2792,7 +2913,7 @@ async function loadExplorePage(countryName) {
       // 1. Fetch REST Countries API (with graceful fallback on failure/deprecation)
       let restData = null;
       try {
-        const restRes = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+        const restRes = await fetch(`/api/countries/${encodeURIComponent(countryName)}`);
         if (restRes.ok) {
           const restList = await restRes.json();
           // Ensure it's not the deprecation error JSON (which doesn't have cca2)
@@ -2801,7 +2922,7 @@ async function loadExplorePage(countryName) {
           }
         }
       } catch (e) {
-        console.warn("REST Countries API failed or deprecated, falling back to Gemini database", e);
+        console.warn("Proxy REST Countries API failed, falling back to Gemini database", e);
       }
 
       // 2. Fetch Gemini backend API
@@ -2861,8 +2982,19 @@ async function loadExplorePage(countryName) {
         throw new Error("Invalid country name requested");
       }
 
+      // 3. Fetch Unsplash images for the slideshow
+      let imageList = [];
+      try {
+        const imgRes = await fetch(`/api/images/${encodeURIComponent(searchName)}`);
+        if (imgRes.ok) {
+          imageList = await imgRes.json();
+        }
+      } catch (err) {
+        console.warn("Failed to fetch Unsplash images:", err);
+      }
+
       // Build the destination structure
-      destinationData = buildExploreDestination(restData, geminiData, countryName);
+      destinationData = buildExploreDestination(restData, geminiData, countryName, imageList);
       
       // Cache the result
       localStorage.setItem(cacheKey, JSON.stringify(destinationData));
@@ -2877,7 +3009,7 @@ async function loadExplorePage(countryName) {
   renderExploreGuide(destinationData);
 }
 
-function buildExploreDestination(restData, geminiData, countryName) {
+function buildExploreDestination(restData, geminiData, countryName, imageList = []) {
   const commonName = restData ? restData.name.common : countryName;
   const officialName = restData ? restData.name.official : (geminiData.officialName || countryName);
   const capital = restData ? (restData.capital ? restData.capital[0] : "N/A") : (geminiData.capital || "N/A");
@@ -2913,7 +3045,8 @@ function buildExploreDestination(restData, geminiData, countryName) {
     flag: restData ? (restData.flag || "🌍") : "🌍",
     summary: `${commonName} is a beautiful destination in ${region}. Official Name: ${officialName}. Capital: ${capital}.`,
     hero: `Explore ${commonName}`,
-    heroImage: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400", // Standard beautiful travel backdrop
+    heroImage: imageList[0] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400",
+    images: imageList.length > 0 ? imageList : ["https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400"],
     language: languageList,
     bestTime: "Varies by region; check local seasonal forecasts.",
     plugType: "Standard plug types.",
@@ -2977,13 +3110,20 @@ function renderExploreGuide(destination) {
     destFlag.innerHTML = `<img src="https://flagcdn.com/h60/${cca2}.png" alt="" style="height: 38px; width: auto; vertical-align: middle; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">`;
   }
 
+  // Register dynamic images and initialize the slideshow
+  if (destination.images) {
+    countryImages[destination.name] = destination.images;
+    initSlideshow(destination.name);
+  }
+
   renderQuickSummary(destination);
   setupShareGuide();
 
   // Overriding tab buttons click listeners for explore guide
   const buttons = Array.from(document.querySelectorAll(".tab-button"));
   const renderExploreTab = (tabName) => {
-    buttons.forEach((button) => {
+    const currentButtons = Array.from(document.querySelectorAll(".tab-button"));
+    currentButtons.forEach((button) => {
       const isActive = button.dataset.tab === tabName;
       button.classList.toggle("active", isActive);
       button.setAttribute("aria-selected", String(isActive));
