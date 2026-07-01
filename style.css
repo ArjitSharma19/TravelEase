@@ -264,17 +264,25 @@ h3 {
   top: calc(100% + 8px);
   right: 8px;
   left: 8px;
-  display: none;
-  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  visibility: hidden;
+  overflow-y: auto;
+  max-height: 350px;
   text-align: left;
   background: #fff;
   border-radius: 8px;
   box-shadow: var(--shadow);
   z-index: 15;
+  transition: opacity 220ms cubic-bezier(0.4, 0, 0.2, 1), transform 220ms cubic-bezier(0.4, 0, 0.2, 1), visibility 220ms;
 }
 
 .suggestions.show {
-  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
 }
 
 .suggestion-item {
@@ -287,10 +295,24 @@ h3 {
   background: #fff;
   border: 0;
   cursor: pointer;
+  transition: background 150ms ease;
+  text-align: left;
 }
 
-.suggestion-item:hover {
+.suggestion-item:hover,
+.suggestion-item.highlighted {
   background: var(--blue-soft);
+  outline: none;
+}
+
+.search-error-msg {
+  color: #ff3b30;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  animation: fadeInUp 300ms ease both;
 }
 
 .section,
