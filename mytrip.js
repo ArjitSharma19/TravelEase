@@ -119,7 +119,16 @@ function renderTripHeader(tripDetails) {
       const code2 = (window.getCountryCode2 ? window.getCountryCode2(countryKey) : countryKey).toLowerCase();
       heroFlag.innerHTML = `<img src="https://flagcdn.com/h80/${code2}.png" alt="" style="height: 36px; width: auto; vertical-align: middle; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">`;
     } else {
-      heroFlag.textContent = "🌍";
+      // Look up in allCountriesList to find flag on Windows
+      const matched = (window.allCountriesList || []).find(c => 
+        (c.name || "").toLowerCase() === tripDetails.destination.toLowerCase() || 
+        (c.officialName || "").toLowerCase() === tripDetails.destination.toLowerCase()
+      );
+      if (matched && matched.cca2) {
+        heroFlag.innerHTML = `<img src="https://flagcdn.com/h80/${matched.cca2.toLowerCase()}.png" alt="" style="height: 36px; width: auto; vertical-align: middle; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">`;
+      } else {
+        heroFlag.textContent = "🌍";
+      }
     }
   }
   
