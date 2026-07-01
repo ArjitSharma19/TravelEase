@@ -158,9 +158,12 @@ function setupSearch() {
     }
 
     suggestions.innerHTML = currentMatches.map((country) => {
+      const flagHtml = country.cca2 
+        ? `<img src="https://flagcdn.com/h24/${country.cca2.toLowerCase()}.png" alt="" style="height: 16px; width: auto; vertical-align: middle; margin-right: 8px; border-radius: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">`
+        : `<span style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">🌍</span>`;
       return `
         <button class="suggestion-item" type="button" data-country-name="${country.name}">
-          <span style="font-size: 1.2rem; vertical-align: middle;">${country.flag || '🌍'}</span>
+          ${flagHtml}
           <strong>${country.name}</strong>
         </button>
       `;
