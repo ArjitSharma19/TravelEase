@@ -100,6 +100,29 @@ const UserSchema = new mongoose.Schema({
     passportExpiry: Date,
     firstTimeAbroad: Boolean
   },
+  resetOTP: {
+    type: String
+  },
+  resetOTPExpiry: {
+    type: Date
+  },
+  otpAttempts: {
+    type: Number,
+    default: 0
+  },
+  otpBlockedUntil: {
+    type: Date
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: {
+    type: String
+  },
+  verificationTokenExpiry: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
