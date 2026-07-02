@@ -59,7 +59,66 @@ document.addEventListener("DOMContentLoaded", () => {
   if (urlParams.get('login') === 'true') {
     setTimeout(() => {
       openModal('loginModal');
-      showToast("Please log in to view your trip details.", "warning");
+      if (urlParams.get('reset') === 'success') {
+        showToast("Password reset successfully. Please log in.", "success");
+      } else {
+        showToast("Please log in to view your trip details.", "warning");
+      }
+    }, 300);
+  }
+  if (urlParams.get('verify') === 'success') {
+    setTimeout(() => {
+      openModal('loginModal');
+      showToast("Email verified successfully, you can now log in", "success");
+    }, 300);
+  }
+  if (urlParams.get('verify') === 'expired') {
+    const email = urlParams.get('email') || "";
+    setTimeout(() => {
+      openModal('loginModal');
+      const errorDiv = document.getElementById("loginError");
+      if (errorDiv) {
+        errorDiv.style.color = "var(--red)";
+        errorDiv.innerHTML = `
+          <div style="font-weight: 700;">Verification link expired, resend below</div>
+          <button type="button" class="primary-button" id="resendVerificationBtn" style="margin-top: 10px; width: 100%; padding: 8px; font-weight: 700; border-radius: 6px; cursor: pointer;">Resend Verification Email</button>
+        `;
+        
+        const resendBtn = document.getElementById("resendVerificationBtn");
+        resendBtn.addEventListener("click", async () => {
+          resendBtn.disabled = true;
+          resendBtn.textContent = "Sending...";
+          try {
+            const res = await fetch("/api/auth/resend-verification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to resend");
+            
+            showToast("Verification email sent, please check your inbox", "success");
+            errorDiv.textContent = "Verification email sent, please check your inbox";
+            errorDiv.style.color = "var(--green)";
+          } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.style.color = "var(--red)";
+            resendBtn.disabled = false;
+            resendBtn.textContent = "Resend Verification Email";
+          }
+        });
+      }
+    }, 300);
+  }
+  if (urlParams.get('verify') === 'invalid') {
+    setTimeout(() => {
+      openModal('loginModal');
+      showToast("Invalid verification link.", "error");
+      const errorDiv = document.getElementById("loginError");
+      if (errorDiv) {
+        errorDiv.style.color = "var(--red)";
+        errorDiv.textContent = "Invalid verification link.";
+      }
     }, 300);
   }
   if (urlParams.get('action') === 'searchFlights') {
@@ -291,7 +350,11 @@ const SERVICE_LINKS = {
   Grab: "https://www.grab.com",
   Careem: "https://www.careem.com",
   Lyft: "https://www.lyft.com",
-  Gojek: "https://www.gojek.com"
+  Gojek: "https://www.gojek.com",
+  Ola: "https://www.olacabs.com",
+  DiDi: "https://www.didiglobal.com",
+  Bolt: "https://www.bolt.eu",
+  MyTaxi: "https://www.free-now.com"
 };
 
 const CAB_APP_META = {
@@ -299,7 +362,11 @@ const CAB_APP_META = {
   Grab: { icon: "🟢", url: SERVICE_LINKS.Grab },
   Careem: { icon: "🚕", url: SERVICE_LINKS.Careem },
   Lyft: { icon: "🚘", url: SERVICE_LINKS.Lyft },
-  Gojek: { icon: "🛵", url: SERVICE_LINKS.Gojek }
+  Gojek: { icon: "🛵", url: SERVICE_LINKS.Gojek },
+  Ola: { icon: "🚖", url: SERVICE_LINKS.Ola },
+  DiDi: { icon: "🚙", url: SERVICE_LINKS.DiDi },
+  Bolt: { icon: "⚡", url: SERVICE_LINKS.Bolt },
+  MyTaxi: { icon: "🚕", url: SERVICE_LINKS.MyTaxi }
 };
 
 const countryImages = {
@@ -775,9 +842,22 @@ function serviceCards(names, buttonLabel) {
 function transportPills(apps) {
   return apps.map((app) => {
     const meta = CAB_APP_META[app] || { icon: "🚕", url: "https://www.uber.com" };
-    return `<a class="app-pill" href="${meta.url}" target="_blank" rel="noopener"><span aria-hidden="true">${meta.icon}</span>${app}</a>`;
+    return `<a class="app-pill" data-app="${app}" href="#" target="_blank" rel="noopener"><span aria-hidden="true">${meta.icon}</span>${app}</a>`;
   }).join("");
 }
+
+// Global click delegator for cab app pills
+document.addEventListener("click", (e) => {
+  const pill = e.target.closest(".app-pill");
+  if (pill) {
+    e.preventDefault();
+    const appName = pill.getAttribute("data-app");
+    if (appName) {
+      const meta = CAB_APP_META[appName] || { url: "https://www.uber.com" };
+      window.open(meta.url, "_blank");
+    }
+  }
+});
 
 const homepageTipToasts = [
   {
@@ -2392,6 +2472,10 @@ function setupAuthHandlers() {
   const loginForm = document.getElementById("loginForm");
   const signupForm = document.getElementById("signupForm");
   const profileForm = document.getElementById("profileForm");
+  const forgotPasswordModal = document.getElementById("forgotPasswordModal");
+  const forgotPasswordCloseBtn = document.getElementById("forgotPasswordCloseBtn");
+  const forgotPasswordForm = document.getElementById("forgotPasswordForm");
+  const switchToLoginFromForgot = document.getElementById("switchToLoginFromForgotBtn");
 
   if (sidebarLoginBtn) sidebarLoginBtn.addEventListener("click", () => openModal("loginModal"));
   if (sidebarSignupBtn) sidebarSignupBtn.addEventListener("click", () => openModal("signupModal"));
@@ -2423,6 +2507,31 @@ function setupAuthHandlers() {
     switchToLogin.addEventListener("click", () => {
       closeModal("signupModal");
       openModal("loginModal");
+    });
+  }
+
+  const forgotPasswordTriggers = document.querySelectorAll(".forgot-password-trigger");
+  forgotPasswordTriggers.forEach(trigger => {
+    trigger.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeModal("loginModal");
+      resetForgotOtpModal();
+      openModal("forgotPasswordModal");
+    });
+  });
+
+  if (forgotPasswordCloseBtn) {
+    forgotPasswordCloseBtn.addEventListener("click", () => {
+      closeModal("forgotPasswordModal");
+      resetForgotOtpModal();
+    });
+  }
+
+  if (switchToLoginFromForgot) {
+    switchToLoginFromForgot.addEventListener("click", () => {
+      closeModal("forgotPasswordModal");
+      openModal("loginModal");
+      resetForgotOtpModal();
     });
   }
 
@@ -2460,6 +2569,395 @@ function setupAuthHandlers() {
     });
   }
 
+  // OTP state variables
+  let otpEmail = "";
+  let otpTimerInterval = null;
+
+  const resetForgotOtpModal = () => {
+    const f1 = document.getElementById("otpForm1");
+    const f2 = document.getElementById("otpForm2");
+    const f3 = document.getElementById("otpForm3");
+    if (f1) f1.reset();
+    if (f2) f2.reset();
+    if (f3) f3.reset();
+
+    const err1 = document.getElementById("otpError1");
+    const err2 = document.getElementById("otpError2");
+    const err3 = document.getElementById("otpError3");
+    if (err1) err1.textContent = "";
+    if (err2) err2.textContent = "";
+    if (err3) err3.textContent = "";
+
+    const confirmErr = document.getElementById("confirmPasswordError");
+    if (confirmErr) confirmErr.style.display = "none";
+
+    const bar = document.getElementById("strengthBar");
+    const text = document.getElementById("strengthText");
+    if (bar) {
+      bar.style.width = "0%";
+      bar.style.backgroundColor = "var(--red)";
+    }
+    if (text) text.textContent = "Too Weak";
+
+    const step1 = document.getElementById("otpStep1");
+    const step2 = document.getElementById("otpStep2");
+    const step3 = document.getElementById("otpStep3");
+    if (step1) step1.style.display = "block";
+    if (step2) step2.style.display = "none";
+    if (step3) step3.style.display = "none";
+
+    if (otpTimerInterval) {
+      clearInterval(otpTimerInterval);
+      otpTimerInterval = null;
+    }
+    const timerElem = document.getElementById("otpTimer");
+    if (timerElem) {
+      timerElem.textContent = "OTP expires in 10:00";
+      timerElem.style.color = "var(--muted)";
+    }
+
+    const verifyBtn = f2 ? f2.querySelector(".modal-submit-btn") : null;
+    if (verifyBtn) verifyBtn.disabled = false;
+
+    // Reset OTP input digit borders
+    const digits = document.querySelectorAll(".otp-digit");
+    digits.forEach(input => {
+      input.classList.remove("error-border");
+      input.value = "";
+    });
+  };
+
+  const startOtpTimer = () => {
+    if (otpTimerInterval) {
+      clearInterval(otpTimerInterval);
+    }
+    let duration = 600; // 10 minutes
+    const timerElem = document.getElementById("otpTimer");
+    const verifyBtn = document.querySelector("#otpForm2 .modal-submit-btn");
+    const resendBtn = document.getElementById("resendOtpBtn");
+    
+    if (verifyBtn) verifyBtn.disabled = false;
+    if (timerElem) timerElem.style.color = "var(--muted)";
+
+    otpTimerInterval = setInterval(() => {
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      const formattedMin = minutes < 10 ? "0" + minutes : minutes;
+      const formattedSec = seconds < 10 ? "0" + seconds : seconds;
+
+      if (timerElem) {
+        timerElem.textContent = `OTP expires in ${formattedMin}:${formattedSec}`;
+      }
+
+      if (--duration < 0) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+        if (timerElem) {
+          timerElem.textContent = "OTP expired";
+          timerElem.style.color = "var(--red)";
+        }
+        if (verifyBtn) verifyBtn.disabled = true;
+        
+        const errDiv = document.getElementById("otpError2");
+        if (errDiv) {
+          errDiv.textContent = "OTP expired — request a new one";
+          errDiv.style.color = "var(--red)";
+        }
+        if (resendBtn) {
+          resendBtn.style.color = "var(--blue)";
+          resendBtn.style.transform = "scale(1.05)";
+          resendBtn.style.transition = "transform 0.2s, color 0.2s";
+        }
+      }
+    }, 1000);
+  };
+
+  // OTP digit inputs autofocusses & backspaces
+  const otpDigits = document.querySelectorAll(".otp-digit");
+  otpDigits.forEach((digitInput, index) => {
+    digitInput.addEventListener("input", (e) => {
+      digitInput.classList.remove("error-border");
+      if (digitInput.value.length === 1) {
+        if (index < otpDigits.length - 1) {
+          otpDigits[index + 1].focus();
+        }
+      }
+    });
+
+    digitInput.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") {
+        digitInput.value = "";
+        digitInput.classList.remove("error-border");
+        if (index > 0) {
+          otpDigits[index - 1].focus();
+        }
+      }
+    });
+  });
+
+  // Step 1 Form: Request OTP
+  const otpForm1 = document.getElementById("otpForm1");
+  if (otpForm1) {
+    otpForm1.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById("otpEmail");
+      const errDiv = document.getElementById("otpError1");
+      const submitBtn = otpForm1.querySelector(".modal-submit-btn");
+
+      otpEmail = emailInput.value.trim();
+      errDiv.textContent = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending OTP...";
+
+      try {
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: otpEmail })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to send OTP.");
+        }
+
+        showToast("OTP sent to your email", "success");
+        
+        // Go to step 2
+        document.getElementById("otpStep1").style.display = "none";
+        document.getElementById("otpStep2").style.display = "block";
+        startOtpTimer();
+        
+        // Focus first OTP digit
+        if (otpDigits.length > 0) {
+          setTimeout(() => otpDigits[0].focus(), 100);
+        }
+      } catch (error) {
+        errDiv.textContent = error.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Send OTP";
+      }
+    });
+  }
+
+  // Resend OTP Link Action
+  const resendOtpBtn = document.getElementById("resendOtpBtn");
+  if (resendOtpBtn) {
+    resendOtpBtn.addEventListener("click", async () => {
+      const errDiv2 = document.getElementById("otpError2");
+      errDiv2.textContent = "";
+      resendOtpBtn.disabled = true;
+      resendOtpBtn.textContent = "Sending...";
+
+      try {
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: otpEmail })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to resend OTP.");
+        }
+
+        showToast("A new OTP has been sent to your email.", "success");
+        
+        // Reset inputs
+        otpDigits.forEach(input => {
+          input.value = "";
+          input.classList.remove("error-border");
+        });
+        
+        // Restart timer
+        startOtpTimer();
+        
+        // Focus first
+        if (otpDigits.length > 0) otpDigits[0].focus();
+      } catch (error) {
+        errDiv2.textContent = error.message;
+      } finally {
+        resendOtpBtn.disabled = false;
+        resendOtpBtn.textContent = "Resend OTP";
+        resendOtpBtn.style.transform = "none";
+        resendOtpBtn.style.color = "";
+      }
+    });
+  }
+
+  // Step 2 Form: Verify OTP
+  const otpForm2 = document.getElementById("otpForm2");
+  if (otpForm2) {
+    otpForm2.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errDiv = document.getElementById("otpError2");
+      const submitBtn = otpForm2.querySelector(".modal-submit-btn");
+
+      // Concatenate OTP inputs
+      let otp = "";
+      otpDigits.forEach(input => otp += input.value.trim());
+
+      if (otp.length < 6) {
+        errDiv.textContent = "Please enter the full 6-digit OTP.";
+        return;
+      }
+
+      errDiv.textContent = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Verifying...";
+
+      try {
+        const response = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: otpEmail, otp })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Verification failed.");
+        }
+
+        showToast("OTP verified successfully.", "success");
+
+        // Save verification OTP in state to pass to step 3
+        otpForm2.dataset.verifiedOtp = otp;
+
+        // Go to step 3
+        document.getElementById("otpStep2").style.display = "none";
+        document.getElementById("otpStep3").style.display = "block";
+        
+        // Focus password input
+        const newPasswordInput = document.getElementById("otpNewPassword");
+        if (newPasswordInput) setTimeout(() => newPasswordInput.focus(), 100);
+      } catch (error) {
+        errDiv.textContent = error.message;
+        
+        // Trigger shake and red border
+        otpDigits.forEach(input => input.classList.add("error-border"));
+        const inputContainer = document.querySelector(".otp-input-container");
+        if (inputContainer) {
+          inputContainer.classList.add("shake");
+          setTimeout(() => {
+            inputContainer.classList.remove("shake");
+          }, 400);
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Verify OTP";
+      }
+    });
+  }
+
+  // Password Strength & Confirm Matching Checker
+  const newPasswordInput = document.getElementById("otpNewPassword");
+  const confirmPasswordInput = document.getElementById("otpConfirmPassword");
+  const strengthBar = document.getElementById("strengthBar");
+  const strengthText = document.getElementById("strengthText");
+  const confirmPasswordError = document.getElementById("confirmPasswordError");
+
+  const checkPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, text: "Too Weak", color: "var(--red)", percent: "0%" };
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^a-zA-Z0-9]/.test(pass)) score++;
+
+    switch(score) {
+      case 0:
+      case 1:
+        return { score, text: "Too Weak", color: "var(--red)", percent: "25%" };
+      case 2:
+        return { score, text: "Weak", color: "var(--orange)", percent: "50%" };
+      case 3:
+        return { score, text: "Medium", color: "var(--yellow)", percent: "75%" };
+      case 4:
+        return { score, text: "Strong", color: "var(--green)", percent: "100%" };
+      default:
+        return { score, text: "Too Weak", color: "var(--red)", percent: "0%" };
+    }
+  };
+
+  if (newPasswordInput) {
+    newPasswordInput.addEventListener("input", () => {
+      const pass = newPasswordInput.value;
+      const strength = checkPasswordStrength(pass);
+      if (strengthBar) {
+        strengthBar.style.width = strength.percent;
+        strengthBar.style.backgroundColor = strength.color;
+      }
+      if (strengthText) {
+        strengthText.textContent = strength.text;
+        strengthText.style.color = strength.color;
+      }
+    });
+  }
+
+  if (confirmPasswordInput) {
+    confirmPasswordInput.addEventListener("input", () => {
+      if (newPasswordInput && confirmPasswordInput.value !== newPasswordInput.value) {
+        confirmPasswordError.style.display = "block";
+      } else {
+        confirmPasswordError.style.display = "none";
+      }
+    });
+  }
+
+  // Step 3 Form: Reset Password Submit
+  const otpForm3 = document.getElementById("otpForm3");
+  if (otpForm3) {
+    otpForm3.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errDiv = document.getElementById("otpError3");
+      const submitBtn = otpForm3.querySelector(".modal-submit-btn");
+
+      const newPass = newPasswordInput.value;
+      const confirmPass = confirmPasswordInput.value;
+
+      if (newPass !== confirmPass) {
+        confirmPasswordError.style.display = "block";
+        return;
+      }
+
+      // Check strength requirement: minimum 8 characters and score >= 2
+      const strength = checkPasswordStrength(newPass);
+      if (newPass.length < 8 || strength.score < 2) {
+        errDiv.textContent = "Password is too weak. Please use combinations of uppercase, lowercase, numbers, and symbols.";
+        return;
+      }
+
+      errDiv.textContent = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Resetting...";
+
+      const verifiedOtp = otpForm2.dataset.verifiedOtp;
+
+      try {
+        const response = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: otpEmail, otp: verifiedOtp, password: newPass })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Password reset failed.");
+        }
+
+        // Success: Close modal, show toast, and open login modal
+        closeModal("forgotPasswordModal");
+        resetForgotOtpModal();
+
+        showToast("Password reset successfully — please log in", "success");
+        setTimeout(() => openModal("loginModal"), 500);
+
+      } catch (error) {
+        errDiv.textContent = error.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Reset Password";
+      }
+    });
+  }
+
   if (signupForm) {
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -2468,6 +2966,22 @@ function setupAuthHandlers() {
       const password = document.getElementById("signup-password").value;
       const errorDiv = document.getElementById("signupError");
       errorDiv.textContent = "";
+      errorDiv.style.color = "var(--red)";
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      const emailErrorDiv = document.getElementById("signupEmailError");
+      if (emailErrorDiv) {
+        emailErrorDiv.style.display = "none";
+        emailErrorDiv.textContent = "";
+      }
+
+      if (!emailRegex.test(email)) {
+        if (emailErrorDiv) {
+          emailErrorDiv.style.display = "block";
+          emailErrorDiv.textContent = "Please enter a valid email address";
+        }
+        return;
+      }
 
       try {
         const response = await fetch("/api/auth/signup", {
@@ -2483,20 +2997,21 @@ function setupAuthHandlers() {
           throw new Error(data.error || "Signup failed.");
         }
 
-        setToken(data.token);
-        setCurrentUser(data.user);
-        closeModal("signupModal");
+        // Reset form inputs
         signupForm.reset();
+        errorDiv.style.color = "var(--green)";
+        errorDiv.textContent = data.message || "Verification email sent, please check your inbox";
+        showToast(data.message || "Verification email sent, please check your inbox", "success");
 
-        renderAuthUI();
-        calculatePersonalizedAlerts();
-        showToast("Account created successfully! Welcome to TravelEase.", "success");
-
-        // Open the Plan Your Trip modal after a short delay for smooth transition
+        // Redirect/switch modal after 2.5 seconds
         setTimeout(() => {
-          openModal("tripModal");
-        }, 300);
+          closeModal("signupModal");
+          openModal("loginModal");
+          errorDiv.style.color = "var(--red)";
+          errorDiv.textContent = "";
+        }, 2500);
       } catch (error) {
+        errorDiv.style.color = "var(--red)";
         errorDiv.textContent = error.message;
       }
     });
@@ -2554,6 +3069,7 @@ function setupAuthHandlers() {
       closeModal("signupModal");
       closeModal("profileModal");
       closeModal("tripModal");
+      closeModal("forgotPasswordModal");
       
       const sidebar = document.getElementById("sidebar");
       if (sidebar && sidebar.classList.contains("expanded")) {
