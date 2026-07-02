@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TravelEase | Travel Abroad With Confidence</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=1.0.1">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap">
+  <link rel="stylesheet" href="style.css?v=1.0.3">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
@@ -203,20 +204,21 @@
   </aside>
 
   <header class="site-header">
-    <a class="brand" href="index.html" aria-label="TravelEase home">
-      <span class="brand-mark">T</span>
-      <span aria-hidden="true">✈️</span>
-      <span>TravelEase</span>
-    </a>
-    <nav class="top-nav" aria-label="Primary navigation">
-      <a href="#destinations">Destinations</a>
-      <a href="#guide">Guide</a>
-      <a href="mytrip.html" id="navMyTrip" style="display: none;">My Trip</a>
-      <span class="nav-divider">|</span>
-      <div id="headerAuthArea">
-        <button class="header-auth-btn" id="headerLoginBtn"><i class="fa-solid fa-circle-user"></i> Log In</button>
-      </div>
-    </nav>
+    <div class="header-container">
+      <a class="brand" href="index.html" aria-label="TravelEase home">
+        <img src="logo.png" alt="TravelEase Logo" class="brand-logo">
+        <span class="brand-text">Travel<span class="brand-text-accent">Ease</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a href="#destinations">Destinations</a>
+        <a href="#guide">Guide</a>
+        <a href="mytrip.html" id="navMyTrip" style="display: none;">My Trip</a>
+        <span class="nav-divider">|</span>
+        <div id="headerAuthArea">
+          <button class="header-auth-btn" id="headerLoginBtn"><i class="fa-solid fa-circle-user"></i> Log In</button>
+        </div>
+      </nav>
+    </div>
   </header>
 
   <main class="app-layout">
