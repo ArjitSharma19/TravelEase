@@ -146,7 +146,7 @@ const DESTINATIONS = {
     },
     transport: {
       cabs: ["Uber", "Bolt", "Free Now"],
-      apps: ["Uber"],
+      apps: ["Uber", "Bolt"],
       airportTip: "Use Elizabeth line, Heathrow Express, Gatwick Express, or National Express based on budget and hotel location.",
       airportCost: "Elizabeth line from ₹600; Heathrow Express from ₹2,700; cab often ₹7,000+",
       publicNote: "In London, use contactless card or Oyster for Tube, buses, and trains."
@@ -254,7 +254,7 @@ const DESTINATIONS = {
     },
     transport: {
       cabs: ["Grab", "Gojek", "ComfortDelGro Zig"],
-      apps: ["Grab", "Gojek"],
+      apps: ["Grab"],
       airportTip: "MRT from Changi is affordable; taxis are convenient for families with luggage.",
       airportCost: "MRT from ₹150; taxi/Grab to city ₹1,600-₹2,800",
       publicNote: "Use contactless cards or EZ-Link for MRT and buses."
@@ -416,7 +416,7 @@ const DESTINATIONS = {
     },
     transport: {
       cabs: ["Uber", "DiDi", "Ola", "13cabs"],
-      apps: ["Uber"],
+      apps: ["Uber", "DiDi"],
       airportTip: "Airport train is fast in Sydney, but surcharges apply; compare with shuttle or ride-share for groups.",
       airportCost: "Airport train from ₹1,100; ride-share to city ₹2,500-₹4,500",
       publicNote: "Use Opal in Sydney, Myki in Melbourne, and go card in Brisbane."
