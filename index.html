@@ -12,6 +12,10 @@
 </head>
 
 <body>
+  <div id="g_id_onload"
+       data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
+       data-callback="handleGoogleLogin">
+  </div>
   <aside class="collapsible-sidebar" id="sidebar">
     <div class="sidebar-toggle-container">
       <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
@@ -283,6 +287,16 @@
       <button class="modal-close" id="loginCloseBtn" aria-label="Close modal">&times;</button>
       <h2>Welcome Back</h2>
       <p class="modal-subtitle">Log in to view your personalized alerts and guides.</p>
+      
+      <!-- Google Sign In Button -->
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div class="g_id_signin" data-type="standard" data-width="300"></div>
+      </div>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
       <form id="loginForm">
         <div class="form-group">
           <label for="loginEmail">Email Address</label>
@@ -292,6 +306,9 @@
           <label for="loginPassword">Password</label>
           <input type="password" id="loginPassword" placeholder="Enter your password" required
             autocomplete="current-password">
+          <div style="text-align: right; margin-top: 4px;">
+            <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot Password?</button>
+          </div>
         </div>
         <div class="form-error-msg" id="loginError"></div>
         <button class="primary-button modal-submit-btn" type="submit">Log In</button>
@@ -311,10 +328,6 @@
       
       <!-- Google Sign In Button -->
       <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-        <div id="g_id_onload"
-             data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
-             data-callback="handleGoogleLogin">
-        </div>
         <div class="g_id_signin" data-type="standard" data-width="300"></div>
       </div>
 
@@ -343,6 +356,84 @@
       </form>
       <div class="modal-footer">
         Already have an account? <button class="link-btn" id="switchToLoginBtn">Log in here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgotPasswordModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <button class="modal-close" id="forgotPasswordCloseBtn" aria-label="Close modal">&times;</button>
+      
+      <!-- Step 1: Email Entry -->
+      <div id="otpStep1" class="otp-step">
+        <h2>Forgot Password</h2>
+        <p class="modal-subtitle">Enter your email address to receive a 6-digit verification OTP.</p>
+        <form id="otpForm1">
+          <div class="form-group">
+            <label for="otpEmail">Email Address</label>
+            <input type="email" id="otpEmail" placeholder="Enter your email" required autocomplete="email">
+          </div>
+          <div class="form-error-msg" id="otpError1"></div>
+          <button class="primary-button modal-submit-btn" type="submit">Send OTP</button>
+        </form>
+      </div>
+
+      <!-- Step 2: OTP Verification -->
+      <div id="otpStep2" class="otp-step" style="display: none;">
+        <h2>Enter OTP</h2>
+        <p class="modal-subtitle">We have sent a 6-digit OTP to your email. Please enter it below.</p>
+        <form id="otpForm2">
+          <div class="otp-input-container" style="display: flex; gap: 8px; justify-content: center; margin: 20px 0;">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.85rem;">
+            <div id="otpTimer" style="color: var(--muted); font-weight: bold;">OTP expires in 10:00</div>
+            <button type="button" class="link-btn" id="resendOtpBtn" style="text-decoration: underline; font-weight: bold;">Resend OTP</button>
+          </div>
+          <div class="form-error-msg" id="otpError2"></div>
+          <button class="primary-button modal-submit-btn" type="submit">Verify OTP</button>
+        </form>
+      </div>
+
+      <!-- Step 3: Reset Password -->
+      <div id="otpStep3" class="otp-step" style="display: none;">
+        <h2>Reset Password</h2>
+        <p class="modal-subtitle">Enter a new secure password for your account (minimum 8 characters).</p>
+        <form id="otpForm3">
+          <div class="form-group">
+            <label for="otpNewPassword">New Password</label>
+            <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+          </div>
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="otpConfirmPassword">Confirm Password</label>
+            <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+            <div class="form-error-msg" id="confirmPasswordError" style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
+          </div>
+          
+          <!-- Password strength indicator -->
+          <div style="margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; color: var(--muted); margin-bottom: 5px;">
+              <span>Password Strength</span>
+              <span id="strengthText">Too Weak</span>
+            </div>
+            <div style="height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; gap: 2px;">
+              <div id="strengthBar" style="height: 100%; width: 0%; background-color: var(--red); transition: width 0.3s, background-color 0.3s;"></div>
+            </div>
+          </div>
+
+          <div class="form-error-msg" id="otpError3"></div>
+          <button class="primary-button modal-submit-btn" type="submit" style="margin-top: 20px;">Reset Password</button>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        Back to <button class="link-btn" id="switchToLoginFromForgotBtn">Log In</button>
       </div>
     </div>
   </div>
