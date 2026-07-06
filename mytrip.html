@@ -404,6 +404,10 @@
 </head>
 
 <body>
+  <div id="g_id_onload"
+       data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
+       data-callback="handleGoogleLogin">
+  </div>
   <!-- Standard Site Header -->
   <header class="site-header">
     <div class="header-container">
@@ -588,6 +592,16 @@
       <button class="modal-close" id="loginCloseBtn" aria-label="Close modal">&times;</button>
       <h2>Welcome Back</h2>
       <p class="modal-subtitle">Log in to view your personalized alerts and guides.</p>
+      
+      <!-- Google Sign In Button -->
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div class="g_id_signin" data-type="standard" data-width="300"></div>
+      </div>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
       <form id="loginForm">
         <div class="form-group">
           <label for="loginEmail">Email Address</label>
@@ -618,10 +632,6 @@
       
       <!-- Google Sign In Button -->
       <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-        <div id="g_id_onload"
-             data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
-             data-callback="handleGoogleLogin">
-        </div>
         <div class="g_id_signin" data-type="standard" data-width="300"></div>
       </div>
 
