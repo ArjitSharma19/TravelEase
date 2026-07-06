@@ -1295,7 +1295,12 @@ function renderCommentsList(commentsArray) {
 
     const countryKey = Object.keys(DESTINATIONS).find(k => k.toLowerCase() === comment.countryCode.toLowerCase());
     const dest = DESTINATIONS[countryKey];
-    const destName = dest ? `<img src="https://flagcdn.com/h20/${getCountryCode2(countryKey)}.png" alt="" style="height: 14px; width: auto; vertical-align: middle; margin-right: 4px; border-radius: 1px;"> ${dest.name}` : comment.countryCode;
+    let destHTML = "";
+    if (dest) {
+      destHTML = `<img src="https://flagcdn.com/h20/${getCountryCode2(countryKey)}.png" alt="" style="height: 14px; width: auto; vertical-align: middle; margin-right: 4px; border-radius: 1px;"> ${escapeHTML(dest.name)}`;
+    } else {
+      destHTML = escapeHTML(comment.countryCode);
+    }
 
     const isLiked = likedComments.includes(comment._id);
     const likeClass = isLiked ? "like-btn liked" : "like-btn";
@@ -1306,7 +1311,8 @@ function renderCommentsList(commentsArray) {
         <header class="comment-card-header">
           <div class="comment-author-info">
             <strong>${escapeHTML(comment.userName)}</strong>
-            <span>Visited ${escapeHTML(comment.tripPeriod)} &bull; For <strong>${escapeHTML(destName)}</strong> &bull; Posted on ${dateStr}</span>
+            <span>Visited ${escapeHTML(comment.tripPeriod)} &bull; ${destHTML}</span>
+            <span style="display: block; margin-top: 2px;">Posted on ${dateStr}</span>
           </div>
           <span class="comment-category-badge ${comment.category}">${categoryNames[comment.category] || "General"}</span>
         </header>
