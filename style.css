@@ -85,10 +85,9 @@ input {
   top: 0;
   z-index: 20;
   padding: 10px clamp(18px, 5vw, 72px);
-  color: #fff;
-  background: var(--blue);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 10px 24px rgba(20, 39, 74, 0.16);
+  background: #ffffff;
+  border-bottom: 1px solid #e8ecf0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(12px);
 }
 
@@ -105,7 +104,7 @@ input {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   color: #fff;
   font-size: 1.2rem;
   font-weight: 800;
@@ -124,45 +123,87 @@ input {
 
 .brand-logo {
   height: 64px;
-  width: 64px;
-  border-radius: 10px;
-  padding: 6px;
-  background: white;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  width: auto;
   object-fit: contain;
 }
 
+.brand-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+
 .brand-text {
-  color: #fff;
+  color: #013678;
   font-weight: 700;
   font-size: 26px;
-  font-family: "Playfair Display", serif;
+  font-family: "Poppins", sans-serif;
   letter-spacing: 0.5px;
+  line-height: 1.05;
 }
 
 .brand-text-accent {
-  color: #fff;
+  color: #029aa5;
+}
+
+.brand-tagline {
+  font-size: 9px;
+  font-weight: 700;
+  color: #013678;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: "Poppins", sans-serif;
 }
 
 @media (max-width: 479px) {
   .brand-logo {
     height: 48px;
-    width: 48px;
+    width: auto;
   }
   .brand-text {
-    font-size: 20px;
+    font-size: 18px;
+  }
+  .brand-tagline {
+    font-size: 7px;
+    letter-spacing: 0.4px;
   }
 }
 
 .top-nav {
   display: flex;
+  align-items: center;
   gap: 18px;
-  color: rgba(255, 255, 255, 0.86);
-  font-weight: 700;
+  font-weight: 500;
+}
+
+.top-nav a {
+  color: #1a1a2e;
+  position: relative;
+  padding-bottom: 4px;
+  transition: color 180ms ease;
 }
 
 .top-nav a:hover {
-  color: #fff;
+  color: #1a73e8;
+}
+
+.top-nav a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #1a73e8;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 180ms ease;
+}
+
+.top-nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .hero {
@@ -1636,7 +1677,7 @@ body.sidebar-expanded {
 
 /* Header auth links styles */
 .nav-divider {
-  color: rgba(255, 255, 255, 0.3);
+  color: #e0e0e0;
   font-weight: 300;
   user-select: none;
 }
@@ -1644,7 +1685,6 @@ body.sidebar-expanded {
 .header-auth-btn {
   background: transparent;
   border: none;
-  color: inherit;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
@@ -1656,6 +1696,14 @@ body.sidebar-expanded {
 
 .header-auth-btn:hover {
   opacity: 0.8;
+}
+
+#headerLoginBtn {
+  color: #1a73e8;
+}
+
+#headerProfileBtn {
+  color: #1a1a2e;
 }
 
 /* --- Glassmorphism Modal Styles --- */
