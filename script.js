@@ -54,6 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupChatWidget();
   setupSidebarWidgets();
   setupHomepageTipToasts();
+  setupFooter();
+  initTipsCarousel();
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('login') === 'true') {
@@ -1635,27 +1637,49 @@ window.saveChecklistToServer = async function(email, checklist) {
   }
 };
 
-// Frankfurter Live Currency Exchange Rate integration
+// Live Currency Exchange Rate integration
 async function getLiveExchangeRate(targetCurrency) {
-  // Frankfurter API does not support AED (UAE Dirham). Provide fallback rate.
-  if (targetCurrency === 'AED') {
-    return 0.0389256; // Fallback rate: 1 AED ≈ ₹25.69 (1 INR ≈ 0.0389 AED)
-  }
-  
+  if (!targetCurrency) return null;
+  const uppercaseCurrency = targetCurrency.toUpperCase();
+
   try {
-    const response = await fetch(`https://api.frankfurter.dev/v1/latest?from=INR&to=${targetCurrency}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Primary API: ExchangeRate-API (supports 160+ currencies, including AZN, AED, etc.)
+    const response = await fetch('https://open.er-api.com/v6/latest/INR');
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.result === 'success' && data.rates && data.rates[uppercaseCurrency]) {
+        return data.rates[uppercaseCurrency];
+      }
     }
-    const data = await response.json();
-    if (data && data.rates && data.rates[targetCurrency]) {
-      return data.rates[targetCurrency];
-    }
-    return null;
   } catch (error) {
-    console.error('Failed to fetch live rate:', error);
-    return null;
+    console.warn('Primary exchange rate API failed, trying Frankfurter fallback:', error);
   }
+
+  // Fallback API: Frankfurter API (only supports 31 major currencies, lacks AED, AZN)
+  try {
+    const response = await fetch(`https://api.frankfurter.dev/v1/latest?from=INR&to=${uppercaseCurrency}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.rates && data.rates[uppercaseCurrency]) {
+        return data.rates[uppercaseCurrency];
+      }
+    }
+  } catch (error) {
+    console.error('Secondary Frankfurter API failed:', error);
+  }
+
+  // Final Fail-safe: Hardcoded exchange rates for common travel destinations
+  const localFallbacks = {
+    'USD': 0.012,
+    'EUR': 0.011,
+    'GBP': 0.0094,
+    'SGD': 0.016,
+    'THB': 0.42,
+    'JPY': 1.88,
+    'AED': 0.044,
+    'AZN': 0.020
+  };
+  return localFallbacks[uppercaseCurrency] || null;
 }
 
 async function updateCurrencyDisplay(currencyCode) {
@@ -3719,3 +3743,432 @@ function showExploreError(countryName) {
     tabContent.classList.add("is-visible");
   }
 }
+
+// --- TravelEase Footer Logic ---
+window.openSidebarPanel = function(panelName) {
+  const btn = document.querySelector(`.nav-icon-btn[data-target="${panelName}"]`);
+  if (btn) {
+    btn.click();
+  }
+};
+
+window.openChatWidget = function() {
+  const panel = document.querySelector(".chat-panel");
+  if (panel) {
+    panel.classList.add("open");
+    const input = document.getElementById("chatInput");
+    if (input) input.focus();
+  }
+};
+
+function setupFooter() {
+  // 1. Stats Counter Animation using IntersectionObserver
+  const statsStrip = document.querySelector(".footer-stats-strip");
+  const statNumbers = document.querySelectorAll(".stat-number");
+
+  const animateCounters = () => {
+    statNumbers.forEach(counter => {
+      const target = parseFloat(counter.getAttribute("data-target") || "0");
+      const suffix = counter.getAttribute("data-suffix") || "";
+      const prefix = counter.getAttribute("data-prefix") || "";
+      const isDecimal = counter.getAttribute("data-decimal") === "true";
+      const duration = 2000; // 2 seconds
+      const startTime = performance.now();
+
+      const updateCount = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+        const currentVal = easeProgress * target;
+
+        if (isDecimal) {
+          counter.textContent = prefix + currentVal.toFixed(1) + suffix;
+        } else {
+          counter.textContent = prefix + Math.floor(currentVal).toLocaleString() + suffix;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(updateCount);
+        } else {
+          if (isDecimal) {
+            counter.textContent = prefix + target.toFixed(1) + suffix;
+          } else {
+            counter.textContent = prefix + Math.floor(target).toLocaleString() + suffix;
+          }
+        }
+      };
+      requestAnimationFrame(updateCount);
+    });
+  };
+
+  if (statsStrip && statNumbers.length > 0) {
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            animateCounters();
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      observer.observe(statsStrip);
+    } else {
+      animateCounters(); // fallback if IntersectionObserver is not supported
+    }
+  }
+
+  // 2. Newsletter Signup Submit Handler
+  const newsletterForm = document.getElementById("footerNewsletterForm");
+  const newsletterEmail = document.getElementById("footerNewsletterEmail");
+  const newsletterMsg = document.getElementById("newsletterMsg");
+
+  if (newsletterForm) {
+    newsletterForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = newsletterEmail.value.trim();
+
+      if (!email) {
+        showNewsletterMsg("Please enter an email address.", "error");
+        return;
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailRegex.test(email)) {
+        showNewsletterMsg("Invalid email format", "error");
+        return;
+      }
+
+      newsletterMsg.textContent = "";
+
+      try {
+        const res = await fetch("/api/newsletter/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showNewsletterMsg("You're subscribed! ✈️", "success");
+          newsletterEmail.value = "";
+        } else {
+          showNewsletterMsg(data.error || "Failed to subscribe.", "error");
+        }
+      } catch (err) {
+        showNewsletterMsg("Network error. Please try again later.", "error");
+      }
+    });
+  }
+
+  function showNewsletterMsg(msg, type) {
+    if (!newsletterMsg) return;
+    newsletterMsg.textContent = msg;
+    newsletterMsg.className = `newsletter-msg ${type}`;
+  }
+
+  // 3. Contact Us Form Handler inside Contact Modal
+  const contactForm = document.getElementById("footerContactForm");
+  const contactName = document.getElementById("footerContactName");
+  const contactEmail = document.getElementById("footerContactEmail");
+  const contactMessage = document.getElementById("footerContactMessage");
+  const contactSuccess = document.getElementById("contactSuccessMsg");
+  const contactError = document.getElementById("contactErrorMsg");
+
+  if (contactForm) {
+    contactForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = contactName.value.trim();
+      const email = contactEmail.value.trim();
+      const message = contactMessage.value.trim();
+
+      if (!name || !email || !message) {
+        showContactFeedback("All fields are required.", "error");
+        return;
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailRegex.test(email)) {
+        showContactFeedback("Invalid email format", "error");
+        return;
+      }
+
+      clearContactFeedback();
+
+      try {
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, message })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showContactFeedback("Message sent successfully! ✈️", "success");
+          contactForm.reset();
+          setTimeout(() => {
+            closeModal("contactModal");
+            clearContactFeedback();
+          }, 1500);
+        } else {
+          showContactFeedback(data.error || "Failed to send message.", "error");
+        }
+      } catch (err) {
+        showContactFeedback("Network error. Please try again later.", "error");
+      }
+    });
+  }
+
+  function showContactFeedback(msg, type) {
+    if (type === "success") {
+      if (contactSuccess) {
+        contactSuccess.textContent = msg;
+        contactSuccess.style.display = "block";
+      }
+      if (contactError) contactError.style.display = "none";
+    } else {
+      if (contactError) {
+        contactError.textContent = msg;
+        contactError.style.display = "block";
+      }
+      if (contactSuccess) contactSuccess.style.display = "none";
+    }
+  }
+
+  function clearContactFeedback() {
+    if (contactSuccess) {
+      contactSuccess.textContent = "";
+      contactSuccess.style.display = "none";
+    }
+    if (contactError) {
+      contactError.textContent = "";
+      contactError.style.display = "none";
+    }
+  }
+
+  // 4. Testimonials Rendering (Top Liked Comments Fetch + Fallbacks)
+  const testimonialsContainer = document.getElementById("testimonialsContainer");
+  const fallbackTestimonials = [
+    {
+      stars: 5,
+      text: "Visa-free entry to Thailand was a breeze. TravelEase's guide on required cash and return tickets was 100% accurate!",
+      userName: "Rohan Gupta",
+      countryCode: "THAILAND"
+    },
+    {
+      stars: 5,
+      text: "I was nervous about my first trip to the UK. The cash vs card tips saved me from paying high ATM conversion fees.",
+      userName: "Priya Sharma",
+      countryCode: "UNITED KINGDOM"
+    },
+    {
+      stars: 5,
+      text: "eSIM setup in Singapore was so smooth because I bought it beforehand as suggested. Highly recommend this guide!",
+      userName: "Sujit Kumar",
+      countryCode: "SINGAPORE"
+    }
+  ];
+
+  const renderTestimonials = (items) => {
+    if (!testimonialsContainer) return;
+    testimonialsContainer.innerHTML = items.map(item => {
+      const starIcons = Array(item.stars || 5).fill('<i class="fa-solid fa-star"></i>').join("");
+      const quoteText = item.text || "";
+      const author = item.userName || "Traveler";
+      const destination = item.countryCode || "General";
+      return `
+        <div class="testimonial-card">
+          <div class="testimonial-stars">${starIcons}</div>
+          <p class="testimonial-quote">"${quoteText}"</p>
+          <div>
+            <h4 class="testimonial-author">${author}</h4>
+            <div class="testimonial-destination">${destination}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  };
+
+  if (testimonialsContainer) {
+    fetch("/api/comments/top/testimonials")
+      .then(res => {
+        if (!res.ok) throw new Error("Fetch failed");
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data) && data.length >= 3) {
+          const formatted = data.map(c => ({
+            stars: 5,
+            text: c.text,
+            userName: c.userName,
+            countryCode: c.countryCode
+          }));
+          renderTestimonials(formatted);
+        } else {
+          renderTestimonials(fallbackTestimonials);
+        }
+      })
+      .catch(() => {
+        renderTestimonials(fallbackTestimonials);
+      });
+  }
+}
+
+function initTipsCarousel() {
+  const track = document.querySelector(".carousel-track");
+  if (!track) return;
+
+  const originalCards = Array.from(track.children);
+  if (originalCards.length === 0) return;
+
+  const prevBtn = document.querySelector(".prev-arrow");
+  const nextBtn = document.querySelector(".next-arrow");
+  const dotsContainer = document.querySelector(".carousel-dots-container");
+
+  const cardCount = originalCards.length; // 8
+  let currentIndex = 3; // Start at the first original card (since we prepended 3 clones)
+
+  // Clone nodes for infinite scroll
+  // Prepend clones of the last 3 cards
+  for (let i = cardCount - 3; i < cardCount; i++) {
+    const clone = originalCards[i].cloneNode(true);
+    clone.classList.add("clone");
+    track.insertBefore(clone, track.firstChild);
+  }
+  // Append clones of the first 3 cards
+  for (let i = 0; i < 3; i++) {
+    const clone = originalCards[i].cloneNode(true);
+    clone.classList.add("clone");
+    track.appendChild(clone);
+  }
+
+  // Create dot indicators
+  if (dotsContainer) {
+    dotsContainer.innerHTML = "";
+    for (let i = 0; i < cardCount; i++) {
+      const dot = document.createElement("button");
+      dot.className = "carousel-dot" + (i === 0 ? " active" : "");
+      dot.setAttribute("aria-label", `Go to tip ${i + 1}`);
+      dot.addEventListener("click", () => {
+        goToIndex(i + 3); // Map original index to track index
+      });
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  const dots = dotsContainer ? Array.from(dotsContainer.children) : [];
+
+  function getVisibleCardsCount() {
+    if (window.innerWidth <= 768) return 1;
+    if (window.innerWidth <= 940) return 2;
+    return 3;
+  }
+
+  function getCardWidth() {
+    const firstCard = track.children[0];
+    if (firstCard) {
+      return firstCard.getBoundingClientRect().width;
+    }
+    return 0;
+  }
+
+  function updateSlide(withTransition = true) {
+    const cardWidth = getCardWidth();
+    const gap = parseFloat(window.getComputedStyle(track).gap) || 24;
+    const amountToMove = (cardWidth + gap) * currentIndex;
+    
+    if (withTransition) {
+      track.style.transition = "transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+    } else {
+      track.style.transition = "none";
+    }
+    
+    track.style.transform = `translateX(-${amountToMove}px)`;
+
+    // Update active dot
+    if (dots.length > 0) {
+      dots.forEach(d => d.classList.remove("active"));
+      let activeDotIndex = (currentIndex - 3) % cardCount;
+      if (activeDotIndex < 0) activeDotIndex += cardCount;
+      if (dots[activeDotIndex]) {
+        dots[activeDotIndex].classList.add("active");
+      }
+    }
+  }
+
+  function handleTransitionEnd() {
+    // If reached end clone, jump to start original
+    if (currentIndex >= cardCount + 3) {
+      track.style.transition = "none";
+      currentIndex -= cardCount;
+      updateSlide(false);
+    }
+    // If reached start clone, jump to end original
+    if (currentIndex < 3) {
+      track.style.transition = "none";
+      currentIndex += cardCount;
+      updateSlide(false);
+    }
+  }
+
+  track.addEventListener("transitionend", handleTransitionEnd);
+
+  function goToIndex(index) {
+    currentIndex = index;
+    updateSlide(true);
+    resetAutoScroll();
+  }
+
+  function slideNext() {
+    currentIndex++;
+    updateSlide(true);
+  }
+
+  function slidePrev() {
+    currentIndex--;
+    updateSlide(true);
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      slideNext();
+      resetAutoScroll();
+    });
+  }
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      slidePrev();
+      resetAutoScroll();
+    });
+  }
+
+  // Auto-scroll every 3.5 seconds
+  let autoScrollTimer = setInterval(slideNext, 3500);
+
+  function resetAutoScroll() {
+    clearInterval(autoScrollTimer);
+    autoScrollTimer = setInterval(slideNext, 3500);
+  }
+
+  // Pause on hover
+  const carouselWrapper = document.querySelector(".travel-tips-carousel-wrapper");
+  if (carouselWrapper) {
+    carouselWrapper.addEventListener("mouseenter", () => {
+      clearInterval(autoScrollTimer);
+    });
+    carouselWrapper.addEventListener("mouseleave", () => {
+      resetAutoScroll();
+    });
+  }
+
+  // Recalculate on window resize
+  window.addEventListener("resize", () => {
+    currentIndex = 3;
+    updateSlide(false);
+  });
+
+  // Initial update after DOM settling
+  setTimeout(() => {
+    updateSlide(false);
+  }, 150);
+}
+
