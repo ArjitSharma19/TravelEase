@@ -31,6 +31,12 @@ app.use('/api/checklist', checklistRoutes);
 const tripRoutes = require('./routes/trip');
 app.use('/api/trip', tripRoutes);
 
+const newsletterRoutes = require('./routes/newsletter');
+app.use('/api/newsletter', newsletterRoutes);
+
+const contactRoutes = require('./routes/contact');
+app.use('/api/contact', contactRoutes);
+
 // Serve static files from the root directory
 app.use(express.static(__dirname));
 
@@ -314,6 +320,19 @@ app.get('/api/db-test', async (req, res) => {
       message: 'Failed to write or read test document.',
       error: error.message
     });
+  }
+});
+
+// GET Top 3 Community Comments for Testimonials Strip
+app.get('/api/comments/top/testimonials', async (req, res) => {
+  try {
+    const topComments = await Comment.find({})
+      .sort({ likes: -1 })
+      .limit(3);
+    res.json(topComments);
+  } catch (error) {
+    console.error('Error fetching top comments for testimonials:', error);
+    res.status(500).json({ error: 'Failed to fetch testimonials.' });
   }
 });
 
