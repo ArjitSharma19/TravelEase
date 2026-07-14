@@ -16,8 +16,8 @@
 
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
 const Contact = require('../models/Contact');
+const transporter = require('../utils/mailer');
 
 // POST /
 router.post('/', async (req, res) => {
@@ -42,14 +42,7 @@ router.post('/', async (req, res) => {
     });
     await newContact.save();
 
-    // Send email notification to site admin via existing Nodemailer setup
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    // Using imported transporter from centralized mailer utility
 
     const adminEmail = process.env.EMAIL_USER || 'admin@travelease.com';
     const mailOptions = {
