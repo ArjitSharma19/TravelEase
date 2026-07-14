@@ -31,21 +31,21 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("Autocomplete list fetch failed, falling back to static popular list", err);
       // Hardcoded fallback list in the frontend as a safety net
       allCountriesList = [
-        { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪" },
-        { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸" },
-        { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧" },
-        { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭" },
-        { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬" },
-        { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵" },
-        { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦" },
-        { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺" },
-        { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪" },
-        { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷" },
-        { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹" },
-        { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸" },
-        { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭" },
-        { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦" },
-        { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳" }
+        { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪", region: "Asia" },
+        { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸", region: "Americas" },
+        { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧", region: "Europe" },
+        { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭", region: "Asia" },
+        { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬", region: "Asia" },
+        { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵", region: "Asia" },
+        { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦", region: "Americas" },
+        { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺", region: "Oceania" },
+        { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪", region: "Europe" },
+        { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷", region: "Europe" },
+        { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹", region: "Europe" },
+        { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸", region: "Europe" },
+        { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭", region: "Europe" },
+        { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦", region: "Africa" },
+        { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳", region: "Asia" }
       ];
     });
 
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div style="font-weight: 700;">Verification link expired, resend below</div>
           <button type="button" class="primary-button" id="resendVerificationBtn" style="margin-top: 10px; width: 100%; padding: 8px; font-weight: 700; border-radius: 6px; cursor: pointer;">Resend Verification Email</button>
         `;
-        
+
         const resendBtn = document.getElementById("resendVerificationBtn");
         resendBtn.addEventListener("click", async () => {
           resendBtn.disabled = true;
@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to resend");
-            
+
             showToast("Verification email sent, please check your inbox", "success");
             errorDiv.textContent = "Verification email sent, please check your inbox";
             errorDiv.style.color = "var(--green)";
@@ -208,10 +208,10 @@ function setupSearch() {
   const showSuggestions = () => {
     // Hide error when user modifies search
     searchError.style.display = "none";
-    
+
     currentMatches = findMatches(input.value).slice(0, 8);
     highlightedIndex = -1;
-    
+
     if (currentMatches.length === 0) {
       suggestions.classList.remove("show");
       suggestions.innerHTML = "";
@@ -219,13 +219,15 @@ function setupSearch() {
     }
 
     suggestions.innerHTML = currentMatches.map((country) => {
-      const flagHtml = country.cca2 
+      const flagHtml = country.cca2
         ? `<img src="https://flagcdn.com/h24/${country.cca2.toLowerCase()}.png" alt="" style="height: 16px; width: auto; vertical-align: middle; margin-right: 8px; border-radius: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">`
         : `<span style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">🌍</span>`;
+      const regionLabel = country.region || 'World';
       return `
-        <button class="suggestion-item" type="button" data-country-name="${country.name}">
+        <button class="suggestion-item" type="button" data-country-name="${country.name}" style="display: flex; align-items: center; width: 100%;">
           ${flagHtml}
-          <strong>${country.name}</strong>
+          <strong class="suggestion-name" style="vertical-align: middle;">${country.name}</strong>
+          <span class="suggestion-region" style="font-size: 0.8rem; color: #888; margin-left: auto; padding-left: 12px; font-weight: normal; vertical-align: middle;">${regionLabel}</span>
         </button>
       `;
     }).join("");
@@ -268,7 +270,7 @@ function setupSearch() {
     }
 
     searchError.style.display = "none";
-    
+
     // Curated countries to route to destination.html
     const curatedCountries = ["UAE", "USA", "UK", "Thailand", "Singapore", "Japan", "Canada", "Australia"];
     const matchedCurated = curatedCountries.find(
@@ -331,7 +333,21 @@ function setupSearch() {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    performSearch(input.value);
+    const query = input.value.trim();
+    if (!query) {
+      form.classList.add("shake-error", "red-border");
+      input.placeholder = "Please enter a destination";
+      setTimeout(() => {
+        form.classList.remove("shake-error", "red-border");
+      }, 500);
+      return;
+    }
+    performSearch(query);
+  });
+
+  input.addEventListener("focus", () => {
+    input.placeholder = "Where are you travelling to?";
+    showSuggestions();
   });
 }
 
@@ -1356,7 +1372,7 @@ function getCategoryName(category) {
   return categoryNames[category] || "General";
 }
 
-window.searchTips = function() {
+window.searchTips = function () {
   const searchInput = document.getElementById('tips-search-input');
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
@@ -1412,7 +1428,7 @@ window.searchTips = function() {
   }
 }
 
-window.showNoResultsMessage = function(query) {
+window.showNoResultsMessage = function (query) {
   const commentsList = document.getElementById('commentsList');
   if (!commentsList) return;
   commentsList.innerHTML = `
@@ -1424,20 +1440,20 @@ window.showNoResultsMessage = function(query) {
   `;
 }
 
-window.clearSearch = function() {
+window.clearSearch = function () {
   const searchInput = document.getElementById('tips-search-input');
   if (searchInput) searchInput.value = '';
-  
+
   const allChip = Array.from(document.querySelectorAll(".filter-chip")).find(c => c.dataset.filter === 'all');
   if (allChip) {
     document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
     allChip.classList.add("active");
   }
-  
+
   renderDefaultView();
 }
 
-window.renderComments = function(filter) {
+window.renderComments = function (filter) {
   const filterChips = document.querySelectorAll(".filter-chip");
   if (filterChips.length > 0) {
     filterChips.forEach(c => {
@@ -1482,12 +1498,12 @@ function sidebarChecklistController() {
   window.loadChecklist();
 }
 
-window.generateChecklist = function(country, purpose) {
+window.generateChecklist = function (country, purpose) {
   const normalizedPurpose = purpose ? purpose.toLowerCase() : 'tourist';
   const baseItems = checklistTemplates[normalizedPurpose] || checklistTemplates.tourist;
   const extraItems = extraChecklistItems[country] || [];
   const allItems = [...baseItems, ...extraItems];
-  
+
   return allItems.map((item, index) => ({
     id: `${country}-${index}`,
     text: item,
@@ -1495,13 +1511,13 @@ window.generateChecklist = function(country, purpose) {
   }));
 };
 
-window.loadChecklist = function() {
+window.loadChecklist = function () {
   const tripDetails = JSON.parse(localStorage.getItem('tripDetails'));
   const user = getCurrentUser();
-  
+
   let destination = null;
   let purpose = null;
-  
+
   if (tripDetails && tripDetails.destination) {
     destination = tripDetails.destination;
     purpose = tripDetails.purpose;
@@ -1509,14 +1525,14 @@ window.loadChecklist = function() {
     destination = user.destination;
     purpose = user.tripPurpose;
   }
-  
+
   if (!destination) {
     window.showEmptyChecklistState();
     return;
   }
-  
+
   let checklist = window.generateChecklist(destination, purpose);
-  
+
   if (user && user.email) {
     window.fetchChecklistFromServer(user.email).then(savedChecklist => {
       if (savedChecklist && savedChecklist.length > 0) {
@@ -1543,25 +1559,25 @@ window.loadChecklist = function() {
   }
 };
 
-window.renderChecklist = function(checklist) {
+window.renderChecklist = function (checklist) {
   const container = document.getElementById('checklist-items');
   if (!container) return;
-  
+
   const completedCount = checklist.filter(item => item.completed).length;
-  
+
   const completedSpan = document.getElementById('checklistCompleted');
   const totalSpan = document.getElementById('checklistTotal');
   if (completedSpan && totalSpan) {
     completedSpan.textContent = completedCount;
     totalSpan.textContent = checklist.length;
   }
-  
+
   const progress = document.getElementById('checklistProgress');
   if (progress) {
     const percentage = checklist.length ? (completedCount / checklist.length) * 100 : 0;
     progress.style.width = `${percentage}%`;
   }
-  
+
   container.innerHTML = checklist.map(item => `
     <li>
       <label class="checkbox-container">
@@ -1576,32 +1592,32 @@ window.renderChecklist = function(checklist) {
   `).join('');
 };
 
-window.toggleChecklistItem = function(itemId) {
+window.toggleChecklistItem = function (itemId) {
   let checklist = JSON.parse(localStorage.getItem('currentChecklist')) || [];
   const item = checklist.find(i => i.id === itemId);
   if (item) {
     item.completed = !item.completed;
   }
-  
+
   localStorage.setItem('currentChecklist', JSON.stringify(checklist));
   window.renderChecklist(checklist);
-  
+
   const user = getCurrentUser();
   if (user && user.email) {
     window.saveChecklistToServer(user.email, checklist);
   }
 };
 
-window.showEmptyChecklistState = function() {
+window.showEmptyChecklistState = function () {
   const container = document.getElementById('checklist-items');
   if (!container) return;
-  
+
   container.innerHTML = `
     <p class="empty-state" style="font-size: 0.86rem; color: var(--muted); text-align: center; padding: 20px 0;">
       Plan a trip first to see your personalized checklist
     </p>
   `;
-  
+
   const completedSpan = document.getElementById('checklistCompleted');
   const totalSpan = document.getElementById('checklistTotal');
   if (completedSpan && totalSpan) {
@@ -1614,7 +1630,7 @@ window.showEmptyChecklistState = function() {
   }
 };
 
-window.fetchChecklistFromServer = async function(email) {
+window.fetchChecklistFromServer = async function (email) {
   try {
     const res = await fetch(`/api/checklist/${encodeURIComponent(email)}`);
     const data = await res.json();
@@ -1625,7 +1641,7 @@ window.fetchChecklistFromServer = async function(email) {
   }
 };
 
-window.saveChecklistToServer = async function(email, checklist) {
+window.saveChecklistToServer = async function (email, checklist) {
   try {
     await fetch(`/api/checklist/${encodeURIComponent(email)}`, {
       method: 'POST',
@@ -1704,12 +1720,12 @@ async function convertCurrency() {
   const currencyElement = document.getElementById('converter-currency');
   const resultElement = document.getElementById('converter-result');
   const calculationElement = document.getElementById('conversionCalculation');
-  
+
   if (!amountElement || !currencyElement || !resultElement) return;
 
   const amount = amountElement.value;
   const targetCurrency = currencyElement.value;
-  
+
   if (calculationElement) {
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount) && parsedAmount > 0) {
@@ -1722,10 +1738,10 @@ async function convertCurrency() {
   }
 
   const rate = await getLiveExchangeRate(targetCurrency);
-  
+
   if (rate) {
     const result = (amount * rate).toFixed(2);
-    
+
     const symbols = {
       AED: "AED",
       USD: "$",
@@ -1734,7 +1750,7 @@ async function convertCurrency() {
       SGD: "S$"
     };
     const symbol = symbols[targetCurrency] || targetCurrency;
-    
+
     resultElement.textContent = `${symbol} ${parseFloat(result).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   } else {
     resultElement.textContent = 'Unable to fetch rate';
@@ -1894,22 +1910,22 @@ function closeModal(modalId) {
   if (modal) modal.classList.remove("open");
 }
 
-window.handleGoogleLogin = async function(response) {
+window.handleGoogleLogin = async function (response) {
   try {
     const res = await fetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: response.credential })
     });
-    
+
     const data = await res.json();
-    
+
     if (data.success) {
       setToken(data.token);
       setCurrentUser(data.user);
       closeModal("signupModal");
       closeModal("loginModal");
-      
+
       renderAuthUI();
       calculatePersonalizedAlerts();
       showToast(`Welcome, ${data.user.name.split(' ')[0]}!`, "success");
@@ -1926,11 +1942,11 @@ window.handleGoogleLogin = async function(response) {
     alert('Something went wrong. Please try again.');
   }
 };
-window.highlightVisaType = function(visaType) {
+window.highlightVisaType = function (visaType) {
   const highlightSpan = document.getElementById('highlighted-visa-type');
   const tipBox = document.querySelector('.visa-tip-box');
   const user = getCurrentUser();
-  
+
   // Reset all highlights
   const cards = document.querySelectorAll('.visa-type-card');
   cards.forEach(card => card.classList.remove('highlighted'));
@@ -1987,7 +2003,7 @@ window.highlightVisaType = function(visaType) {
   }
 };
 
-window.toggleVisaEducation = function() {
+window.toggleVisaEducation = function () {
   const grid = document.getElementById('visa-types-grid');
   const subtitle = document.querySelector('.visa-education .subtitle');
   const btn = document.getElementById('toggle-visa-edu-btn');
@@ -2004,13 +2020,13 @@ window.toggleVisaEducation = function() {
   }
 };
 
-window.searchFlights = async function() {
+window.searchFlights = async function () {
   const from = document.getElementById('flight-from').value;
   const to = document.getElementById('flight-to').value;
   const departure = document.getElementById('flight-departure').value;
   const returnDate = document.getElementById('flight-return').value;
   const travellers = document.getElementById('flight-travellers').value;
-  
+
   if (!departure) {
     alert('Please select a departure date');
     return;
@@ -2031,11 +2047,11 @@ window.searchFlights = async function() {
 
     window.allFlights = data.data;
     window.currentSort = 'cheapest';
-    
+
     // Reset filters
     const radioAll = document.querySelector('input[name="stopsFilter"][value="all"]');
     if (radioAll) radioAll.checked = true;
-    
+
     const priceRange = document.getElementById('priceRangeFilter');
     if (priceRange) {
       const maxPrice = window.allFlights.length > 0 ? Math.max(...window.allFlights.map(f => f.price)) : 150000;
@@ -2061,7 +2077,7 @@ window.searchFlights = async function() {
     if (searchSummary) {
       const fromLabel = document.getElementById('flight-from').options[document.getElementById('flight-from').selectedIndex].text.split('(')[0].trim();
       const toLabel = document.getElementById('flight-to').options[document.getElementById('flight-to').selectedIndex].text.split('(')[0].trim();
-      searchSummary.textContent = `${fromLabel} (${from}) to ${toLabel} (${to}) | ${new Date(departure).toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'})} | ${travellers} Traveller${travellers > 1 ? 's' : ''}`;
+      searchSummary.textContent = `${fromLabel} (${from}) to ${toLabel} (${to}) | ${new Date(departure).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })} | ${travellers} Traveller${travellers > 1 ? 's' : ''}`;
     }
 
     openModal('flightResultsModal');
@@ -2075,23 +2091,23 @@ window.searchFlights = async function() {
   }
 };
 
-window.updatePriceLimitLabel = function() {
+window.updatePriceLimitLabel = function () {
   const val = document.getElementById('priceRangeFilter').value;
   document.getElementById('priceLimitVal').textContent = `₹${val}`;
 };
 
-window.filterFlights = function() {
+window.filterFlights = function () {
   window.renderFlightResults();
 };
 
-window.sortFlights = function(type) {
+window.sortFlights = function (type) {
   window.currentSort = type;
   document.getElementById('sortCheapestBtn').classList.toggle('active', type === 'cheapest');
   document.getElementById('sortFastestBtn').classList.toggle('active', type === 'fastest');
   window.renderFlightResults();
 };
 
-window.renderFlightResults = function() {
+window.renderFlightResults = function () {
   const container = document.getElementById('flightResultsList');
   if (!container) return;
 
@@ -2107,7 +2123,7 @@ window.renderFlightResults = function() {
 
   const stopsVal = document.querySelector('input[name="stopsFilter"]:checked').value;
   const priceVal = parseFloat(document.getElementById('priceRangeFilter').value);
-  
+
   const airlineCheckboxes = document.querySelectorAll('input[name="airlineFilter"]:checked');
   const allowedAirlines = Array.from(airlineCheckboxes).map(cb => cb.value);
 
@@ -2153,7 +2169,7 @@ window.renderFlightResults = function() {
     const outbound = flight.itineraries[0] || {};
     const inbound = flight.itineraries[1];
     const carrierCodeOut = flight.flightNumber ? flight.flightNumber.substring(0, 2) : 'FL';
-    
+
     let inboundHTML = "";
     if (inbound) {
       const carrierCodeIn = inbound.flightNumber ? inbound.flightNumber.substring(0, 2) : carrierCodeOut;
@@ -2232,12 +2248,12 @@ window.renderFlightResults = function() {
   }).join('');
 };
 
-window.openBookingFlow = function(flightId) {
+window.openBookingFlow = function (flightId) {
   const flight = window.allFlights.find(f => f.id === flightId);
   if (!flight) return;
 
   window.selectedFlight = flight;
-  
+
   const user = getCurrentUser();
   const passengerInput = document.getElementById('bookingPassengerName');
   if (passengerInput) {
@@ -2248,7 +2264,7 @@ window.openBookingFlow = function(flightId) {
   if (detailsContainer) {
     const outbound = flight.itineraries[0] || {};
     const inbound = flight.itineraries[1];
-    
+
     let summaryText = `
       <div style="font-weight: 700; color: #1a73e8; margin-bottom: 6px;">
         ${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})
@@ -2275,11 +2291,11 @@ window.openBookingFlow = function(flightId) {
   openModal('flightBookingModal');
 };
 
-window.confirmFlightBooking = async function() {
+window.confirmFlightBooking = async function () {
   const passengerName = document.getElementById('bookingPassengerName').value.trim();
   const seatPref = document.getElementById('bookingSeatPref').value;
   const errorDiv = document.getElementById('bookingError');
-  
+
   if (!passengerName) {
     errorDiv.textContent = 'Please enter passenger full name';
     return;
@@ -2347,7 +2363,7 @@ window.confirmFlightBooking = async function() {
         pnr,
         passengerName
       };
-      
+
       showToast("Flight booked successfully (Guest Checkout)!", "success");
     }
 
@@ -2357,10 +2373,10 @@ window.confirmFlightBooking = async function() {
     document.getElementById('passFlightNo').textContent = bookingData.flightNumber;
     document.getElementById('passPassengerName').textContent = bookingData.passengerName;
     document.getElementById('passSeat').textContent = bookingData.seat.split(' ')[0];
-    
+
     const depDate = new Date(bookingData.departureTime);
-    document.getElementById('passDate').textContent = depDate.toLocaleDateString("en-IN", {day:'numeric', month:'short', year:'numeric'});
-    document.getElementById('passTime').textContent = depDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+    document.getElementById('passDate').textContent = depDate.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' });
+    document.getElementById('passTime').textContent = depDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
     document.getElementById('bookingFormSide').style.display = 'none';
     document.getElementById('bookingSuccessPanel').style.display = 'block';
@@ -2373,10 +2389,10 @@ window.confirmFlightBooking = async function() {
   }
 };
 
-window.prefillFlightDestination = function() {
+window.prefillFlightDestination = function () {
   const urlParams = new URLSearchParams(window.location.search);
   const country = urlParams.get('country') || urlParams.get('code');
-  
+
   const countryToAirport = {
     UAE: 'DXB',
     USA: 'JFK',
@@ -2387,7 +2403,7 @@ window.prefillFlightDestination = function() {
     Canada: 'YYZ',
     Australia: 'SYD'
   };
-  
+
   if (country) {
     const matchedKey = Object.keys(countryToAirport).find(k => k.toLowerCase() === country.toLowerCase());
     if (matchedKey) {
@@ -2399,24 +2415,24 @@ window.prefillFlightDestination = function() {
   }
 };
 
-window.showPanel = function(target) {
+window.showPanel = function (target) {
   const btn = document.querySelector(`.nav-icon-btn[data-target="${target}"]`);
   if (btn) btn.click();
 };
 
-window.openTripModal = function() {
+window.openTripModal = function () {
   openModal("tripModal");
 };
 
-window.closeTripModal = function() {
+window.closeTripModal = function () {
   closeModal("tripModal");
 };
 
-window.skipTripDetails = function() {
+window.skipTripDetails = function () {
   closeModal("tripModal");
 };
 
-window.saveTripDetails = async function() {
+window.saveTripDetails = async function () {
   const destination = document.getElementById("trip-destination").value;
   const tripPurpose = document.getElementById("trip-purpose").value;
   const passportExpiry = document.getElementById("trip-passport-expiry").value;
@@ -2665,7 +2681,7 @@ function setupAuthHandlers() {
     const timerElem = document.getElementById("otpTimer");
     const verifyBtn = document.querySelector("#otpForm2 .modal-submit-btn");
     const resendBtn = document.getElementById("resendOtpBtn");
-    
+
     if (verifyBtn) verifyBtn.disabled = false;
     if (timerElem) timerElem.style.color = "var(--muted)";
 
@@ -2687,7 +2703,7 @@ function setupAuthHandlers() {
           timerElem.style.color = "var(--red)";
         }
         if (verifyBtn) verifyBtn.disabled = true;
-        
+
         const errDiv = document.getElementById("otpError2");
         if (errDiv) {
           errDiv.textContent = "OTP expired — request a new one";
@@ -2751,12 +2767,12 @@ function setupAuthHandlers() {
         }
 
         showToast("OTP sent to your email", "success");
-        
+
         // Go to step 2
         document.getElementById("otpStep1").style.display = "none";
         document.getElementById("otpStep2").style.display = "block";
         startOtpTimer();
-        
+
         // Focus first OTP digit
         if (otpDigits.length > 0) {
           setTimeout(() => otpDigits[0].focus(), 100);
@@ -2791,16 +2807,16 @@ function setupAuthHandlers() {
         }
 
         showToast("A new OTP has been sent to your email.", "success");
-        
+
         // Reset inputs
         otpDigits.forEach(input => {
           input.value = "";
           input.classList.remove("error-border");
         });
-        
+
         // Restart timer
         startOtpTimer();
-        
+
         // Focus first
         if (otpDigits.length > 0) otpDigits[0].focus();
       } catch (error) {
@@ -2854,13 +2870,13 @@ function setupAuthHandlers() {
         // Go to step 3
         document.getElementById("otpStep2").style.display = "none";
         document.getElementById("otpStep3").style.display = "block";
-        
+
         // Focus password input
         const newPasswordInput = document.getElementById("otpNewPassword");
         if (newPasswordInput) setTimeout(() => newPasswordInput.focus(), 100);
       } catch (error) {
         errDiv.textContent = error.message;
-        
+
         // Trigger shake and red border
         otpDigits.forEach(input => input.classList.add("error-border"));
         const inputContainer = document.querySelector(".otp-input-container");
@@ -2892,7 +2908,7 @@ function setupAuthHandlers() {
     if (/[0-9]/.test(pass)) score++;
     if (/[^a-zA-Z0-9]/.test(pass)) score++;
 
-    switch(score) {
+    switch (score) {
       case 0:
       case 1:
         return { score, text: "Too Weak", color: "var(--red)", percent: "25%" };
@@ -3100,7 +3116,7 @@ function setupAuthHandlers() {
       closeModal("profileModal");
       closeModal("tripModal");
       closeModal("forgotPasswordModal");
-      
+
       const sidebar = document.getElementById("sidebar");
       if (sidebar && sidebar.classList.contains("expanded")) {
         const toggleBtn = document.getElementById("sidebarToggle");
@@ -3513,7 +3529,7 @@ async function loadExplorePage(countryName) {
       }
 
       const chatData = await chatRes.json();
-      
+
       // Resilient JSON parsing
       let cleanText = chatData.text.trim();
       if (cleanText.startsWith("```json")) {
@@ -3525,7 +3541,7 @@ async function loadExplorePage(countryName) {
         cleanText = cleanText.substring(0, cleanText.length - 3);
       }
       cleanText = cleanText.trim();
-      
+
       const geminiData = JSON.parse(cleanText);
       if (geminiData.error) {
         throw new Error("Invalid country name requested");
@@ -3544,7 +3560,7 @@ async function loadExplorePage(countryName) {
 
       // Build the destination structure
       destinationData = buildExploreDestination(restData, geminiData, countryName, imageList);
-      
+
       // Cache the result
       localStorage.setItem(cacheKey, JSON.stringify(destinationData));
     } catch (error) {
@@ -3564,7 +3580,7 @@ function buildExploreDestination(restData, geminiData, countryName, imageList = 
   const capital = restData ? (restData.capital ? restData.capital[0] : "N/A") : (geminiData.capital || "N/A");
   const region = restData ? restData.region : (geminiData.region || "N/A");
   const cca2 = restData ? restData.cca2 : (geminiData.cca2 || "us");
-  
+
   // Extract currency details
   let currencyCode = "USD", currencySymbol = "$", currencyName = "US Dollar";
   if (restData) {
@@ -3582,8 +3598,8 @@ function buildExploreDestination(restData, geminiData, countryName, imageList = 
   }
 
   // Extract languages
-  const languageList = restData 
-    ? (Object.values(restData.languages || {}).join(", ") || "English") 
+  const languageList = restData
+    ? (Object.values(restData.languages || {}).join(", ") || "English")
     : (geminiData.languages || "English");
 
   // Build the unified structure
@@ -3678,7 +3694,7 @@ function renderExploreGuide(destination) {
       button.setAttribute("aria-selected", String(isActive));
     });
     tabContent.classList.remove("is-visible");
-    
+
     // Construct tab markup and append disclaimer banner
     const disclaimer = `
       <div class="ai-disclaimer-banner" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 12px 18px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
@@ -3688,7 +3704,7 @@ function renderExploreGuide(destination) {
     `;
 
     tabContent.innerHTML = disclaimer + getTabMarkup(tabName, destination);
-    
+
     if (tabName === "visa") {
       highlightVisaType(destination.visa.type);
     } else if (tabName === "currency") {
@@ -3745,14 +3761,14 @@ function showExploreError(countryName) {
 }
 
 // --- TravelEase Footer Logic ---
-window.openSidebarPanel = function(panelName) {
+window.openSidebarPanel = function (panelName) {
   const btn = document.querySelector(`.nav-icon-btn[data-target="${panelName}"]`);
   if (btn) {
     btn.click();
   }
 };
 
-window.openChatWidget = function() {
+window.openChatWidget = function () {
   const panel = document.querySelector(".chat-panel");
   if (panel) {
     panel.classList.add("open");
@@ -4075,13 +4091,13 @@ function initTipsCarousel() {
     const cardWidth = getCardWidth();
     const gap = parseFloat(window.getComputedStyle(track).gap) || 24;
     const amountToMove = (cardWidth + gap) * currentIndex;
-    
+
     if (withTransition) {
       track.style.transition = "transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
     } else {
       track.style.transition = "none";
     }
-    
+
     track.style.transform = `translateX(-${amountToMove}px)`;
 
     // Update active dot
