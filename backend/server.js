@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('./models/User');
 const Comment = require('./models/Comment');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 
 const app = express();
@@ -37,8 +37,8 @@ app.use('/api/newsletter', newsletterRoutes);
 const contactRoutes = require('./routes/contact');
 app.use('/api/contact', contactRoutes);
 
-// Serve static files from the root directory
-app.use(express.static(__dirname));
+// Serve static files from the parent's public directory
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Connect to MongoDB
 const dbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/travelease';
@@ -54,17 +54,17 @@ mongoose.connect(dbUri)
 
 // Route for serving the main index.html file
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // Route for serving the destination.html file
 app.get('/destination.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'destination.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'destination.html'));
 });
 
 // Route for serving the explore.html file
 app.get('/explore.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'explore.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'explore.html'));
 });
 
 // Authentication Middleware
