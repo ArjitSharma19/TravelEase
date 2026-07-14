@@ -232,16 +232,37 @@
     <div class="main-content">
       <section class="hero">
         <div class="hero-content">
-          <p class="eyebrow">For first-time Indian travellers</p>
-          <h1>Everything you need to travel abroad, in one place</h1>
-          <p class="hero-copy">Visa basics, currency tips, SIM plans, transport apps, and cultural essentials for your
-            first international trip.</p>
-          <form class="search-panel" id="searchForm" role="search">
+          <h1 class="hero-title">
+            <span class="hero-line-1">Your First Trip Abroad,</span>
+            <span class="hero-line-2">Made <span class="hero-teal-glow">Effortless.<span class="hero-underline"></span></span></span>
+          </h1>
+          <p class="hero-copy animate-on-load-2">The only travel guide built for Indian passport holders — visa, currency, SIM, transport and cultural essentials for every country in the world.</p>
+          <form class="search-panel animate-on-load-4" id="searchForm" role="search">
             <label class="sr-only" for="countrySearch">Where are you travelling to?</label>
+            <i class="fa-solid fa-search search-icon" style="color: #888; margin-right: 12px; font-size: 18px;"></i>
             <input id="countrySearch" type="search" placeholder="Where are you travelling to?" autocomplete="off">
-            <button type="submit">Search</button>
+            <button type="submit">
+              <span class="btn-text-desktop">Search</span>
+              <span class="btn-text-mobile">Go</span>
+            </button>
             <div class="suggestions" id="suggestions" aria-live="polite"></div>
           </form>
+
+          <!-- Feature pills -->
+          <div class="hero-feature-pills">
+            <span class="feature-pill">✈️ Visa Guides</span>
+            <span class="feature-pill">💱 Live Currency</span>
+            <span class="feature-pill">📱 eSIM Tips</span>
+            <span class="feature-pill">🚕 Transport Apps</span>
+          </div>
+
+          <!-- Social proof -->
+          <p class="hero-social-proof">Trusted by 10,000+ Indian travellers | 195 countries covered</p>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="hero-scroll-indicator" id="heroScrollIndicator" aria-hidden="true">
+          <i class="fa-solid fa-chevron-down"></i>
         </div>
       </section>
 
