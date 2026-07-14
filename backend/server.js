@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const User = require('./models/User');
 const Comment = require('./models/Comment');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('./utils/mailer');
 
 
 const app = express();
@@ -144,13 +145,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
     const verifyUrl = `${origin}/api/auth/verify-email/${verificationTokenRaw}`;
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    const transporter = require('./utils/mailer');
 
     const mailOptions = {
       from: `"TravelEase Support" <${process.env.EMAIL_USER || 'no-reply@travelease.com'}>`,
@@ -562,23 +557,22 @@ app.get('/api/countries-list', async (req, res) => {
 
   const apiKey = process.env.REST_COUNTRIES_API_KEY;
 
-  // Fallback static list of countries if key not configured or API fails
   const staticFallback = [
-    { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪" },
-    { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸" },
-    { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧" },
-    { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭" },
-    { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬" },
-    { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵" },
-    { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦" },
-    { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺" },
-    { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪" },
-    { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷" },
-    { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹" },
-    { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸" },
-    { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭" },
-    { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦" },
-    { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳" }
+    { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪", region: "Asia" },
+    { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸", region: "Americas" },
+    { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧", region: "Europe" },
+    { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭", region: "Asia" },
+    { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬", region: "Asia" },
+    { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵", region: "Asia" },
+    { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦", region: "Americas" },
+    { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺", region: "Oceania" },
+    { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪", region: "Europe" },
+    { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷", region: "Europe" },
+    { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹", region: "Europe" },
+    { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸", region: "Europe" },
+    { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭", region: "Europe" },
+    { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦", region: "Africa" },
+    { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳", region: "Asia" }
   ];
 
   if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
@@ -620,7 +614,8 @@ app.get('/api/countries-list', async (req, res) => {
         name: country.names?.common || '',
         officialName: country.names?.official || '',
         cca2: country.codes?.alpha_2 || '',
-        flag: country.flag?.emoji || '🌍'
+        flag: country.flag?.emoji || '🌍',
+        region: country.geo?.continent || country.region || 'World'
       })).filter(c => c.name !== '');
       console.log(`Cached ${countriesCache.length} countries successfully.`);
       return res.json(countriesCache);
