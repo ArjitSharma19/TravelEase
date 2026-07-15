@@ -9,6 +9,8 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('./models/User');
 const Comment = require('./models/Comment');
+const PlaceRecommendation = require('./models/PlaceRecommendation');
+const SavedPlace = require('./models/SavedPlace');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('./utils/mailer');
 
@@ -674,12 +676,361 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    const data = await response.json();
-    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
     res.json({ text: generatedText });
   } catch (error) {
     console.error('Error communicating with Gemini API:', error);
     res.status(500).json({ error: 'Failed to communicate with the travel assistant.' });
+  }
+});
+
+// POST Places to Visit (Google Places API + Gemini Custom Annotation)
+app.post('/api/places-to-visit', async (req, res) => {
+  const { destination, travelPurpose, interests } = req.body;
+
+  if (!destination) {
+    return res.status(400).json({ error: 'Destination country is required.' });
+  }
+
+  const purpose = travelPurpose || 'Tourist';
+  const interestsList = Array.isArray(interests) ? interests : [];
+  
+  // Sort and hash interests for consistent caching
+  const sortedInterests = [...interestsList].sort();
+  const interestsHash = crypto.createHash('sha256').update(sortedInterests.join(',')).digest('hex');
+
+  try {
+    // 1. Check cache first
+    const cached = await PlaceRecommendation.findOne({
+      destination: destination.trim(),
+      travelPurpose: purpose,
+      interestsHash
+    });
+
+    if (cached) {
+      console.log(`Returning cached place recommendations for ${destination} (${purpose})`);
+      return res.json(cached.recommendations);
+    }
+
+    // 2. Fetch from Google Places API
+    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY;
+    let rawPlaces = [];
+
+    if (googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY' && googleApiKey.trim() !== '') {
+      console.log(`Google Places API key is configured. Fetching places for ${destination}...`);
+      
+      // We will perform parallel searches:
+      // One general query: "top tourist attractions in {destination}"
+      // And one per interest: "best {interest} spots in {destination}"
+      const queries = [`top tourist attractions in ${destination}`];
+      interestsList.forEach(interest => {
+        if (interest === 'food') queries.push(`best restaurants food dining spots in ${destination}`);
+        else if (interest === 'history') queries.push(`best historical cultural heritage sites in ${destination}`);
+        else if (interest === 'nature') queries.push(`best nature parks scenic spots outdoors in ${destination}`);
+        else if (interest === 'shopping') queries.push(`best shopping malls markets nightlife in ${destination}`);
+      });
+
+      try {
+        const fetchPromises = queries.map(async (textQuery) => {
+          const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': googleApiKey,
+              'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.photos,places.location,places.types,places.id'
+            },
+            body: JSON.stringify({ textQuery })
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            console.error(`Google Places API Error for query "${textQuery}" (${response.status}):`, errText);
+            return [];
+          }
+
+          const data = await response.json();
+          return data.places || [];
+        });
+
+        const resultsArray = await Promise.all(fetchPromises);
+        
+        // Flatten and deduplicate by id
+        const placesMap = new Map();
+        resultsArray.flat().forEach(place => {
+          if (place && place.id) {
+            placesMap.set(place.id, place);
+          }
+        });
+        rawPlaces = Array.from(placesMap.values());
+        console.log(`Retrieved and deduplicated ${rawPlaces.length} places from Google Places API.`);
+      } catch (googleErr) {
+        console.error("Google Places API call failed:", googleErr.message);
+      }
+    } else {
+      console.warn("GOOGLE_PLACES_API_KEY is not configured. Falling back to Gemini generative mode.");
+    }
+
+    // Category mapping helper
+    function mapGoogleTypesToCategory(types) {
+      if (!types || !Array.isArray(types)) return 'Landmark';
+      const typeSet = new Set(types);
+      const foodTypes = ['restaurant', 'cafe', 'bar', 'bakery', 'food', 'meal_takeaway', 'meal_delivery', 'brewery', 'winery'];
+      if (foodTypes.some(t => typeSet.has(t))) return 'Food';
+      const natureTypes = ['park', 'zoo', 'aquarium', 'amusement_park', 'garden', 'national_park', 'natural_feature', 'beach', 'lake', 'mountain', 'campground', 'hiking_area'];
+      if (natureTypes.some(t => typeSet.has(t))) return 'Nature';
+      const cultureTypes = ['museum', 'art_gallery', 'library', 'theater', 'movie_theater', 'performing_arts_theater', 'cultural_center', 'cemetery', 'embassy'];
+      if (cultureTypes.some(t => typeSet.has(t))) return 'Culture';
+      const landmarkTypes = ['monument', 'landmark', 'tourist_attraction', 'point_of_interest', 'place_of_worship', 'church', 'temple', 'mosque', 'synagogue', 'town_square', 'historical_landmark', 'castle', 'palace'];
+      if (landmarkTypes.some(t => typeSet.has(t))) return 'Landmark';
+      return 'Hidden Gem';
+    }
+
+    let recommendations = [];
+
+    // If Google Places returned places, annotate them using Gemini
+    if (rawPlaces.length > 0) {
+      // Map and enrich raw Google places
+      const enrichedPlaces = rawPlaces.map(place => {
+        let photoUrl = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'; // default
+        if (place.photos && place.photos.length > 0 && googleApiKey) {
+          const photoName = place.photos[0].name;
+          photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=600&key=${googleApiKey}`;
+        }
+        return {
+          id: place.id,
+          name: place.displayName?.text || place.displayName || '',
+          rating: place.rating || 4.0,
+          address: place.formattedAddress || '',
+          location: place.location ? {
+            latitude: place.location.latitude,
+            longitude: place.location.longitude
+          } : null,
+          photoUrl,
+          category: mapGoogleTypesToCategory(place.types)
+        };
+      });
+
+      // Call Gemini 2.5 Flash to annotate these real places
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.trim() === '') {
+        const placesInputList = enrichedPlaces.slice(0, 10).map(p => ({
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          category: p.category
+        }));
+
+        console.log(`Sending ${placesInputList.length} real places to Gemini for annotation...`);
+
+        const prompt = `You are a travel expert helping a first-time Indian traveler visiting ${destination} for ${purpose}. Their interests: ${sortedInterests.length > 0 ? sortedInterests.join(', ') : "general sightseeing"}.
+
+Here is a list of real places (JSON): ${JSON.stringify(placesInputList)}
+
+Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \`\`\`json) of the EXACT SAME length and order as the input list, where each object has this shape:
+{
+  "id": string (matching the input place id),
+  "category": "Landmark" | "Nature" | "Food" | "Culture" | "Hidden Gem",
+  "estimatedDuration": string (e.g. "2 hours"),
+  "tip": string (practical tip for an Indian traveler: entry fee, best time, safety, or etiquette),
+  "relevanceReason": string (1 sentence on why this fits their travelPurpose/interests)
+}`;
+
+        try {
+          const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                role: 'user',
+                parts: [{ text: prompt }]
+              }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const generatedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (generatedText) {
+              const annotations = JSON.parse(generatedText.trim());
+              const annotationMap = new Map();
+              if (Array.isArray(annotations)) {
+                annotations.forEach(ann => {
+                  if (ann && ann.id) annotationMap.set(ann.id, ann);
+                });
+              }
+
+              recommendations = enrichedPlaces.slice(0, 10).map(p => {
+                const ann = annotationMap.get(p.id) || {};
+                return {
+                  id: p.id,
+                  name: p.name,
+                  category: ann.category || p.category,
+                  description: p.address,
+                  estimatedDuration: ann.estimatedDuration || '2 hours',
+                  tip: ann.tip || 'Plan ahead, keep currency handy, and check open hours.',
+                  relevanceReason: ann.relevanceReason || `Matches your trip details.`,
+                  photoUrl: p.photoUrl,
+                  rating: p.rating,
+                  address: p.address,
+                  location: p.location
+                };
+              });
+            }
+          }
+        } catch (geminiErr) {
+          console.error("Gemini places annotation failed, falling back to direct mapping:", geminiErr.message);
+        }
+      }
+
+      // If Gemini annotation failed or was skipped, build recommendations with default values
+      if (recommendations.length === 0) {
+        recommendations = enrichedPlaces.slice(0, 10).map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          description: p.address,
+          estimatedDuration: '2 hours',
+          tip: 'Check entry fees and timing before visiting.',
+          relevanceReason: `Popular spot in ${destination}.`,
+          photoUrl: p.photoUrl,
+          rating: p.rating,
+          address: p.address,
+          location: p.location
+        }));
+      }
+    } else {
+      // 3. Graceful fallback: Generative mode using Gemini if Google Places returned nothing
+      console.log("Generative fallback: Google Places returned nothing. Asking Gemini to invent places...");
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.trim() === '') {
+        return res.status(500).json({ error: 'Gemini API key is not configured.' });
+      }
+
+      const prompt = `You are a travel expert helping a first-time Indian traveler visiting ${destination} for the purpose of ${purpose}. Their interests: ${sortedInterests.length > 0 ? sortedInterests.join(', ') : "general sightseeing"}.
+
+Return ONLY a valid JSON array of 8 recommended places to visit, tailored to their travel purpose and interests. Each object must have this exact shape:
+
+{
+  "name": string,
+  "category": "Landmark" | "Nature" | "Food" | "Culture" | "Hidden Gem",
+  "description": string (1-2 sentences),
+  "estimatedDuration": string (e.g. "2 hours"),
+  "tip": string (a practical first-time-traveler tip: entry fee, best time, safety, or etiquette note relevant to an Indian traveler),
+  "relevanceReason": string (1 sentence on why this fits their travelPurpose/interests)
+}
+
+Do not wrap the response in markdown blocks. Return only raw JSON. Prioritize a mix of categories.`;
+
+      const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      if (geminiRes.ok) {
+        const geminiData = await geminiRes.json();
+        const generatedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (generatedText) {
+          const generatedPlaces = JSON.parse(generatedText.trim());
+          if (Array.isArray(generatedPlaces)) {
+            // Enrich with default placeholder image
+            recommendations = generatedPlaces.map((p, idx) => ({
+              id: `gen-${idx}`,
+              name: p.name,
+              category: p.category || 'Landmark',
+              description: p.description || '',
+              estimatedDuration: p.estimatedDuration || '2 hours',
+              tip: p.tip || 'Check opening hours.',
+              relevanceReason: p.relevanceReason || 'Popular tourist site.',
+              photoUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800',
+              rating: 4.5,
+              address: `${p.name}, ${destination}`,
+              location: null
+            }));
+          }
+        }
+      }
+    }
+
+    if (recommendations.length === 0) {
+      throw new Error('Could not generate recommendations from any source.');
+    }
+
+    // 4. Cache recommendations
+    const cacheEntry = new PlaceRecommendation({
+      destination: destination.trim(),
+      travelPurpose: purpose,
+      interestsHash,
+      recommendations
+    });
+    await cacheEntry.save();
+
+    res.json(recommendations);
+  } catch (error) {
+    console.error('Places to visit retrieval failed:', error);
+    res.status(500).json({ error: 'Failed to retrieve recommended places.' });
+  }
+});
+
+// POST toggle saved place
+app.post('/api/saved-places', requireAuth, async (req, res) => {
+  const { name, category, description, estimatedDuration, tip, relevanceReason, photoUrl, destination, id, rating, address, location } = req.body;
+
+  if (!name || !destination) {
+    return res.status(400).json({ error: 'Place name and destination are required.' });
+  }
+
+  try {
+    const existing = await SavedPlace.findOne({
+      userId: req.userId,
+      name,
+      destination
+    });
+
+    if (existing) {
+      // Toggle off (delete)
+      await SavedPlace.deleteOne({ _id: existing._id });
+      return res.json({ saved: false, message: 'Place removed from saved list.' });
+    } else {
+      // Toggle on (save)
+      const newSaved = new SavedPlace({
+        userId: req.userId,
+        name,
+        category,
+        description,
+        estimatedDuration,
+        tip,
+        relevanceReason,
+        photoUrl,
+        destination,
+        id,
+        rating,
+        address,
+        location
+      });
+      await newSaved.save();
+      return res.status(201).json({ saved: true, message: 'Place saved to My Trip successfully.' });
+    }
+  } catch (error) {
+    console.error('Toggle saved place failed:', error);
+    res.status(500).json({ error: 'Failed to update saved places.' });
+  }
+});
+
+// GET user's saved places
+app.get('/api/saved-places', requireAuth, async (req, res) => {
+  try {
+    const saved = await SavedPlace.find({ userId: req.userId }).sort({ savedAt: -1 });
+    res.json(saved);
+  } catch (error) {
+    console.error('Fetch saved places failed:', error);
+    res.status(500).json({ error: 'Failed to load saved places.' });
   }
 });
 

@@ -11,9 +11,8 @@
 </head>
 
 <body>
-  <div id="g_id_onload"
-       data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
-       data-callback="handleGoogleLogin">
+  <div id="g_id_onload" data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
+    data-callback="handleGoogleLogin">
   </div>
   <aside class="collapsible-sidebar" id="sidebar">
     <div class="sidebar-toggle-container">
@@ -35,6 +34,9 @@
       </button>
       <button class="nav-icon-btn" data-target="flight" aria-label="Book Flight" title="Book Flight">
         ✈️
+      </button>
+      <button class="nav-icon-btn" data-target="places" aria-label="Places to Visit" title="Places to Visit">
+        <i class="fa-solid fa-map-location-dot"></i>
       </button>
     </div>
 
@@ -159,7 +161,7 @@
                 <option value="CCU">Kolkata (CCU)</option>
               </select>
             </div>
-            
+
             <div class="input-group">
               <label for="flight-to">To</label>
               <select id="flight-to">
@@ -173,17 +175,17 @@
                 <option value="SYD">Sydney, Australia</option>
               </select>
             </div>
-            
+
             <div class="input-group">
               <label for="flight-departure">Departure Date</label>
               <input type="date" id="flight-departure">
             </div>
-            
+
             <div class="input-group">
               <label for="flight-return">Return Date (optional)</label>
               <input type="date" id="flight-return">
             </div>
-            
+
             <div class="input-group">
               <label for="flight-travellers">Travellers</label>
               <select id="flight-travellers">
@@ -193,12 +195,57 @@
                 <option value="4">4 Adults</option>
               </select>
             </div>
-            
+
             <button class="flight-search-btn" onclick="searchFlights()">
               Search Flights
             </button>
-            
+
             <p class="flight-disclaimer">You'll be redirected to Google Flights to complete your search and booking.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 5: Places to Visit -->
+      <div class="sidebar-panel" id="panel-places">
+        <div class="widget-card-sidebar" id="placesWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+            <h3>Places to Visit</h3>
+          </div>
+          <p class="panel-subtitle">Personalized recommendations for your trip</p>
+          
+          <!-- Interests refinement selector -->
+          <div class="interests-container" style="margin-bottom: 15px;">
+            <p style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin: 0 0 8px 0;">Select Interests:</p>
+            <div class="interests-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button type="button" class="interest-pill" data-interest="food">🍔 Food</button>
+              <button type="button" class="interest-pill" data-interest="history">🏛️ Culture</button>
+              <button type="button" class="interest-pill" data-interest="nature">🌲 Nature</button>
+              <button type="button" class="interest-pill" data-interest="shopping">🛍️ Shopping</button>
+            </div>
+            <button type="button" class="primary-button" id="getPlacesBtn" style="width: 100%; margin-top: 12px; padding: 8px; font-size: 0.85rem; font-weight: bold; border-radius: 6px;">
+              Find Recommended Places
+            </button>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
+
+          <!-- Category filter tabs -->
+          <div class="places-filters" style="display: none;" id="placesCategoryFilters">
+            <button class="filter-chip active" data-category="All">All</button>
+            <button class="filter-chip" data-category="Landmark">Landmark</button>
+            <button class="filter-chip" data-category="Nature">Nature</button>
+            <button class="filter-chip" data-category="Food">Food</button>
+            <button class="filter-chip" data-category="Culture">Culture</button>
+            <button class="filter-chip" data-category="Hidden Gem">Hidden Gem</button>
+          </div>
+
+          <!-- Places Content Container -->
+          <div id="placesContent" class="places-list">
+            <div class="places-error-container" id="placesInitState">
+              <i class="fa-solid fa-map" style="color: var(--blue); opacity: 0.7;"></i>
+              <p>Click the button above to discover places tailored to your trip destination and travel purpose.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -218,6 +265,7 @@
       <nav class="top-nav" aria-label="Primary navigation">
         <a href="#destinations">Destinations</a>
         <a href="#guide">Guide</a>
+        <a href="places.html">Places to Visit</a>
         <a href="mytrip.html" id="navMyTrip" style="display: none;">My Trip</a>
         <span class="nav-divider">|</span>
         <div id="headerAuthArea">
@@ -234,9 +282,11 @@
         <div class="hero-content">
           <h1 class="hero-title">
             <span class="hero-line-1">Your First Trip Abroad,</span>
-            <span class="hero-line-2">Made <span class="hero-teal-glow">Effortless.<span class="hero-underline"></span></span></span>
+            <span class="hero-line-2">Made <span class="hero-teal-glow">Effortless.<span
+                  class="hero-underline"></span></span></span>
           </h1>
-          <p class="hero-copy animate-on-load-2">The only travel guide built for Indian passport holders — visa, currency, SIM, transport and cultural essentials for every country in the world.</p>
+          <p class="hero-copy animate-on-load-2">The only travel guide built for Indian passport holders — visa,
+            currency, SIM, transport and cultural essentials for every country in the world.</p>
           <form class="search-panel animate-on-load-4" id="searchForm" role="search">
             <label class="sr-only" for="countrySearch">Where are you travelling to?</label>
             <i class="fa-solid fa-search search-icon" style="color: #888; margin-right: 12px; font-size: 18px;"></i>
@@ -250,10 +300,10 @@
 
           <!-- Feature pills -->
           <div class="hero-feature-pills">
-            <span class="feature-pill">✈️ Visa Guides</span>
-            <span class="feature-pill">💱 Live Currency</span>
-            <span class="feature-pill">📱 eSIM Tips</span>
-            <span class="feature-pill">🚕 Transport Apps</span>
+            <span class="feature-pill"> Visa Guides</span>
+            <span class="feature-pill"> Live Currency</span>
+            <span class="feature-pill"> eSIM Tips</span>
+            <span class="feature-pill"> Transport Apps</span>
           </div>
 
           <!-- Social proof -->
@@ -285,16 +335,17 @@
           </div>
           <a href="destination.html#comments" class="view-all-tips-btn">View All Tips &rarr;</a>
         </div>
-        
+
         <div class="travel-tips-carousel-wrapper">
           <button class="carousel-arrow prev-arrow" aria-label="Previous tip">&larr;</button>
-          
+
           <div class="carousel-track-container">
             <div class="carousel-track">
               <!-- Tip 1 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600" alt="Apply for visa early" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600" alt="Apply for visa early"
+                    loading="lazy">
                   <span class="tip-badge visa">Visa</span>
                 </div>
                 <div class="tip-content">
@@ -302,11 +353,12 @@
                   <p>Start paperwork weeks ahead so appointments, documents, and approvals do not delay your trip.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 2 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1559526324-593bc073d938?w=600" alt="Use forex card" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1559526324-593bc073d938?w=600" alt="Use forex card"
+                    loading="lazy">
                   <span class="tip-badge money">Money</span>
                 </div>
                 <div class="tip-content">
@@ -314,11 +366,12 @@
                   <p>Carry a low-fee travel card like Niyo or Wise and keep only small emergency cash.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 3 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600" alt="Buy eSIM before travel" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600"
+                    alt="Buy eSIM before travel" loading="lazy">
                   <span class="tip-badge sim">SIM</span>
                 </div>
                 <div class="tip-content">
@@ -326,7 +379,7 @@
                   <p>Install your eSIM before flying so maps, cabs, and hotel calls work as soon as you land.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 4 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
@@ -335,46 +388,53 @@
                 </div>
                 <div class="tip-content">
                   <h3>Always carry physical copies</h3>
-                  <p>Keep printed backups of your visa, passport, travel insurance, and bookings in case of device failure.</p>
+                  <p>Keep printed backups of your visa, passport, travel insurance, and bookings in case of device
+                    failure.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 5 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600" alt="Get travel insurance" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600"
+                    alt="Get travel insurance" loading="lazy">
                   <span class="tip-badge health">Health</span>
                 </div>
                 <div class="tip-content">
                   <h3>Get travel insurance</h3>
-                  <p>Protect yourself from unexpected medical emergencies, trip cancellations, or lost baggage abroad.</p>
+                  <p>Protect yourself from unexpected medical emergencies, trip cancellations, or lost baggage abroad.
+                  </p>
                 </div>
               </article>
-              
+
               <!-- Tip 6 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600" alt="Notify your bank before travelling" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600"
+                    alt="Notify your bank before travelling" loading="lazy">
                   <span class="tip-badge money">Money</span>
                 </div>
                 <div class="tip-content">
                   <h3>Notify your bank early</h3>
-                  <p>Inform your card issuer of your travel dates and destination to prevent security blocks on transactions.</p>
+                  <p>Inform your card issuer of your travel dates and destination to prevent security blocks on
+                    transactions.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 7 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
-                  <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600" alt="Download offline maps before you land" loading="lazy">
+                  <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600"
+                    alt="Download offline maps before you land" loading="lazy">
                   <span class="tip-badge tech">Tech</span>
                 </div>
                 <div class="tip-content">
                   <h3>Download offline maps</h3>
-                  <p>Save maps of your destination city offline to navigate streets and locate hotels without cellular data.</p>
+                  <p>Save maps of your destination city offline to navigate streets and locate hotels without cellular
+                    data.</p>
                 </div>
               </article>
-              
+
               <!-- Tip 8 -->
               <article class="travel-tip-card">
                 <div class="tip-image-wrapper">
@@ -383,15 +443,16 @@
                 </div>
                 <div class="tip-content">
                   <h3>Check baggage limits</h3>
-                  <p>Review airline weight limits for cabin and checked luggage to avoid hefty excess fees at the airport.</p>
+                  <p>Review airline weight limits for cabin and checked luggage to avoid hefty excess fees at the
+                    airport.</p>
                 </div>
               </article>
             </div>
           </div>
-          
+
           <button class="carousel-arrow next-arrow" aria-label="Next tip">&rarr;</button>
         </div>
-        
+
         <div class="carousel-dots-container"></div>
       </section>
     </div>
@@ -403,7 +464,7 @@
       <button class="modal-close" id="loginCloseBtn" aria-label="Close modal">&times;</button>
       <h2>Welcome Back</h2>
       <p class="modal-subtitle">Log in to view your personalized alerts and guides.</p>
-      
+
       <!-- Google Sign In Button -->
       <div style="display: flex; justify-content: center; margin-bottom: 12px;">
         <div class="g_id_signin" data-type="standard" data-width="300"></div>
@@ -420,10 +481,16 @@
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter your password" required
-            autocomplete="current-password">
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Enter your password" required
+              autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
           <div style="text-align: right; margin-top: 4px;">
-            <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot Password?</button>
+            <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot
+              Password?</button>
           </div>
         </div>
         <div class="form-error-msg" id="loginError"></div>
@@ -441,7 +508,7 @@
       <button class="modal-close" id="signupCloseBtn" aria-label="Close modal">&times;</button>
       <h2>Create Traveler Account</h2>
       <p class="modal-subtitle">Register to customize your profile, trip dates, and alerts.</p>
-      
+
       <!-- Google Sign In Button -->
       <div style="display: flex; justify-content: center; margin-bottom: 12px;">
         <div class="g_id_signin" data-type="standard" data-width="300"></div>
@@ -464,8 +531,13 @@
         </div>
         <div class="form-group">
           <label for="signup-password">Password</label>
-          <input type="password" id="signup-password" placeholder="Min. 6 characters" required
-            autocomplete="new-password">
+          <div class="password-wrapper">
+            <input type="password" id="signup-password" placeholder="Min. 6 characters" required
+              autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
         <div class="form-error-msg" id="signupError"></div>
         <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
@@ -480,7 +552,7 @@
   <div class="modal-overlay" id="forgotPasswordModal">
     <div class="modal-content" style="max-width: 480px;">
       <button class="modal-close" id="forgotPasswordCloseBtn" aria-label="Close modal">&times;</button>
-      
+
       <!-- Step 1: Email Entry -->
       <div id="otpStep1" class="otp-step">
         <h2>Forgot Password</h2>
@@ -501,16 +573,24 @@
         <p class="modal-subtitle">We have sent a 6-digit OTP to your email. Please enter it below.</p>
         <form id="otpForm2">
           <div class="otp-input-container" style="display: flex; gap: 8px; justify-content: center; margin: 20px 0;">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
-            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required
+              style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; transition: border-color 0.2s; background: var(--bg);">
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.85rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.85rem;">
             <div id="otpTimer" style="color: var(--muted); font-weight: bold;">OTP expires in 10:00</div>
-            <button type="button" class="link-btn" id="resendOtpBtn" style="text-decoration: underline; font-weight: bold;">Resend OTP</button>
+            <button type="button" class="link-btn" id="resendOtpBtn"
+              style="text-decoration: underline; font-weight: bold;">Resend OTP</button>
           </div>
           <div class="form-error-msg" id="otpError2"></div>
           <button class="primary-button modal-submit-btn" type="submit">Verify OTP</button>
@@ -524,27 +604,45 @@
         <form id="otpForm3">
           <div class="form-group">
             <label for="otpNewPassword">New Password</label>
-            <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+            <div class="password-wrapper">
+              <input type="password" id="otpNewPassword" placeholder="Enter new password" required
+                autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-group" style="margin-top: 15px;">
             <label for="otpConfirmPassword">Confirm Password</label>
-            <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
-            <div class="form-error-msg" id="confirmPasswordError" style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
+            <div class="password-wrapper">
+              <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required
+                autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="form-error-msg" id="confirmPasswordError"
+              style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
           </div>
-          
+
           <!-- Password strength indicator -->
           <div style="margin-top: 15px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; color: var(--muted); margin-bottom: 5px;">
+            <div
+              style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; color: var(--muted); margin-bottom: 5px;">
               <span>Password Strength</span>
               <span id="strengthText">Too Weak</span>
             </div>
-            <div style="height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; gap: 2px;">
-              <div id="strengthBar" style="height: 100%; width: 0%; background-color: var(--red); transition: width 0.3s, background-color 0.3s;"></div>
+            <div
+              style="height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; gap: 2px;">
+              <div id="strengthBar"
+                style="height: 100%; width: 0%; background-color: var(--red); transition: width 0.3s, background-color 0.3s;">
+              </div>
             </div>
           </div>
 
           <div class="form-error-msg" id="otpError3"></div>
-          <button class="primary-button modal-submit-btn" type="submit" style="margin-top: 20px;">Reset Password</button>
+          <button class="primary-button modal-submit-btn" type="submit" style="margin-top: 20px;">Reset
+            Password</button>
         </form>
       </div>
 
@@ -612,7 +710,8 @@
         <div class="form-error-msg" id="tripError"></div>
         <div style="display: flex; gap: 12px; margin-top: 10px;">
           <button class="primary-button modal-submit-btn" type="submit" style="flex: 1;">Save Trip Details</button>
-          <button class="secondary-button" type="button" onclick="skipTripDetails()" style="flex: 1;">Skip for now</button>
+          <button class="secondary-button" type="button" onclick="skipTripDetails()" style="flex: 1;">Skip for
+            now</button>
         </div>
       </form>
     </div>
@@ -685,18 +784,20 @@
   <!-- Flight Search Results Modal -->
   <div class="modal-overlay" id="flightResultsModal">
     <div class="modal-content flight-results-content" style="max-width: 900px; width: 90%;">
-      <button class="modal-close" onclick="closeModal('flightResultsModal')" aria-label="Close flight results">&times;</button>
-      
+      <button class="modal-close" onclick="closeModal('flightResultsModal')"
+        aria-label="Close flight results">&times;</button>
+
       <div class="flight-results-header">
         <h2 id="flightResultsTitle">✈️ Available Flights</h2>
-        <p class="flight-search-summary" id="flightSearchSummary">Delhi (DEL) to Dubai (DXB) | 20 Jul 2026 | 1 Traveller</p>
+        <p class="flight-search-summary" id="flightSearchSummary">Delhi (DEL) to Dubai (DXB) | 20 Jul 2026 | 1 Traveller
+        </p>
       </div>
 
       <div class="flight-results-container">
         <!-- Sidebar filters -->
         <aside class="flight-filters-sidebar">
           <h3>Filters</h3>
-          
+
           <div class="filter-group">
             <label>Stops</label>
             <div class="filter-options">
@@ -724,7 +825,8 @@
 
           <div class="filter-group">
             <label>Max Price (<span id="priceLimitVal">₹75000</span>)</label>
-            <input type="range" id="priceRangeFilter" min="5000" max="150000" step="1000" value="150000" oninput="updatePriceLimitLabel()" onchange="filterFlights()">
+            <input type="range" id="priceRangeFilter" min="5000" max="150000" step="1000" value="150000"
+              oninput="updatePriceLimitLabel()" onchange="filterFlights()">
           </div>
         </aside>
 
@@ -747,8 +849,9 @@
   <!-- Flight Booking Modal -->
   <div class="modal-overlay" id="flightBookingModal">
     <div class="modal-content flight-booking-content" style="max-width: 600px; width: 90%;">
-      <button class="modal-close" onclick="closeModal('flightBookingModal')" aria-label="Close booking modal">&times;</button>
-      
+      <button class="modal-close" onclick="closeModal('flightBookingModal')"
+        aria-label="Close booking modal">&times;</button>
+
       <h2 id="flightBookingTitle">Confirm Your Flight Booking</h2>
       <p class="booking-subtitle">Secure your ticket with TravelEase</p>
 
@@ -761,10 +864,12 @@
 
           <div class="booking-fields" style="margin-top: 15px;">
             <label for="bookingPassengerName">Passenger Full Name</label>
-            <input type="text" id="bookingPassengerName" placeholder="e.g. Arjit Sharma" required style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
+            <input type="text" id="bookingPassengerName" placeholder="e.g. Arjit Sharma" required
+              style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
 
             <label for="bookingSeatPref">Seat Preference</label>
-            <select id="bookingSeatPref" style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
+            <select id="bookingSeatPref"
+              style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px;">
               <option value="12A (Window)">Window Seat (Standard)</option>
               <option value="12B (Middle)">Middle Seat</option>
               <option value="12C (Aisle)">Aisle Seat</option>
@@ -774,7 +879,8 @@
 
             <div class="form-error-msg" id="bookingError" style="margin-top: 10px; color: red;"></div>
 
-            <button class="primary-button booking-confirm-btn" onclick="confirmFlightBooking()" style="margin-top: 15px; width: 100%;">
+            <button class="primary-button booking-confirm-btn" onclick="confirmFlightBooking()"
+              style="margin-top: 15px; width: 100%;">
               Confirm & Book Flight
             </button>
           </div>
@@ -787,7 +893,7 @@
               <span class="pass-logo">✈️ TravelEase</span>
               <span class="pass-pnr-label">BOARDING PASS / PNR: <strong id="passPNR">XXXXXX</strong></span>
             </div>
-            
+
             <div class="pass-flight-info">
               <div class="pass-airport">
                 <h3 id="passOrigin">DEL</h3>
@@ -826,7 +932,8 @@
               <div class="pass-barcode">
                 <div class="barcode-stripe"></div>
               </div>
-              <button class="secondary-button close-success-btn" onclick="closeModal('flightBookingModal')" style="width: 100%; margin-top: 15px;">Done</button>
+              <button class="secondary-button close-success-btn" onclick="closeModal('flightBookingModal')"
+                style="width: 100%; margin-top: 15px;">Done</button>
             </div>
           </div>
         </div>
@@ -861,23 +968,42 @@
           <a class="brand" href="index.html" style="display: inline-flex; align-items: center; gap: 6px;">
             <img src="logo.png" alt="TravelEase Logo" class="brand-logo" style="height: 48px;">
             <div class="brand-text-container">
-              <span class="brand-text" style="color: #013678; font-weight: 700; font-size: 20px;">Travel<span class="brand-text-accent" style="color: #029aa5;">Ease</span></span>
-              <span class="brand-tagline" style="font-size: 8px; font-weight: 700; color: #013678; letter-spacing: 0.5px;">EXPLORE MORE. WORRY LESS.</span>
+              <span class="brand-text" style="color: #013678; font-weight: 700; font-size: 20px;">Travel<span
+                  class="brand-text-accent" style="color: #029aa5;">Ease</span></span>
+              <span class="brand-tagline"
+                style="font-size: 8px; font-weight: 700; color: #013678; letter-spacing: 0.5px;">EXPLORE MORE. WORRY
+                LESS.</span>
             </div>
           </a>
           <p class="footer-brand-desc">Your one-stop travel guide for first-time Indian travellers going abroad.</p>
           <div class="footer-social-icons">
-            <a class="footer-social-link" href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
-              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            <a class="footer-social-link" href="https://instagram.com" target="_blank" rel="noopener"
+              aria-label="Instagram">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+              </svg>
             </a>
-            <a class="footer-social-link" href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter/X">
-              <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <a class="footer-social-link" href="https://twitter.com" target="_blank" rel="noopener"
+              aria-label="Twitter/X">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
             </a>
-            <a class="footer-social-link" href="https://linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+            <a class="footer-social-link" href="https://linkedin.com" target="_blank" rel="noopener"
+              aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+              </svg>
             </a>
-            <a class="footer-social-link" href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube">
-              <svg viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.108C19.524 3.545 12 3.545 12 3.545s-7.525 0-9.388.51a3.003 3.003 0 00-2.11 2.108C0 8.029 0 12 0 12s0 3.971.502 5.837a3.003 3.003 0 002.11 2.108C4.475 20.455 12 20.455 12 20.455s7.524 0 9.388-.51a3.003 3.003 0 002.11-2.108C24 15.971 24 12 24 12s0-3.971-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <a class="footer-social-link" href="https://youtube.com" target="_blank" rel="noopener"
+              aria-label="YouTube">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M23.498 6.163a3.003 3.003 0 00-2.11-2.108C19.524 3.545 12 3.545 12 3.545s-7.525 0-9.388.51a3.003 3.003 0 00-2.11 2.108C0 8.029 0 12 0 12s0 3.971.502 5.837a3.003 3.003 0 002.11 2.108C4.475 20.455 12 20.455 12 20.455s7.524 0 9.388-.51a3.003 3.003 0 002.11-2.108C24 15.971 24 12 24 12s0-3.971-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+              </svg>
             </a>
           </div>
         </div>
@@ -894,7 +1020,8 @@
             <li><a href="destination.html?country=Japan">Japan</a></li>
             <li><a href="destination.html?country=Canada">Canada</a></li>
             <li><a href="destination.html?country=Australia">Australia</a></li>
-            <li style="margin-top: 15px;"><a href="index.html#destinations" style="font-weight: 700; color: #00BFA5;">View All Countries →</a></li>
+            <li style="margin-top: 15px;"><a href="index.html#destinations"
+                style="font-weight: 700; color: #00BFA5;">View All Countries →</a></li>
           </ul>
         </div>
 
@@ -914,7 +1041,8 @@
         <!-- Col 4: Newsletter -->
         <div class="footer-column">
           <h3>Get Travel Updates</h3>
-          <p class="footer-newsletter-sub">Visa rule changes, currency alerts and travel tips — straight to your inbox.</p>
+          <p class="footer-newsletter-sub">Visa rule changes, currency alerts and travel tips — straight to your inbox.
+          </p>
           <form class="footer-newsletter-form" id="footerNewsletterForm">
             <input type="email" id="footerNewsletterEmail" placeholder="Enter your email" required autocomplete="email">
             <button type="submit">Subscribe</button>
@@ -952,10 +1080,15 @@
       <h2>Privacy Policy</h2>
       <p class="modal-subtitle">Last updated: July 2026</p>
       <div style="font-size: 0.9rem; line-height: 1.6; color: var(--muted);">
-        <p>Welcome to TravelEase. We respect your privacy and are committed to protecting the personal data of first-time Indian travellers going abroad.</p>
-        <p><strong>1. Information We Collect:</strong> We collect personal details you provide directly, such as name, email address, passport expiry date, trip preferences, and travel destinations when you register, search flights, or subscribe to newsletters.</p>
-        <p><strong>2. How We Use Your Information:</strong> We use your details to calculate visa warnings, provide live exchange alerts, customize travel checklists, and deliver email updates about visa changes.</p>
-        <p><strong>3. Data Security:</strong> Your data is stored securely in our MongoDB database and is hashed or protected using modern encryption standards. We never sell or share your data with third parties.</p>
+        <p>Welcome to TravelEase. We respect your privacy and are committed to protecting the personal data of
+          first-time Indian travellers going abroad.</p>
+        <p><strong>1. Information We Collect:</strong> We collect personal details you provide directly, such as name,
+          email address, passport expiry date, trip preferences, and travel destinations when you register, search
+          flights, or subscribe to newsletters.</p>
+        <p><strong>2. How We Use Your Information:</strong> We use your details to calculate visa warnings, provide live
+          exchange alerts, customize travel checklists, and deliver email updates about visa changes.</p>
+        <p><strong>3. Data Security:</strong> Your data is stored securely in our MongoDB database and is hashed or
+          protected using modern encryption standards. We never sell or share your data with third parties.</p>
       </div>
     </div>
   </div>
@@ -967,10 +1100,15 @@
       <h2>Terms of Service</h2>
       <p class="modal-subtitle">Last updated: July 2026</p>
       <div style="font-size: 0.9rem; line-height: 1.6; color: var(--muted);">
-        <p>Please read these Terms of Service carefully before using TravelEase's travel guides, checklists, or automated alerts.</p>
-        <p><strong>1. Travel Advice Disclaimer:</strong> TravelEase provides general educational guidelines, visa tips, and currency references for Indian passport holders. We do not issue official visas or legal documents. Always double check with the respective country's embassy or VFS global portals before finalizing travel plans.</p>
-        <p><strong>2. User Accounts:</strong> You are responsible for keeping your travel account passwords and Google logins secure. Accounts created with invalid or throwaway email domains are subject to deletion.</p>
-        <p><strong>3. Acceptable Use:</strong> Users are prohibited from posting fraudulent reviews, spamming the community tips comments, or attempt to exploit backend APIs.</p>
+        <p>Please read these Terms of Service carefully before using TravelEase's travel guides, checklists, or
+          automated alerts.</p>
+        <p><strong>1. Travel Advice Disclaimer:</strong> TravelEase provides general educational guidelines, visa tips,
+          and currency references for Indian passport holders. We do not issue official visas or legal documents. Always
+          double check with the respective country's embassy or VFS global portals before finalizing travel plans.</p>
+        <p><strong>2. User Accounts:</strong> You are responsible for keeping your travel account passwords and Google
+          logins secure. Accounts created with invalid or throwaway email domains are subject to deletion.</p>
+        <p><strong>3. Acceptable Use:</strong> Users are prohibited from posting fraudulent reviews, spamming the
+          community tips comments, or attempt to exploit backend APIs.</p>
       </div>
     </div>
   </div>
@@ -984,15 +1122,18 @@
       <form id="footerContactForm">
         <div class="form-group" style="margin-bottom: 15px;">
           <label for="footerContactName">Full Name</label>
-          <input type="text" id="footerContactName" placeholder="e.g. Arjit Sharma" required style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none;">
+          <input type="text" id="footerContactName" placeholder="e.g. Arjit Sharma" required
+            style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none;">
         </div>
         <div class="form-group" style="margin-bottom: 15px;">
           <label for="footerContactEmail">Email Address</label>
-          <input type="email" id="footerContactEmail" placeholder="e.g. arjit@example.com" required style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none;">
+          <input type="email" id="footerContactEmail" placeholder="e.g. arjit@example.com" required
+            style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none;">
         </div>
         <div class="form-group" style="margin-bottom: 15px;">
           <label for="footerContactMessage">Your Message</label>
-          <textarea id="footerContactMessage" rows="4" placeholder="Enter your message here..." required style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none; font-family: inherit; resize: vertical;"></textarea>
+          <textarea id="footerContactMessage" rows="4" placeholder="Enter your message here..." required
+            style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; outline: none; font-family: inherit; resize: vertical;"></textarea>
         </div>
         <div id="contactErrorMsg" class="form-error-msg" style="display: none;"></div>
         <div id="contactSuccessMsg" class="newsletter-msg success" style="display: none; margin-bottom: 15px;"></div>

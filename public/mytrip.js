@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load user data and render
   loadTripSummary();
+  loadSavedPlaces();
 
   // Setup click handlers for Edit Trip details (reuses index.html modals)
   setupDashboardEditHandlers();
@@ -444,3 +445,246 @@ function showErrorState() {
     container.style.display = "block";
   }
 }
+
+// Fetch and render user's saved places for the current trip
+async function loadSavedPlaces() {
+  const panel = document.getElementById("savedPlacesPanel");
+  const grid = document.getElementById("savedPlacesGrid");
+
+  if (!panel || !grid) return;
+
+  const token = localStorage.getItem("travelease_token");
+  const user = getLoggedInUser();
+
+  if (!token || !user || !user.destination) {
+    panel.style.display = "none";
+    return;
+  }
+
+  const destination = user.destination;
+
+  try {
+    const res = await fetch("/api/saved-places", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    
+    // Filter places for the current destination
+    const filteredPlaces = data.filter(place => 
+      place.destination.toLowerCase() === destination.toLowerCase()
+    );
+
+    if (filteredPlaces.length === 0) {
+      panel.style.display = "none";
+      return;
+    }
+
+    panel.style.display = "block";
+
+    window.loadedDashboardPlaces = filteredPlaces;
+
+    grid.innerHTML = filteredPlaces.map((place, idx) => {
+      const categoryClass = place.category ? place.category.toLowerCase().replace(' ', '-') : 'landmark';
+      
+      return `
+        <div class="place-card" style="cursor: pointer;" data-place-index="${idx}">
+          <div class="place-card-image-wrapper">
+            <img src="${escapeHTML(place.photoUrl)}" class="place-card-img" alt="${escapeHTML(place.name)}" loading="lazy">
+            <button class="place-bookmark-btn saved" data-place-index="${idx}" aria-label="Remove bookmark">
+              <i class="fa-solid fa-bookmark"></i>
+            </button>
+          </div>
+          <div class="place-card-body">
+            <div class="place-card-header">
+              <h4 class="place-title">${escapeHTML(place.name)}</h4>
+              <span class="place-badge ${categoryClass}">${escapeHTML(place.category || 'Landmark')}</span>
+            </div>
+            <p class="place-desc">${escapeHTML(place.description)}</p>
+            <div class="place-meta">
+              <span><i class="fa-regular fa-clock"></i> ${escapeHTML(place.estimatedDuration || '1-2 hours')}</span>
+            </div>
+            <div class="place-meta" style="margin-top: -4px;">
+              <span><i class="fa-regular fa-lightbulb"></i> <strong>Tip:</strong> ${escapeHTML(place.tip || 'Carry water')}</span>
+            </div>
+            <p class="place-relevance">
+              <i class="fa-solid fa-circle-info" style="color: var(--blue); margin-right: 4px;"></i>
+              ${escapeHTML(place.relevanceReason || 'Recommended spot')}
+            </p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach click listeners to cards
+    const cards = grid.querySelectorAll(".place-card");
+    cards.forEach(card => {
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".place-bookmark-btn")) return;
+        const idx = parseInt(card.dataset.placeIndex);
+        const place = filteredPlaces[idx];
+        if (place) {
+          openPlaceDetails(place);
+        }
+      });
+    });
+
+    const bookmarkBtns = grid.querySelectorAll(".place-bookmark-btn");
+    bookmarkBtns.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.placeIndex);
+        const place = filteredPlaces[idx];
+        if (place) {
+          toggleDashboardPlaceBookmark(e, btn, place);
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error("Failed to load saved places for dashboard:", error);
+    panel.style.display = "none";
+  }
+}
+
+// Open modal showing comprehensive details of a selected place from dashboard
+function openPlaceDetails(place) {
+  if (!place) return;
+
+  const container = document.getElementById("placeDetailsContainer");
+  if (!container) return;
+
+  const ratingStars = generateRatingStars(place.rating || 4.0);
+
+  // Setup directions link using coordinates if present, fallback to text query
+  let directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.address || ''))}`;
+  if (place.location && place.location.latitude && place.location.longitude) {
+    directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.latitude},${place.location.longitude}`;
+  }
+
+  container.innerHTML = `
+    <div class="detail-header-image" style="position: relative; height: 260px; background: #f1f5f9;">
+      <img src="${escapeHTML(place.photoUrl)}" alt="${escapeHTML(place.name)}" style="width: 100%; height: 100%; object-fit: cover;">
+      <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 24px 20px 20px 20px; color: #fff;">
+        <span class="place-badge ${place.category ? place.category.toLowerCase().replace(' ', '-') : 'landmark'}" style="margin-bottom: 8px; display: inline-block;">${escapeHTML(place.category || 'Landmark')}</span>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${escapeHTML(place.name)}</h2>
+      </div>
+    </div>
+    <div class="detail-body" style="padding: 24px 20px; color: var(--ink);">
+      
+      <!-- Rating and Location Details -->
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.95rem; color: #ffb100;">
+          ${ratingStars}
+          <span style="color: var(--muted); font-size: 0.88rem; font-weight: bold;">(${place.rating ? place.rating.toFixed(1) : '4.0'})</span>
+        </div>
+        <div style="font-size: 0.88rem; color: var(--muted); font-weight: bold;">
+          <i class="fa-regular fa-clock" style="color: var(--blue); margin-right: 4px;"></i> Duration: ${escapeHTML(place.estimatedDuration || '2 hours')}
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 6px;">Address</h4>
+        <p style="font-size: 0.92rem; line-height: 1.5; color: var(--muted); margin: 0;">
+          <i class="fa-solid fa-location-dot" style="color: var(--blue); margin-right: 6px;"></i> ${escapeHTML(place.address || 'Address details not available')}
+        </p>
+      </div>
+
+      <!-- Relevance reason -->
+      <div style="background: var(--blue-soft); border-left: 4px solid var(--blue); padding: 14px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--blue-dark); letter-spacing: 0.5px; margin-bottom: 4px;">Why it fits your profile</h4>
+        <p style="font-size: 0.88rem; line-height: 1.45; color: var(--blue-dark); margin: 0; font-weight: 600;">
+          ${escapeHTML(place.relevanceReason || 'Highly recommended.')}
+        </p>
+      </div>
+
+      <!-- Travel Tip -->
+      <div style="background: #fffbeb; border-left: 4px solid #d97706; padding: 14px 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: #b45309; letter-spacing: 0.5px; margin-bottom: 4px;">First-Time Traveler Tip</h4>
+        <p style="font-size: 0.88rem; line-height: 1.45; color: #b45309; margin: 0; font-weight: 600;">
+          <i class="fa-regular fa-lightbulb" style="margin-right: 4px;"></i> ${escapeHTML(place.tip || 'Plan ahead.')}
+        </p>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; gap: 12px;">
+        <a href="${directionsUrl}" target="_blank" rel="noopener" class="primary-button" style="flex: 1; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 6px; padding: 10px;">
+          <i class="fa-solid fa-diamond-turn-right" style="margin-right: 8px;"></i> Get Directions
+        </a>
+        <button type="button" class="secondary-button" onclick="closeModal('placeDetailsModal')" style="flex: 1; border-radius: 6px;">Close Details</button>
+      </div>
+    </div>
+  `;
+
+  openModal("placeDetailsModal");
+}
+
+// Generate rating stars
+function generateRatingStars(rating) {
+  const fullStars = Math.floor(rating);
+  const hasHalf = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+  let starsHtml = '';
+  for (let i = 0; i < fullStars; i++) {
+    starsHtml += '<i class="fa-solid fa-star"></i>';
+  }
+  if (hasHalf) {
+    starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+  }
+  for (let i = 0; i < emptyStars; i++) {
+    starsHtml += '<i class="fa-regular fa-star"></i>';
+  }
+  return starsHtml;
+}
+
+// Toggle dashboard bookmark
+async function toggleDashboardPlaceBookmark(event, btn, place) {
+  if (!place) return;
+
+  const token = localStorage.getItem("travelease_token");
+  if (!token) return;
+
+  try {
+    const toggleRes = await fetch("/api/saved-places", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        name: place.name,
+        destination: place.destination
+      })
+    });
+
+    if (!toggleRes.ok) {
+      throw new Error("Failed to unsave place");
+    }
+
+    const responseData = await toggleRes.json();
+    if (typeof showToast === 'function') {
+      showToast(responseData.message, "success");
+    }
+
+    // Reload list
+    loadSavedPlaces();
+  } catch (err) {
+    console.error(err);
+    if (typeof showToast === 'function') {
+      showToast("Failed to unsave place. Please try again.", "error");
+    }
+  }
+}
+
+// Make loadSavedPlaces and helpers globally available
+window.loadSavedPlaces = loadSavedPlaces;
+window.openPlaceDetails = openPlaceDetails;
+window.toggleDashboardPlaceBookmark = toggleDashboardPlaceBookmark;

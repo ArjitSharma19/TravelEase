@@ -4974,3 +4974,369 @@ body.sidebar-expanded {
     display: inline;
   }
 }
+
+/* ==========================================================================
+   Custom Searchable Currency Selector Widget
+   ========================================================================== */
+
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-search {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.custom-select-search:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+  background: #ffffff;
+}
+
+.custom-select-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 200;
+  padding: 4px 0;
+}
+
+.custom-select-item {
+  width: 100%;
+  display: block;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.custom-select-item:hover {
+  background-color: #eef4ff;
+  color: #1a73e8;
+}
+
+.custom-select-no-results {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+/* --- Password Toggle Buttons --- */
+.password-wrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 40px !important; /* Ensure input text doesn't overlap the eye icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  font-size: 0.95rem;
+  transition: color 150ms ease, transform 150ms ease;
+  outline: none;
+}
+
+.password-toggle-btn:hover {
+  color: var(--blue);
+}
+
+.password-toggle-btn:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+/* --- Places to Visit Styles --- */
+.places-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.places-filters .filter-chip {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.places-filters .filter-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.places-filters .filter-chip.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.places-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.place-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(20, 39, 74, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.place-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(20, 39, 74, 0.08);
+}
+
+.place-card-image-wrapper {
+  position: relative;
+  height: 140px;
+  width: 100%;
+  background: #f1f5f9;
+}
+
+.place-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.place-bookmark-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 150ms ease;
+  z-index: 10;
+}
+
+.place-bookmark-btn:hover {
+  transform: scale(1.1);
+  color: var(--red);
+}
+
+.place-bookmark-btn.saved {
+  color: var(--red);
+  background: #ffffff;
+}
+
+.place-card-body {
+  padding: 14px;
+}
+
+.place-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.place-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.place-badge {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Category Badge Colors */
+.place-badge.landmark { background: #e0f2fe; color: #0369a1; }
+.place-badge.nature { background: #dcfce7; color: #15803d; }
+.place-badge.food { background: #fef3c7; color: #b45309; }
+.place-badge.culture { background: #f3e8ff; color: #6d28d9; }
+.place-badge.hidden-gem { background: #fce7f3; color: #be185d; }
+
+.place-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0 0 10px 0;
+}
+
+.place-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.place-meta i {
+  color: var(--blue);
+  margin-right: 4px;
+}
+
+.place-relevance {
+  background: var(--blue-soft);
+  border-left: 3px solid var(--blue);
+  padding: 6px 10px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.78rem;
+  color: var(--blue-dark);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Skeleton Loading */
+.place-skeleton {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+  padding: 0 0 14px 0;
+  margin-bottom: 16px;
+}
+
+.place-skeleton-img {
+  height: 140px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+.place-skeleton-body {
+  padding: 14px;
+}
+
+.place-skeleton-title {
+  height: 16px;
+  width: 60%;
+  background: #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+.place-skeleton-text {
+  height: 12px;
+  width: 100%;
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+.place-skeleton-text.short {
+  width: 80%;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.places-error-container {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--muted);
+}
+
+.places-error-container i {
+  font-size: 2rem;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.places-error-container p {
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+}
+
+/* Dashboard Saved Places Grid */
+.saved-places-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+/* Interest pills in sidebar */
+.interests-grid .interest-pill {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 180ms ease;
+  outline: none;
+}
+
+.interests-grid .interest-pill:hover {
+  border-color: var(--blue);
+}
+
+.interests-grid .interest-pill.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue-dark);
+}

@@ -420,6 +420,7 @@
       <nav class="top-nav" aria-label="Primary navigation">
         <a href="index.html#destinations">Destinations</a>
         <a href="index.html#guide">Guide</a>
+        <a href="places.html">Places to Visit</a>
         <a href="mytrip.html" id="navMyTrip" style="display: inline-block;">My Trip</a>
         <span class="nav-divider">|</span>
         <div id="headerAuthArea">
@@ -524,6 +525,14 @@
                 <!-- Populated Dynamically (Boarding pass or search CTA) -->
               </div>
             </article>
+
+            <!-- Section 4.5: Saved Places Card -->
+            <article class="dashboard-panel-card" id="savedPlacesPanel" style="display: none; margin-top: 20px;">
+              <h3><i class="fa-solid fa-bookmark" style="color: var(--blue);"></i> Saved Places to Visit</h3>
+              <div class="saved-places-grid" id="savedPlacesGrid">
+                <!-- Populated dynamically -->
+              </div>
+            </article>
           </div>
 
           <!-- Right Column -->
@@ -611,7 +620,12 @@
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
           <div style="text-align: right; margin-top: 4px;">
             <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot Password?</button>
           </div>
@@ -655,7 +669,12 @@
         </div>
         <div class="form-group">
           <label for="signup-password">Password</label>
-          <input type="password" id="signup-password" placeholder="Min. 6 characters" required autocomplete="new-password">
+          <div class="password-wrapper">
+            <input type="password" id="signup-password" placeholder="Min. 6 characters" required autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
         <div class="form-error-msg" id="signupError"></div>
         <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
@@ -714,11 +733,21 @@
         <form id="otpForm3">
           <div class="form-group">
             <label for="otpNewPassword">New Password</label>
-            <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+            <div class="password-wrapper">
+              <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-group" style="margin-top: 15px;">
             <label for="otpConfirmPassword">Confirm Password</label>
-            <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+            <div class="password-wrapper">
+              <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
             <div class="form-error-msg" id="confirmPasswordError" style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
           </div>
           
@@ -1037,6 +1066,16 @@
         <div id="contactSuccessMsg" class="newsletter-msg success" style="display: none; margin-bottom: 15px;"></div>
         <button class="primary-button modal-submit-btn" type="submit" style="width: 100%;">Send Message</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Details Modal / Panel -->
+  <div class="modal-overlay" id="placeDetailsModal" style="display: none; align-items: center; justify-content: center; z-index: 2000;">
+    <div class="modal-content" style="max-width: 600px; padding: 0; overflow: hidden; border-radius: 12px; position: relative;">
+      <button class="modal-close" onclick="closeModal('placeDetailsModal')" aria-label="Close details modal" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;">&times;</button>
+      <div id="placeDetailsContainer">
+        <!-- Populated dynamically -->
+      </div>
     </div>
   </div>
 
