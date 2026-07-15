@@ -564,18 +564,21 @@ app.get('/api/countries-list', async (req, res) => {
     const publicResponse = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,flag,region');
     if (publicResponse.ok) {
       const publicCountries = await publicResponse.json();
-      countriesCache = publicCountries
-        .map(country => ({
-          name: country.name?.common || '',
-          officialName: country.name?.official || '',
-          cca2: country.cca2 || '',
-          flag: country.flag || '🌍',
-          region: country.region || 'World'
-        }))
-        .filter(c => c.name !== '')
-        .sort((a, b) => a.name.localeCompare(b.name));
-      console.log(`Cached ${countriesCache.length} countries from public REST Countries API.`);
-      return res.json(countriesCache);
+      if (Array.isArray(publicCountries)) {
+        countriesCache = publicCountries
+          .map(country => ({
+            name: country.name?.common || '',
+            officialName: country.name?.official || '',
+            cca2: country.cca2 || '',
+            flag: country.flag || '🌍',
+            region: country.region || 'World'
+          }))
+          .filter(c => c.name !== '')
+          .sort((a, b) => a.name.localeCompare(b.name));
+        console.log(`Cached ${countriesCache.length} countries from public REST Countries API.`);
+        return res.json(countriesCache);
+      }
+      console.warn('Public REST Countries list returned a non-array response; trying keyed API if configured.');
     }
     console.warn(`Public REST Countries list returned status ${publicResponse.status}; trying keyed API if configured.`);
   } catch (error) {
