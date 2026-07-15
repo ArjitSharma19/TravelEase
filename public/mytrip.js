@@ -63,9 +63,7 @@ async function loadTripSummary() {
   }
 
   try {
-    // Determine target host dynamically (support relative path)
-    const host = window.location.origin;
-    const res = await fetch(`${host}/api/trip/summary/${encodeURIComponent(user.email)}`);
+    const res = await fetch(apiUrl(`/api/trip/summary/${encodeURIComponent(user.email)}`));
     if (!res.ok) {
       throw new Error(`Server returned status ${res.status}`);
     }
@@ -380,7 +378,7 @@ function setupQuickAsk() {
     const purpose = user ? user.tripPurpose : "tourism";
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -464,7 +462,7 @@ async function loadSavedPlaces() {
   const destination = user.destination;
 
   try {
-    const res = await fetch("/api/saved-places", {
+    const res = await fetch(apiUrl("/api/saved-places"), {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -653,7 +651,7 @@ async function toggleDashboardPlaceBookmark(event, btn, place) {
   if (!token) return;
 
   try {
-    const toggleRes = await fetch("/api/saved-places", {
+    const toggleRes = await fetch(apiUrl("/api/saved-places"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

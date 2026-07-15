@@ -414,20 +414,19 @@ app.get('/api/countries/:countryName', async (req, res) => {
   const { countryName } = req.params;
   const apiKey = process.env.REST_COUNTRIES_API_KEY;
 
-  // Fallback to public v3.1 API if API key is not configured
-  if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
-    console.log(`REST Countries API key not configured, falling back to public v3.1 for: ${countryName}`);
-    try {
-      const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
-      if (!response.ok) {
-        return res.status(response.status).json({ error: 'Failed to fetch country details from public API' });
-      }
-      const data = await response.json();
+  try {
+    const publicResponse = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
+    if (publicResponse.ok) {
+      const data = await publicResponse.json();
       return res.json(data);
-    } catch (error) {
-      console.error('Error fetching public REST Countries v3.1 data:', error);
-      return res.status(500).json({ error: 'Failed to fetch country details' });
     }
+    console.warn(`Public REST Countries API returned status ${publicResponse.status}; trying keyed API if configured.`);
+  } catch (error) {
+    console.error('Error fetching public REST Countries v3.1 data:', error.message);
+  }
+
+  if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
+    return res.status(502).json({ error: 'Failed to fetch country details from REST Countries.' });
   }
 
   try {
@@ -443,12 +442,6 @@ app.get('/api/countries/:countryName', async (req, res) => {
       const errText = await response.text();
       console.warn(`REST Countries v5 API returned status ${response.status}: ${errText}. Falling back to public v3.1.`);
       
-      // Fallback to public v3.1
-      const publicResponse = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
-      if (publicResponse.ok) {
-        const publicData = await publicResponse.json();
-        return res.json(publicData);
-      }
       return res.status(response.status).json({ error: `REST Countries API returned error: ${response.statusText}` });
     }
 
@@ -498,16 +491,6 @@ app.get('/api/countries/:countryName', async (req, res) => {
     res.json([]);
   } catch (error) {
     console.error('Error calling REST Countries API proxy:', error);
-    // Attempt last-resort fallback to public v3.1
-    try {
-      const publicResponse = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}`);
-      if (publicResponse.ok) {
-        const publicData = await publicResponse.json();
-        return res.json(publicData);
-      }
-    } catch (fallbackError) {
-      console.error('Last-resort fallback to public v3.1 failed:', fallbackError);
-    }
     res.status(500).json({ error: 'Failed to retrieve country details' });
   }
 });
@@ -576,6 +559,28 @@ app.get('/api/countries-list', async (req, res) => {
     { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦", region: "Africa" },
     { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳", region: "Asia" }
   ];
+
+  try {
+    const publicResponse = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,flag,region');
+    if (publicResponse.ok) {
+      const publicCountries = await publicResponse.json();
+      countriesCache = publicCountries
+        .map(country => ({
+          name: country.name?.common || '',
+          officialName: country.name?.official || '',
+          cca2: country.cca2 || '',
+          flag: country.flag || '🌍',
+          region: country.region || 'World'
+        }))
+        .filter(c => c.name !== '')
+        .sort((a, b) => a.name.localeCompare(b.name));
+      console.log(`Cached ${countriesCache.length} countries from public REST Countries API.`);
+      return res.json(countriesCache);
+    }
+    console.warn(`Public REST Countries list returned status ${publicResponse.status}; trying keyed API if configured.`);
+  } catch (error) {
+    console.error('Error fetching public REST Countries list:', error.message);
+  }
 
   if (!apiKey || apiKey === 'YOUR_REST_COUNTRIES_API_KEY' || apiKey.trim() === '') {
     console.log("REST Countries API key not configured, returning static fallback list.");
@@ -674,6 +679,13 @@ app.post('/api/chat', async (req, res) => {
           error: `Gemini API error: ${response.statusText}`
         });
       }
+    }
+
+    const data = await response.json();
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!generatedText) {
+      return res.status(502).json({ error: 'Gemini did not return a response.' });
     }
 
     res.json({ text: generatedText });

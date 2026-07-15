@@ -1,4 +1,11 @@
 const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
+const API_BASE_URL = window.TRAVELEASE_API_BASE_URL || "https://travelease-xva8.onrender.com";
+
+function apiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
+
+window.apiUrl = apiUrl;
 
 function getCountryCode2(code) {
   const mapping = {
@@ -19,7 +26,7 @@ let allCountriesList = [];
 
 document.addEventListener("DOMContentLoaded", () => {
   // Fetch full countries list as early as possible
-  fetch("/api/countries-list")
+  fetch(apiUrl("/api/countries-list"))
     .then((res) => {
       if (res.ok) return res.json();
       throw new Error("Failed to load countries list");
@@ -91,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
           resendBtn.disabled = true;
           resendBtn.textContent = "Sending...";
           try {
-            const res = await fetch("/api/auth/resend-verification", {
+            const res = await fetch(apiUrl("/api/auth/resend-verification"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email })
@@ -1142,7 +1149,7 @@ function appendMessage(log, message, sender) {
 }
 
 async function askClaude(userMessage) {
-  const response = await fetch("/api/chat", {
+  const response = await fetch(apiUrl("/api/chat"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -1203,7 +1210,7 @@ async function setupCommentsSection(countryCode) {
     const text = document.getElementById("commentText").value.trim();
 
     try {
-      const response = await fetch("/api/comments", {
+      const response = await fetch(apiUrl("/api/comments"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -1251,7 +1258,7 @@ async function setupCommentsSection(countryCode) {
     }
 
     try {
-      const response = await fetch(`/api/comments/${commentId}/like`, {
+      const response = await fetch(apiUrl(`/api/comments/${commentId}/like`), {
         method: "POST"
       });
 
@@ -1296,7 +1303,7 @@ async function setupCommentsSection(countryCode) {
 async function loadComments(countryCode) {
   const commentsList = document.getElementById("commentsList");
   try {
-    const response = await fetch(`/api/comments/${countryCode}`);
+    const response = await fetch(apiUrl(`/api/comments/${countryCode}`));
     if (!response.ok) {
       throw new Error("Failed to fetch comments.");
     }
@@ -1656,7 +1663,7 @@ window.showEmptyChecklistState = function () {
 
 window.fetchChecklistFromServer = async function (email) {
   try {
-    const res = await fetch(`/api/checklist/${encodeURIComponent(email)}`);
+    const res = await fetch(apiUrl(`/api/checklist/${encodeURIComponent(email)}`));
     const data = await res.json();
     return data.checklist;
   } catch (error) {
@@ -1667,7 +1674,7 @@ window.fetchChecklistFromServer = async function (email) {
 
 window.saveChecklistToServer = async function (email, checklist) {
   try {
-    await fetch(`/api/checklist/${encodeURIComponent(email)}`, {
+    await fetch(apiUrl(`/api/checklist/${encodeURIComponent(email)}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ checklist })
@@ -2286,7 +2293,7 @@ function closeModal(modalId) {
 
 window.handleGoogleLogin = async function (response) {
   try {
-    const res = await fetch('/api/auth/google', {
+    const res = await fetch(apiUrl('/api/auth/google'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: response.credential })
@@ -2412,7 +2419,7 @@ window.searchFlights = async function () {
   searchBtn.textContent = 'Searching...';
 
   try {
-    const res = await fetch(`/api/flights/search?origin=${from}&destination=${to}&departure=${departure}&returnDate=${returnDate || ''}&adults=${travellers}`);
+    const res = await fetch(apiUrl(`/api/flights/search?origin=${from}&destination=${to}&departure=${departure}&returnDate=${returnDate || ''}&adults=${travellers}`));
     const data = await res.json();
 
     if (!res.ok || !data.success) {
@@ -2690,7 +2697,7 @@ window.confirmFlightBooking = async function () {
     const inbound = flight.itineraries[1];
 
     if (token) {
-      const res = await fetch('/api/flights/book', {
+      const res = await fetch(apiUrl('/api/flights/book'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2822,7 +2829,7 @@ window.saveTripDetails = async function () {
       throw new Error("No authorization token found. Please log in.");
     }
 
-    const response = await fetch("/api/auth/profile", {
+    const response = await fetch(apiUrl("/api/auth/profile"), {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -2964,7 +2971,7 @@ function setupAuthHandlers() {
       errorDiv.textContent = "";
 
       try {
-        const response = await fetch("/api/auth/login", {
+        const response = await fetch(apiUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
@@ -3130,7 +3137,7 @@ function setupAuthHandlers() {
       submitBtn.textContent = "Sending OTP...";
 
       try {
-        const response = await fetch("/api/auth/forgot-password", {
+        const response = await fetch(apiUrl("/api/auth/forgot-password"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: otpEmail })
@@ -3170,7 +3177,7 @@ function setupAuthHandlers() {
       resendOtpBtn.textContent = "Sending...";
 
       try {
-        const response = await fetch("/api/auth/forgot-password", {
+        const response = await fetch(apiUrl("/api/auth/forgot-password"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: otpEmail })
@@ -3226,7 +3233,7 @@ function setupAuthHandlers() {
       submitBtn.textContent = "Verifying...";
 
       try {
-        const response = await fetch("/api/auth/verify-otp", {
+        const response = await fetch(apiUrl("/api/auth/verify-otp"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: otpEmail, otp })
@@ -3352,7 +3359,7 @@ function setupAuthHandlers() {
       const verifiedOtp = otpForm2.dataset.verifiedOtp;
 
       try {
-        const response = await fetch("/api/auth/reset-password", {
+        const response = await fetch(apiUrl("/api/auth/reset-password"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: otpEmail, otp: verifiedOtp, password: newPass })
@@ -3404,7 +3411,7 @@ function setupAuthHandlers() {
       }
 
       try {
-        const response = await fetch("/api/auth/signup", {
+        const response = await fetch(apiUrl("/api/auth/signup"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -3453,7 +3460,7 @@ function setupAuthHandlers() {
 
       try {
         const token = getToken();
-        const response = await fetch("/api/auth/profile", {
+        const response = await fetch(apiUrl("/api/auth/profile"), {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -3852,7 +3859,7 @@ async function loadExplorePage(countryName) {
       // 1. Fetch REST Countries API (with graceful fallback on failure/deprecation)
       let restData = null;
       try {
-        const restRes = await fetch(`/api/countries/${encodeURIComponent(countryName)}`);
+        const restRes = await fetch(apiUrl(`/api/countries/${encodeURIComponent(countryName)}`));
         if (restRes.ok) {
           const restList = await restRes.json();
           // Ensure it's not the deprecation error JSON (which doesn't have cca2)
@@ -3889,7 +3896,7 @@ async function loadExplorePage(countryName) {
       const searchName = restData ? restData.name.common : countryName;
       const userPrompt = `Generate travel visa and local guidelines for Indian passport holders visiting ${searchName}.`;
 
-      const chatRes = await fetch("/api/chat", {
+      const chatRes = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3924,7 +3931,7 @@ async function loadExplorePage(countryName) {
       // 3. Fetch Unsplash images for the slideshow
       let imageList = [];
       try {
-        const imgRes = await fetch(`/api/images/${encodeURIComponent(searchName)}`);
+        const imgRes = await fetch(apiUrl(`/api/images/${encodeURIComponent(searchName)}`));
         if (imgRes.ok) {
           imageList = await imgRes.json();
         }
@@ -4231,7 +4238,7 @@ function setupFooter() {
       newsletterMsg.textContent = "";
 
       try {
-        const res = await fetch("/api/newsletter/subscribe", {
+        const res = await fetch(apiUrl("/api/newsletter/subscribe"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email })
@@ -4285,7 +4292,7 @@ function setupFooter() {
       clearContactFeedback();
 
       try {
-        const res = await fetch("/api/contact", {
+        const res = await fetch(apiUrl("/api/contact"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, message })
@@ -4379,7 +4386,7 @@ function setupFooter() {
   };
 
   if (testimonialsContainer) {
-    fetch("/api/comments/top/testimonials")
+    fetch(apiUrl("/api/comments/top/testimonials"))
       .then(res => {
         if (!res.ok) throw new Error("Fetch failed");
         return res.json();
@@ -4645,7 +4652,7 @@ async function setupPlacesWidget() {
       const token = getToken();
       if (token) {
         try {
-          const savedRes = await fetch('/api/saved-places', {
+          const savedRes = await fetch(apiUrl('/api/saved-places'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (savedRes.ok) {
@@ -4661,7 +4668,7 @@ async function setupPlacesWidget() {
         }
       }
 
-      const res = await fetch('/api/places-to-visit', {
+      const res = await fetch(apiUrl('/api/places-to-visit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ destination, travelPurpose: purposeStr, interests })
@@ -4781,7 +4788,7 @@ async function setupPlacesWidget() {
         const destination = user ? user.destination : '';
 
         try {
-          const res = await fetch('/api/saved-places', {
+          const res = await fetch(apiUrl('/api/saved-places'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

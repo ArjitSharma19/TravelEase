@@ -105,7 +105,7 @@ async function fetchFullPageRecommendations() {
     const token = getToken();
     if (token) {
       try {
-        const savedRes = await fetch('/api/saved-places', {
+        const savedRes = await fetch(apiUrl('/api/saved-places'), {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (savedRes.ok) {
@@ -121,7 +121,7 @@ async function fetchFullPageRecommendations() {
       }
     }
 
-    const res = await fetch('/api/places-to-visit', {
+    const res = await fetch(apiUrl('/api/places-to-visit'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ destination, travelPurpose: purposeStr, interests })
@@ -354,7 +354,7 @@ async function togglePlaceBookmark(event, btn, place) {
   const destination = user ? user.destination : "";
 
   try {
-    const res = await fetch("/api/saved-places", {
+    const res = await fetch(apiUrl("/api/saved-places"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

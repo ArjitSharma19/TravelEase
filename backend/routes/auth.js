@@ -7,19 +7,25 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 const User = require('../models/User');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(googleClientId);
 
 router.post('/google', async (req, res) => {
   try {
     const { token } = req.body;
     
+    if (!googleClientId || googleClientId.trim() === '') {
+      console.error('Google Auth Error: GOOGLE_CLIENT_ID is not configured.');
+      return res.status(500).json({ success: false, message: 'Google sign-in is not configured on the server.' });
+    }
+
     if (!token) {
       return res.status(400).json({ success: false, message: 'Google credential token is required' });
     }
 
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: googleClientId
     });
     
     const payload = ticket.getPayload();
@@ -69,8 +75,11 @@ router.post('/google', async (req, res) => {
     res.json({ success: true, token: jwtToken, user: userResponse });
     
   } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(401).json({ success: false, message: 'Invalid Google token' });
+    console.error('Google Auth Error:', error.message);
+    res.status(401).json({
+      success: false,
+      message: 'Google sign-in failed. Check the OAuth client ID and authorized JavaScript origins.'
+    });
   }
 });
 
