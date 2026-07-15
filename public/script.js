@@ -136,7 +136,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }, 300);
   }
+  setupPasswordToggles();
 });
+
+function setupPasswordToggles() {
+  document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const container = btn.closest('.password-wrapper');
+      if (!container) return;
+      const input = container.querySelector('input');
+      if (!input) return;
+      const icon = btn.querySelector('i');
+      if (!icon) return;
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    });
+  });
+}
 
 function renderHomePage() {
   const grid = document.getElementById("destinationGrid");
@@ -1490,6 +1513,7 @@ function setupSidebarWidgets() {
   setupAuthHandlers();
   renderAuthUI();
   calculatePersonalizedAlerts();
+  setupPlacesWidget();
 }
 
 /* --- Collapsible Sidebar Layout Setup --- */
@@ -1654,21 +1678,225 @@ window.saveChecklistToServer = async function (email, checklist) {
 };
 
 // Live Currency Exchange Rate integration
+let exchangeRatesCache = null;
+
+const fallbackCurrencies = {
+  "AED": "United Arab Emirates Dirham (AED)",
+  "AUD": "Australian Dollar (AUD)",
+  "AZN": "Azerbaijani Manat (AZN)",
+  "CAD": "Canadian Dollar (CAD)",
+  "CHF": "Swiss Franc (CHF)",
+  "CNY": "Chinese Yuan (CNY)",
+  "EUR": "Euro (EUR)",
+  "GBP": "British Pound (GBP)",
+  "HKD": "Hong Kong Dollar (HKD)",
+  "INR": "Indian Rupee (INR)",
+  "JPY": "Japanese Yen (JPY)",
+  "KRW": "South Korean Won (KRW)",
+  "MYR": "Malaysian Ringgit (MYR)",
+  "NZD": "New Zealand Dollar (NZD)",
+  "SGD": "Singapore Dollar (SGD)",
+  "THB": "Thai Baht (THB)",
+  "USD": "US Dollar (USD)",
+  "ZAR": "South African Rand (ZAR)"
+};
+
+const currencyNames = {
+  "AED": "UAE Dirham",
+  "AFN": "Afghan Afghani",
+  "ALL": "Albanian Lek",
+  "AMD": "Armenian Dram",
+  "ANG": "Netherlands Antillean Guilder",
+  "AOA": "Angolan Kwanza",
+  "ARS": "Argentine Peso",
+  "AUD": "Australian Dollar",
+  "AWG": "Aruban Florin",
+  "AZN": "Azerbaijani Manat",
+  "BAM": "Bosnia-Herzegovina Mark",
+  "BBD": "Barbadian Dollar",
+  "BDT": "Bangladeshi Taka",
+  "BGN": "Bulgarian Lev",
+  "BHD": "Bahraini Dinar",
+  "BIF": "Burundian Franc",
+  "BMD": "Bermudian Dollar",
+  "BND": "Brunei Dollar",
+  "BOB": "Bolivian Boliviano",
+  "BRL": "Brazilian Real",
+  "BSD": "Bahamian Dollar",
+  "BTN": "Bhutanese Ngultrum",
+  "BWP": "Botswanan Pula",
+  "BYN": "Belarusian Ruble",
+  "BZD": "Belize Dollar",
+  "CAD": "Canadian Dollar",
+  "CDF": "Congolese Franc",
+  "CHF": "Swiss Franc",
+  "CLP": "Chilean Peso",
+  "CNY": "Chinese Yuan",
+  "COP": "Colombian Peso",
+  "CRC": "Costa Rican Colón",
+  "CUP": "Cuban Peso",
+  "CVE": "Cape Verdean Escudo",
+  "CZK": "Czech Koruna",
+  "DJF": "Djiboutian Franc",
+  "DKK": "Danish Krone",
+  "DOP": "Dominican Peso",
+  "DZD": "Algerian Dinar",
+  "EGP": "Egyptian Pound",
+  "ERN": "Eritrean Nakfa",
+  "ETB": "Ethiopian Birr",
+  "EUR": "Euro",
+  "FJD": "Fijian Dollar",
+  "FKP": "Falkland Islands Pound",
+  "FOK": "Faroese Króna",
+  "GBP": "British Pound",
+  "GEL": "Georgian Lari",
+  "GGP": "Guernsey Pound",
+  "GHS": "Ghanaian Cedi",
+  "GIP": "Gibraltar Pound",
+  "GMD": "Gambian Dalasi",
+  "GNF": "Guinean Franc",
+  "GTQ": "Guatemalan Quetzal",
+  "GYD": "Guyanese Dollar",
+  "HKD": "Hong Kong Dollar",
+  "HNL": "Honduran Lempira",
+  "HRK": "Croatian Kuna",
+  "HTG": "Haitian Gourde",
+  "HUF": "Hungarian Forint",
+  "IDR": "Indonesian Rupiah",
+  "ILS": "Israeli New Shekel",
+  "IMP": "Manx Pound",
+  "INR": "Indian Rupee",
+  "IQD": "Iraqi Dinar",
+  "IRR": "Iranian Rial",
+  "ISK": "Icelandic Króna",
+  "JEP": "Jersey Pound",
+  "JMD": "Jamaican Dollar",
+  "JOD": "Jordanian Dinar",
+  "JPY": "Japanese Yen",
+  "KES": "Kenyan Shilling",
+  "KGS": "Kyrgystani Som",
+  "KHR": "Cambodian Riel",
+  "KID": "Kiribati Dollar",
+  "KMF": "Comorian Franc",
+  "KPW": "North Korean Won",
+  "KRW": "South Korean Won",
+  "KWD": "Kuwaiti Dinar",
+  "KYD": "Cayman Islands Dollar",
+  "KZT": "Kazakhstani Tenge",
+  "LAK": "Laotian Kip",
+  "LBP": "Lebanese Pound",
+  "LKR": "Sri Lankan Rupee",
+  "LRD": "Liberian Dollar",
+  "LSL": "Lesotho Loti",
+  "LYD": "Libyan Dinar",
+  "MAD": "Moroccan Dirham",
+  "MDL": "Moldovan Leu",
+  "MGA": "Malagasy Ariary",
+  "MKD": "Macedonian Denar",
+  "MMK": "Myanmar Kyat",
+  "MNT": "Mongolian Tughrik",
+  "MOP": "Macanese Pataca",
+  "MRU": "Mauritanian Ouguiya",
+  "MUR": "Mauritian Rupee",
+  "MVR": "Maldivian Rufiyaa",
+  "MWK": "Malawian Kwacha",
+  "MXN": "Mexican Peso",
+  "MYR": "Malaysian Ringgit",
+  "MZN": "Mozambican Metical",
+  "NAD": "Namibian Dollar",
+  "NGN": "Nigerian Naira",
+  "NIO": "Nicaraguan Córdoba",
+  "NOK": "Norwegian Krone",
+  "NPR": "Nepalese Rupee",
+  "NZD": "New Zealand Dollar",
+  "OMR": "Omani Rial",
+  "PAB": "Panamanian Balboa",
+  "PEN": "Peruvian Sol",
+  "PGK": "Papua New Guinean Kina",
+  "PHP": "Philippine Peso",
+  "PKR": "Pakistani Rupee",
+  "PLN": "Polish Złoty",
+  "PYG": "Paraguayan Guaraní",
+  "QAR": "Qatari Riyal",
+  "RON": "Romanian Leu",
+  "RSD": "Serbian Dinar",
+  "RUB": "Russian Ruble",
+  "RWF": "Rwandan Franc",
+  "SAR": "Saudi Riyal",
+  "SBD": "Solomon Islands Dollar",
+  "SCR": "Seychellois Rupee",
+  "SDG": "Sudanese Pound",
+  "SEK": "Swedish Krona",
+  "SGD": "Singapore Dollar",
+  "SHP": "St. Helena Pound",
+  "SLE": "Sierra Leonean Leone",
+  "SLL": "Sierra Leonean Leone",
+  "SOS": "Somali Shilling",
+  "SRD": "Surinamese Dollar",
+  "SSP": "South Sudanese Pound",
+  "STN": "São Tomé and Príncipe Dobra",
+  "SYP": "Syrian Pound",
+  "SZL": "Swazi Lilangeni",
+  "THB": "Thai Baht",
+  "TJS": "Tajikistani Somoni",
+  "TMT": "Turkmenistani Manat",
+  "TND": "Tunisian Dinar",
+  "TOP": "Tongan Paʻanga",
+  "TRY": "Turkish Lira",
+  "TTD": "Trinidad and Tobago Dollar",
+  "TVD": "Tuvaluan Dollar",
+  "TWD": "New Taiwan Dollar",
+  "TZS": "Tanzanian Shilling",
+  "UAH": "Ukrainian Hryvnia",
+  "UGX": "Ugandan Shilling",
+  "USD": "US Dollar",
+  "UYU": "Uruguayan Peso",
+  "UZS": "Uzbekistani Som",
+  "VES": "Venezuelan Bolívar Soberano",
+  "VND": "Vietnamese Đồng",
+  "VUV": "Vanuatu Vatu",
+  "WST": "Samoan Tālā",
+  "XAF": "Central African CFA Franc",
+  "XCD": "East Caribbean Dollar",
+  "XDR": "Special Drawing Rights",
+  "XOF": "West African CFA Franc",
+  "XPF": "CFP Franc",
+  "YER": "Yemeni Rial",
+  "ZAR": "South African Rand",
+  "ZMW": "Zambian Kwacha",
+  "ZWL": "Zimbabwean Dollar"
+};
+
+async function fetchAllExchangeRates() {
+  if (exchangeRatesCache) return exchangeRatesCache;
+  try {
+    const response = await fetch('https://open.er-api.com/v6/latest/INR');
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.result === 'success' && data.rates) {
+        exchangeRatesCache = data.rates;
+        return exchangeRatesCache;
+      }
+    }
+  } catch (error) {
+    console.warn('Primary exchange rate fetch failed, trying fallback:', error);
+  }
+  return null;
+}
+
 async function getLiveExchangeRate(targetCurrency) {
   if (!targetCurrency) return null;
   const uppercaseCurrency = targetCurrency.toUpperCase();
 
-  try {
-    // Primary API: ExchangeRate-API (supports 160+ currencies, including AZN, AED, etc.)
-    const response = await fetch('https://open.er-api.com/v6/latest/INR');
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.result === 'success' && data.rates && data.rates[uppercaseCurrency]) {
-        return data.rates[uppercaseCurrency];
-      }
-    }
-  } catch (error) {
-    console.warn('Primary exchange rate API failed, trying Frankfurter fallback:', error);
+  // Check cache first
+  if (exchangeRatesCache && exchangeRatesCache[uppercaseCurrency]) {
+    return exchangeRatesCache[uppercaseCurrency];
+  }
+
+  // Fetch and cache all rates
+  const rates = await fetchAllExchangeRates();
+  if (rates && rates[uppercaseCurrency]) {
+    return rates[uppercaseCurrency];
   }
 
   // Fallback API: Frankfurter API (only supports 31 major currencies, lacks AED, AZN)
@@ -1696,6 +1924,136 @@ async function getLiveExchangeRate(targetCurrency) {
     'AZN': 0.020
   };
   return localFallbacks[uppercaseCurrency] || null;
+}
+
+async function setupCustomCurrencySelect() {
+  const selectElement = document.getElementById("converter-currency");
+  if (!selectElement) return;
+
+  // 1. Create a container wrapper
+  const wrapper = document.createElement("div");
+  wrapper.className = "custom-select-wrapper";
+  
+  // 2. Create the visible search input
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.id = "converter-currency-search";
+  searchInput.className = "custom-select-search";
+  searchInput.placeholder = "Type to search currency...";
+  searchInput.autocomplete = "off";
+  
+  // 3. Create the hidden input to store the value
+  const hiddenInput = document.createElement("input");
+  hiddenInput.type = "hidden";
+  hiddenInput.id = "converter-currency";
+  hiddenInput.value = selectElement.value || "USD";
+  
+  // 4. Create the custom dropdown items list container
+  const listContainer = document.createElement("div");
+  listContainer.className = "custom-select-list";
+  listContainer.id = "currencySuggestions";
+  listContainer.style.display = "none";
+  
+  // Build the DOM
+  wrapper.appendChild(searchInput);
+  wrapper.appendChild(hiddenInput);
+  wrapper.appendChild(listContainer);
+  
+  // Replace selectElement with our searchable wrapper
+  selectElement.parentNode.replaceChild(wrapper, selectElement);
+
+  // Pre-load all rates and fill allCurrencyList
+  const rates = await fetchAllExchangeRates();
+  let codes = [];
+  if (rates) {
+    codes = Object.keys(rates);
+  } else {
+    codes = Object.keys(fallbackCurrencies);
+  }
+  codes = codes.filter(code => code !== "INR");
+  codes.sort();
+
+  const allCurrencyList = codes.map(code => {
+    const name = currencyNames[code] || code;
+    return {
+      code,
+      name,
+      displayName: `${name} (${code})`
+    };
+  });
+
+  // Set initial visible search input value
+  const initialCode = hiddenInput.value;
+  const initialCurrency = allCurrencyList.find(c => c.code === initialCode);
+  if (initialCurrency) {
+    searchInput.value = initialCurrency.displayName;
+  } else {
+    searchInput.value = `US Dollar (USD)`;
+  }
+
+  // Render options helper
+  const renderOptions = (filterQuery = "") => {
+    const query = filterQuery.toLowerCase().trim();
+    const filtered = allCurrencyList.filter(c => 
+      c.code.toLowerCase().includes(query) || 
+      c.name.toLowerCase().includes(query)
+    );
+
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<div class="custom-select-no-results">No currencies found</div>`;
+      return;
+    }
+
+    listContainer.innerHTML = filtered.map(c => `
+      <button class="custom-select-item" type="button" data-value="${c.code}">
+        ${c.displayName}
+      </button>
+    `).join("");
+  };
+
+  // Event: Input focus -> show suggestions
+  searchInput.addEventListener("focus", () => {
+    // Select all text on focus for easier typing
+    searchInput.select();
+    renderOptions(searchInput.value === (initialCurrency ? initialCurrency.displayName : "") ? "" : searchInput.value);
+    listContainer.style.display = "block";
+  });
+
+  // Event: Input keyup -> filter suggestions
+  searchInput.addEventListener("input", () => {
+    renderOptions(searchInput.value);
+    listContainer.style.display = "block";
+  });
+
+  // Event: Click suggestion item
+  listContainer.addEventListener("mousedown", (e) => {
+    const button = e.target.closest(".custom-select-item");
+    if (!button) return;
+
+    const value = button.getAttribute("data-value");
+    const currency = allCurrencyList.find(c => c.code === value);
+    if (currency) {
+      hiddenInput.value = value;
+      searchInput.value = currency.displayName;
+      listContainer.style.display = "none";
+      
+      // Trigger change event on hidden input to fire convertCurrency
+      hiddenInput.dispatchEvent(new Event("change"));
+    }
+  });
+
+  // Event: Blur input -> reset if empty
+  searchInput.addEventListener("blur", () => {
+    // Timeout to let mousedown on list item resolve first
+    setTimeout(() => {
+      listContainer.style.display = "none";
+      const currentCode = hiddenInput.value;
+      const currentCurrency = allCurrencyList.find(c => c.code === currentCode);
+      if (currentCurrency) {
+        searchInput.value = currentCurrency.displayName;
+      }
+    }, 150);
+  });
 }
 
 async function updateCurrencyDisplay(currencyCode) {
@@ -1747,7 +2105,15 @@ async function convertCurrency() {
       USD: "$",
       THB: "฿",
       JPY: "¥",
-      SGD: "S$"
+      SGD: "S$",
+      EUR: "€",
+      GBP: "£",
+      AUD: "A$",
+      CAD: "C$",
+      CHF: "CHF",
+      CNY: "¥",
+      HKD: "HK$",
+      NZD: "NZ$"
     };
     const symbol = symbols[targetCurrency] || targetCurrency;
 
@@ -1757,12 +2123,16 @@ async function convertCurrency() {
   }
 }
 
-function sidebarConverterController() {
+async function sidebarConverterController() {
   const converterWidget = document.getElementById("converterWidget");
   if (!converterWidget) return;
 
   const amountInput = document.getElementById("converter-amount");
-  const targetSelect = document.getElementById("converter-currency");
+  
+  // Set up searchable currency selector
+  await setupCustomCurrencySelect();
+
+  const targetSelect = document.getElementById("converter-currency"); // This finds the hidden input
 
   if (!amountInput || !targetSelect) return;
 
@@ -1848,6 +2218,10 @@ function setupSidebarLayout() {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       const target = btn.dataset.target;
+      if (target === 'places') {
+        window.location.href = 'places.html';
+        return;
+      }
       const isExpanded = sidebar.classList.contains("expanded");
       const isActive = btn.classList.contains("active");
 
@@ -4186,5 +4560,291 @@ function initTipsCarousel() {
   setTimeout(() => {
     updateSlide(false);
   }, 150);
+}
+
+async function setupPlacesWidget() {
+  const getPlacesBtn = document.getElementById('getPlacesBtn');
+  const placesContent = document.getElementById('placesContent');
+  const categoryFilters = document.getElementById('placesCategoryFilters');
+  const interestPills = document.querySelectorAll('#panel-places .interest-pill');
+
+  if (!getPlacesBtn || !placesContent) return;
+
+  let loadedPlaces = []; // cache recommendations locally
+
+  // Toggle interest pills
+  interestPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pill.classList.toggle('active');
+    });
+  });
+
+  // Handle category filtering
+  if (categoryFilters) {
+    const chips = categoryFilters.querySelectorAll('.filter-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const category = chip.dataset.category;
+        renderPlacesList(loadedPlaces, category);
+      });
+    });
+  }
+
+  // Trigger loading recommendations
+  async function fetchRecommendations() {
+    const user = getCurrentUser();
+    if (!user || !user.destination) {
+      placesContent.innerHTML = `
+        <div class="places-error-container">
+          <i class="fa-solid fa-earth-americas" style="color: var(--blue); opacity: 0.7;"></i>
+          <p style="margin-top: 10px; font-weight: 600;">No Destination Selected</p>
+          <p style="font-size: 0.82rem; margin-bottom: 12px;">Please set a destination in your profile first to get recommendations.</p>
+          <button class="primary-button" id="placesOpenProfileBtn" style="padding: 6px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px;">
+            Open Profile
+          </button>
+        </div>
+      `;
+      const openBtn = document.getElementById('placesOpenProfileBtn');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => openModal('profileModal'));
+      }
+      if (categoryFilters) categoryFilters.style.display = 'none';
+      return;
+    }
+
+    const destination = user.destination;
+    const travelPurpose = user.tripPurpose || 'tourism';
+    
+    // Map tripPurpose for Gemini
+    let purposeStr = 'Tourist';
+    if (travelPurpose === 'business') purposeStr = 'Business';
+    else if (travelPurpose === 'education') purposeStr = 'Student';
+    else if (travelPurpose === 'other') purposeStr = 'Family';
+
+    const activePills = document.querySelectorAll('#panel-places .interest-pill.active');
+    const interests = Array.from(activePills).map(pill => pill.dataset.interest);
+
+    // Show loading skeleton
+    if (categoryFilters) categoryFilters.style.display = 'none';
+    placesContent.innerHTML = Array(3).fill(0).map(() => `
+      <div class="place-skeleton">
+        <div class="place-skeleton-img"></div>
+        <div class="place-skeleton-body">
+          <div class="place-skeleton-title"></div>
+          <div class="place-skeleton-text"></div>
+          <div class="place-skeleton-text short"></div>
+        </div>
+      </div>
+    `).join('');
+
+    try {
+      // Parallel fetch saved places if logged in to display active bookmarks
+      let savedSet = new Set();
+      const token = getToken();
+      if (token) {
+        try {
+          const savedRes = await fetch('/api/saved-places', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (savedRes.ok) {
+            const savedData = await savedRes.json();
+            savedData.forEach(item => {
+              if (item.destination.toLowerCase() === destination.toLowerCase()) {
+                savedSet.add(item.name.toLowerCase());
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Failed to load saved places for marking active bookmarks:', err);
+        }
+      }
+
+      const res = await fetch('/api/places-to-visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination, travelPurpose: purposeStr, interests })
+      });
+
+      if (!res.ok) {
+        throw new Error('API failed');
+      }
+
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid response format');
+      }
+
+      // Add "isSaved" flag based on user's current saved places
+      loadedPlaces = data.map(place => ({
+        ...place,
+        isSaved: savedSet.has(place.name.toLowerCase())
+      }));
+
+      if (categoryFilters) {
+        categoryFilters.style.display = 'flex';
+        // Reset active filter tab to "All"
+        const chips = categoryFilters.querySelectorAll('.filter-chip');
+        chips.forEach(c => c.classList.toggle('active', c.dataset.category === 'All'));
+      }
+
+      renderPlacesList(loadedPlaces, 'All');
+    } catch (error) {
+      console.error(error);
+      placesContent.innerHTML = `
+        <div class="places-error-container">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <p style="margin-top: 10px; font-weight: 600;">Failed to load places</p>
+          <p style="font-size: 0.82rem; margin-bottom: 12px;">We encountered an error contacting the travel assistant.</p>
+          <button class="primary-button" id="placesRetryBtn" style="padding: 6px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px;">
+            Retry
+          </button>
+        </div>
+      `;
+      const retryBtn = document.getElementById('placesRetryBtn');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', fetchRecommendations);
+      }
+      if (categoryFilters) categoryFilters.style.display = 'none';
+    }
+  }
+
+  getPlacesBtn.addEventListener('click', fetchRecommendations);
+
+  // Render places to the list
+  function renderPlacesList(places, filterCategory = 'All') {
+    const filtered = filterCategory === 'All'
+      ? places
+      : places.filter(p => p.category.toLowerCase() === filterCategory.toLowerCase());
+
+    if (filtered.length === 0) {
+      placesContent.innerHTML = `
+        <div style="text-align: center; padding: 30px 10px; color: var(--muted); font-size: 0.85rem;">
+          No recommendations found for category "${filterCategory}".
+        </div>
+      `;
+      return;
+    }
+
+    placesContent.innerHTML = filtered.map(place => {
+      const categoryClass = place.category.toLowerCase().replace(' ', '-');
+      const isSavedClass = place.isSaved ? 'saved' : '';
+      const bookmarkIcon = place.isSaved ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+
+      return `
+        <div class="place-card">
+          <div class="place-card-image-wrapper">
+            <img src="${escapeHTML(place.photoUrl)}" class="place-card-img" alt="${escapeHTML(place.name)}" loading="lazy">
+            <button class="place-bookmark-btn ${isSavedClass}" data-place-name="${escapeHTML(place.name)}" aria-label="Bookmark place">
+              <i class="${bookmarkIcon}"></i>
+            </button>
+          </div>
+          <div class="place-card-body">
+            <div class="place-card-header">
+              <h4 class="place-title">${escapeHTML(place.name)}</h4>
+              <span class="place-badge ${categoryClass}">${escapeHTML(place.category)}</span>
+            </div>
+            <p class="place-desc">${escapeHTML(place.description)}</p>
+            <div class="place-meta">
+              <span><i class="fa-regular fa-clock"></i> ${escapeHTML(place.estimatedDuration)}</span>
+            </div>
+            <div class="place-meta" style="margin-top: -4px;">
+              <span><i class="fa-regular fa-lightbulb"></i> <strong>Tip:</strong> ${escapeHTML(place.tip)}</span>
+            </div>
+            <p class="place-relevance">
+              <i class="fa-solid fa-circle-info" style="color: var(--blue); margin-right: 4px;"></i>
+              ${escapeHTML(place.relevanceReason)}
+            </p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach bookmark click listeners
+    const bookmarkBtns = placesContent.querySelectorAll('.place-bookmark-btn');
+    bookmarkBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const placeName = btn.dataset.placeName;
+        const placeObj = places.find(p => p.name === placeName);
+        if (!placeObj) return;
+
+        const token = getToken();
+        if (!token) {
+          showToast("Please log in to save places to your trip!", "warning");
+          openModal("loginModal");
+          return;
+        }
+
+        const user = getCurrentUser();
+        const destination = user ? user.destination : '';
+
+        try {
+          const res = await fetch('/api/saved-places', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: placeObj.name,
+              category: placeObj.category,
+              description: placeObj.description,
+              estimatedDuration: placeObj.estimatedDuration,
+              tip: placeObj.tip,
+              relevanceReason: placeObj.relevanceReason,
+              photoUrl: placeObj.photoUrl,
+              destination
+            })
+          });
+
+          if (!res.ok) {
+            throw new Error('Save failed');
+          }
+
+          const responseData = await res.json();
+          placeObj.isSaved = responseData.saved;
+          
+          // Toggle button styling
+          btn.classList.toggle('saved', responseData.saved);
+          const icon = btn.querySelector('i');
+          if (icon) {
+            icon.className = responseData.saved ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+          }
+
+          showToast(responseData.message, "success");
+
+          // Trigger update to the Traveler Dashboard if we are on the mytrip page
+          if (window.loadSavedPlaces) {
+            window.loadSavedPlaces();
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("Failed to update saved places. Please try again.", "error");
+        }
+      });
+    });
+  }
+
+  // Pre-load if destination is set and user opens panel
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+      if (mutation.attributeName === 'class') {
+        const panel = document.getElementById('panel-places');
+        if (panel && panel.classList.contains('active') && loadedPlaces.length === 0) {
+          const user = getCurrentUser();
+          if (user && user.destination) {
+            fetchRecommendations();
+          }
+        }
+      }
+    });
+  });
+
+  const placesPanel = document.getElementById('panel-places');
+  if (placesPanel) {
+    observer.observe(placesPanel, { attributes: true });
+  }
 }
 
