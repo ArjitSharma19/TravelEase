@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelEase - Places to Visit</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=1.0.3">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+  <div id="g_id_onload"
+       data-client_id="697091471515-ko72l03nk8s5nblnv799ivamm6v5u151.apps.googleusercontent.com"
+       data-callback="handleGoogleLogin">
+  </div>
+  
+  <aside class="collapsible-sidebar" id="sidebar">
+    <div class="sidebar-toggle-container">
+      <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <i class="fa-solid fa-chevron-right" id="toggleIcon"></i>
+      </button>
+    </div>
+
+    <!-- Collapsed icons navigation -->
+    <div class="sidebar-icons-nav">
+      <button class="nav-icon-btn active" data-target="profile" aria-label="User Profile" title="Traveler Profile">
+        <i class="fa-solid fa-user"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="checklist" aria-label="Flyer Checklist" title="Checklist">
+        <i class="fa-solid fa-list-check"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="converter" aria-label="Currency Converter" title="Converter">
+        <i class="fa-solid fa-calculator"></i>
+      </button>
+      <button class="nav-icon-btn" data-target="flight" aria-label="Book Flight" title="Book Flight">
+        ✈️
+      </button>
+      <button class="nav-icon-btn" data-target="places" aria-label="Places to Visit" title="Places to Visit">
+        <i class="fa-solid fa-map-location-dot"></i>
+      </button>
+    </div>
+
+    <!-- Expanded content panels container -->
+    <div class="sidebar-content-panels">
+
+      <!-- Panel 1: Traveler Profile & Auth -->
+      <div class="sidebar-panel active" id="panel-profile">
+        <div class="profile-widget" id="profileWidget">
+          <div class="guest-profile">
+            <i class="fa-solid fa-circle-user guest-avatar"></i>
+            <h3>Welcome, Guest</h3>
+            <p>Sign in to unlock personalized travel alerts and save your trip details.</p>
+            <div class="auth-buttons">
+              <button class="primary-button" id="sidebarLoginBtn">Log In</button>
+              <button class="secondary-button" id="sidebarSignupBtn">Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Checklist -->
+      <div class="sidebar-panel" id="panel-checklist">
+        <div class="widget-card-sidebar" id="checklistWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+            <h3>Flyer Checklist</h3>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="checklistProgress" style="width: 0%"></div>
+          </div>
+          <p class="progress-text"><span id="checklistCompleted">0</span> of <span id="checklistTotal">5</span> completed</p>
+          <ul class="checklist-items" id="checklist-items"></ul>
+        </div>
+      </div>
+
+      <!-- Panel 3: Currency Converter -->
+      <div class="sidebar-panel" id="panel-converter">
+        <div class="widget-card-sidebar">
+          <div class="widget-header">
+            <i class="fa-solid fa-calculator" aria-hidden="true"></i>
+            <h3>Currency Converter</h3>
+          </div>
+          <p class="panel-subtitle">Convert live exchange rates to INR</p>
+          <div class="converter-form">
+            <div class="form-group-sidebar">
+              <label for="converter-amount">Amount</label>
+              <input type="number" id="converter-amount" value="100" min="1" required>
+            </div>
+            <div class="form-group-sidebar">
+              <label for="converter-currency">Select Currency</label>
+              <div class="custom-select-wrapper" style="position: relative; width: 100%;">
+                <div class="custom-select-trigger" id="currencySelectTrigger" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.88rem; font-weight: bold; color: var(--ink);">
+                  <span>Select Currency...</span>
+                  <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--muted); margin-left: 8px;"></i>
+                </div>
+                <div class="custom-select-options-container" id="currencySelectOptions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; border: 1.5px solid var(--line); border-top: none; border-radius: 0 0 6px 6px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; padding: 10px;">
+                  <input type="text" id="currencySearchInput" placeholder="Search currency..." style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 8px; font-size: 0.82rem; outline: none;">
+                  <div class="custom-select-options-list" id="currencySelectOptionsList" style="display: flex; flex-direction: column; gap: 4px;"></div>
+                </div>
+                <select id="converter-currency" required style="display: none;">
+                  <option value="">Select...</option>
+                </select>
+              </div>
+            </div>
+            <div class="converter-result">
+              <span class="converted-val" id="convertedResult">100 USD = 8,300 INR</span>
+              <span class="rate-timestamp" id="converterTimestamp">Last updated: Just now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Flight Search -->
+      <div class="sidebar-panel" id="panel-flight">
+        <div class="widget-card-sidebar" id="flightWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-plane" aria-hidden="true"></i>
+            <h3>Search Flights</h3>
+          </div>
+          <p class="panel-subtitle">Find flights to your destination</p>
+          <div class="converter-form">
+            <div class="form-group-sidebar">
+              <label for="flightOrigin">Origin City (India)</label>
+              <input type="text" id="flightOrigin" value="Delhi (DEL)" required>
+            </div>
+            <div class="form-group-sidebar">
+              <label for="flightPassengers">Travellers</label>
+              <select id="flightPassengers" style="width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 6px;">
+                <option value="1">1 Adult</option>
+                <option value="2">2 Adults</option>
+                <option value="3">3 Adults</option>
+                <option value="4">4 Adults</option>
+              </select>
+            </div>
+            <button class="flight-search-btn" onclick="searchFlights()">Search Flights</button>
+            <p class="flight-disclaimer">You'll be redirected to Google Flights to complete your search and booking.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <header class="site-header">
+    <div class="header-container">
+      <a class="brand" href="index.html" aria-label="TravelEase home">
+        <img src="logo.png" alt="TravelEase Logo" class="brand-logo">
+        <div class="brand-text-container">
+          <span class="brand-text">Travel<span class="brand-text-accent">Ease</span></span>
+          <span class="brand-tagline">EXPLORE MORE. WORRY LESS.</span>
+        </div>
+      </a>
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a href="index.html#destinations">Destinations</a>
+        <a href="index.html#guide">Guide</a>
+        <a href="places.html" class="active">Places to Visit</a>
+        <a href="mytrip.html" id="navMyTrip" style="display: none;">My Trip</a>
+        <span class="nav-divider">|</span>
+        <div id="headerAuthArea"></div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Full-Page Main Content -->
+  <main class="app-layout" style="display: block; padding: 24px; max-width: 1200px; margin: 80px auto 0 auto; box-sizing: border-box;">
+    <div class="places-page-container">
+      
+      <!-- Full Page Header Section -->
+      <section class="places-header-card" style="background: #ffffff; border: 1px solid var(--line); border-radius: 12px; padding: 30px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(20,39,74,0.04);">
+        <h1 id="placesPageTitle" style="font-size: 1.8rem; font-weight: 800; color: var(--ink); margin: 0 0 10px 0;">
+          Personalized Recommendations for Your Destination
+        </h1>
+        <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 20px;">
+          Select your sightseeing interests to customize recommendations generated by real Google Places details and personalized AI travel expertise.
+        </p>
+        
+        <div class="places-config-row" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+          <div class="interests-box" style="flex: 1; min-width: 280px;">
+            <label style="font-size: 0.82rem; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
+              Choose Your Interests (Multi-select)
+            </label>
+            <div class="interests-grid" id="fullPageInterests" style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <button type="button" class="interest-pill" data-interest="food">🍔 Food & Dining</button>
+              <button type="button" class="interest-pill" data-interest="history">🏛️ Culture & History</button>
+              <button type="button" class="interest-pill" data-interest="nature">🌲 Nature & Outdoors</button>
+              <button type="button" class="interest-pill" data-interest="shopping">🛍️ Shopping & Nightlife</button>
+            </div>
+          </div>
+          <button type="button" class="primary-button" id="findPlacesBtn" style="padding: 12px 24px; font-weight: bold; border-radius: 8px; height: 46px; font-size: 0.95rem;">
+            <i class="fa-solid fa-magnifying-glass-location" style="margin-right: 8px;"></i> Find Recommended Places
+          </button>
+        </div>
+      </section>
+
+      <!-- Category Filter Tabs -->
+      <div class="places-filters-row" style="display: none; margin-bottom: 24px;" id="fullPageCategoryFiltersRow">
+        <div class="places-filters" id="fullPageCategoryFilters" style="gap: 8px; margin-bottom: 0;">
+          <button class="filter-chip active" data-category="All">All Places</button>
+          <button class="filter-chip" data-category="Landmark">Landmarks</button>
+          <button class="filter-chip" data-category="Nature">Nature</button>
+          <button class="filter-chip" data-category="Food">Food</button>
+          <button class="filter-chip" data-category="Culture">Culture</button>
+          <button class="filter-chip" data-category="Hidden Gem">Hidden Gems</button>
+        </div>
+      </div>
+
+      <!-- Places Grid Output -->
+      <div id="fullPagePlacesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+        <div class="places-error-container" id="fullPageInitState" style="grid-column: 1 / -1; padding: 60px 20px; text-align: center;">
+          <i class="fa-solid fa-map-location-dot" style="font-size: 3.5rem; color: var(--blue); opacity: 0.5; margin-bottom: 15px; display: inline-block;"></i>
+          <h2 style="font-size: 1.4rem; color: var(--ink); margin-bottom: 8px;">Discover Places to Visit</h2>
+          <p style="color: var(--muted); max-width: 500px; margin: 0 auto 20px auto;">
+            Enter your travel details to generate real places, Google ratings, and personalized tips for your trip.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Details Modal / Panel -->
+  <div class="modal-overlay" id="placeDetailsModal" style="display: none; align-items: center; justify-content: center; z-index: 2000;">
+    <div class="modal-content" style="max-width: 600px; padding: 0; overflow: hidden; border-radius: 12px; position: relative;">
+      <button class="modal-close" onclick="closeModal('placeDetailsModal')" aria-label="Close details modal" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;">&times;</button>
+      <div id="placeDetailsContainer">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-content">
+      <button class="modal-close" id="loginCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Welcome Back</h2>
+      <p class="modal-subtitle">Log in to view your personalized alerts and guides.</p>
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div class="g_id_signin" data-type="standard" data-width="300"></div>
+      </div>
+      <div class="divider"><span>OR</span></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div style="text-align: right; margin-top: 4px;">
+            <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot Password?</button>
+          </div>
+        </div>
+        <div class="form-error-msg" id="loginError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Log In</button>
+      </form>
+      <div class="modal-footer">
+        Don't have an account? <button class="link-btn" id="switchToSignupBtn">Register here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div class="modal-overlay" id="signupModal">
+    <div class="modal-content">
+      <button class="modal-close" id="signupCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Create Traveler Account</h2>
+      <p class="modal-subtitle">Register to customize your profile, trip dates, and alerts.</p>
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div class="g_id_signin" data-type="standard" data-width="300"></div>
+      </div>
+      <div class="divider"><span>OR</span></div>
+      <form id="signupForm">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="signup-name">Full Name</label>
+            <input type="text" id="signup-name" placeholder="e.g. Arjit Sharma" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email Address</label>
+            <input type="email" id="signup-email" placeholder="e.g. arjit@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="signup-password" placeholder="Min. 6 characters" required autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-error-msg" id="signupError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
+      </form>
+      <div class="modal-footer">
+        Already have an account? <button class="link-btn" id="switchToLoginBtn">Log in here</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgotPasswordModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <button class="modal-close" id="forgotPasswordCloseBtn" aria-label="Close modal">&times;</button>
+      <div id="otpStep1" class="otp-step">
+        <h2>Forgot Password</h2>
+        <p class="modal-subtitle">Enter your email address to receive a 6-digit verification OTP.</p>
+        <form id="otpForm1">
+          <div class="form-group">
+            <label for="otpEmail">Email Address</label>
+            <input type="email" id="otpEmail" placeholder="Enter your email" required autocomplete="email">
+          </div>
+          <div class="form-error-msg" id="otpError1"></div>
+          <button class="primary-button modal-submit-btn" type="submit">Send OTP</button>
+        </form>
+      </div>
+      <div id="otpStep2" class="otp-step" style="display: none;">
+        <h2>Enter OTP</h2>
+        <p class="modal-subtitle">We have sent a 6-digit OTP to your email. Please enter it below.</p>
+        <form id="otpForm2">
+          <div class="otp-input-container" style="display: flex; gap: 8px; justify-content: center; margin: 20px 0;">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+            <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required style="width: 45px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 1.5px solid var(--line); border-radius: 8px; outline: none; background: var(--bg);">
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.85rem;">
+            <div id="otpTimer" style="color: var(--muted); font-weight: bold;">OTP expires in 10:00</div>
+            <button type="button" class="link-btn" id="resendOtpBtn" style="text-decoration: underline; font-weight: bold;">Resend OTP</button>
+          </div>
+          <div class="form-error-msg" id="otpError2"></div>
+          <button class="primary-button modal-submit-btn" type="submit">Verify OTP</button>
+        </form>
+      </div>
+      <div id="otpStep3" class="otp-step" style="display: none;">
+        <h2>Reset Password</h2>
+        <p class="modal-subtitle">Enter a new secure password for your account (minimum 8 characters).</p>
+        <form id="otpForm3">
+          <div class="form-group">
+            <label for="otpNewPassword">New Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="otpConfirmPassword">Confirm Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="form-error-msg" id="confirmPasswordError" style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
+          </div>
+          <div style="margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; color: var(--muted); margin-bottom: 5px;">
+              <span>Password Strength</span>
+              <span id="strengthText">Too Weak</span>
+            </div>
+            <div style="height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; display: flex; gap: 2px;">
+              <div id="strengthBar" style="height: 100%; width: 0%; background-color: var(--red); transition: width 0.3s, background-color 0.3s;"></div>
+            </div>
+          </div>
+          <div class="form-error-msg" id="otpError3"></div>
+          <button class="primary-button modal-submit-btn" type="submit" style="margin-top: 20px;">Reset Password</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        Back to <button class="link-btn" id="switchToLoginFromForgotBtn">Log In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Your Trip Modal -->
+  <div class="modal-overlay" id="tripModal">
+    <div class="modal-content">
+      <button class="modal-close" id="tripCloseBtn" onclick="closeTripModal()" aria-label="Close modal">&times;</button>
+      <h2>Plan Your Trip</h2>
+      <p class="modal-subtitle">Add your trip details to get personalized alerts and tips.</p>
+      <form id="tripForm" onsubmit="event.preventDefault(); saveTripDetails();">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="trip-destination">Destination Country</label>
+            <select id="trip-destination">
+              <option value="">Select country...</option>
+              <option value="UAE">United Arab Emirates (UAE)</option>
+              <option value="USA">United States (USA)</option>
+              <option value="UK">United Kingdom (UK)</option>
+              <option value="Thailand">Thailand</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Japan">Japan</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="trip-purpose">Trip Purpose</label>
+            <select id="trip-purpose">
+              <option value="tourism">Tourism / Vacation</option>
+              <option value="business">Business Trip</option>
+              <option value="education">Education / Study</option>
+              <option value="other">Other / Visiting Family</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="trip-passport-expiry">Passport Expiry Date</label>
+            <input type="date" id="trip-passport-expiry">
+          </div>
+          <div class="form-group">
+            <label for="trip-departure">Departure Date</label>
+            <input type="date" id="trip-departure">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="trip-return">Return Date</label>
+            <input type="date" id="trip-return">
+          </div>
+          <div class="form-group flex-checkbox" style="margin-top: 28px;">
+            <label class="checkbox-container">
+              <input type="checkbox" id="trip-first-time">
+              <span class="checkmark"></span>
+              Travelling abroad first time?
+            </label>
+          </div>
+        </div>
+        <div class="form-error-msg" id="tripError"></div>
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button class="primary-button modal-submit-btn" type="submit" style="flex: 1;">Save Trip Details</button>
+          <button class="secondary-button" type="button" onclick="skipTripDetails()" style="flex: 1;">Skip for now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Profile / Traveler Details Modal -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-content">
+      <button class="modal-close" id="profileCloseBtn" aria-label="Close modal">&times;</button>
+      <h2>Traveler Details & Preferences</h2>
+      <p class="modal-subtitle">Update your trip details to recalculate personalized alerts.</p>
+      <form id="profileForm">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileName">Full Name</label>
+            <input type="text" id="profileName" required>
+          </div>
+          <div class="form-group">
+            <label for="profilePassportExpiry">Passport Expiry Date</label>
+            <input type="date" id="profilePassportExpiry">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileDestination">Destination Country</label>
+            <select id="profileDestination" required>
+              <option value="UAE">United Arab Emirates (UAE)</option>
+              <option value="USA">United States (USA)</option>
+              <option value="UK">United Kingdom (UK)</option>
+              <option value="Thailand">Thailand</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Japan">Japan</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="profileTripPurpose">Trip Purpose</label>
+            <select id="profileTripPurpose" required>
+              <option value="tourism">Tourism / Vacation</option>
+              <option value="business">Business Trip</option>
+              <option value="education">Education / Study</option>
+              <option value="other">Other Purpose</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="profileTravelDateFrom">Departure Date</label>
+            <input type="date" id="profileTravelDateFrom">
+          </div>
+          <div class="form-group">
+            <label for="profileTravelDateTo">Return Date</label>
+            <input type="date" id="profileTravelDateTo">
+          </div>
+        </div>
+        <div class="form-group flex-checkbox">
+          <label class="checkbox-container">
+            <input type="checkbox" id="profileFirstTime">
+            <span class="checkmark"></span>
+            Travelling abroad first time?
+          </label>
+        </div>
+        <div class="form-error-msg" id="profileError"></div>
+        <button class="primary-button modal-submit-btn" type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="chatRoot"></div>
+
+  <script src="data.js"></script>
+  <script src="script.js?v=1.0.2"></script>
+  <script src="places.js"></script>
+</body>
+
+</html>

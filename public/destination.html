@@ -36,6 +36,9 @@
       <button class="nav-icon-btn" data-target="flight" aria-label="Book Flight" title="Book Flight">
         ✈️
       </button>
+      <button class="nav-icon-btn" data-target="places" aria-label="Places to Visit" title="Places to Visit">
+        <i class="fa-solid fa-map-location-dot"></i>
+      </button>
     </div>
 
     <!-- Expanded content panels container -->
@@ -203,6 +206,51 @@
         </div>
       </div>
 
+      <!-- Panel 5: Places to Visit -->
+      <div class="sidebar-panel" id="panel-places">
+        <div class="widget-card-sidebar" id="placesWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+            <h3>Places to Visit</h3>
+          </div>
+          <p class="panel-subtitle">Personalized recommendations for your trip</p>
+          
+          <!-- Interests refinement selector -->
+          <div class="interests-container" style="margin-bottom: 15px;">
+            <p style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin: 0 0 8px 0;">Select Interests:</p>
+            <div class="interests-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button type="button" class="interest-pill" data-interest="food">🍔 Food</button>
+              <button type="button" class="interest-pill" data-interest="history">🏛️ Culture</button>
+              <button type="button" class="interest-pill" data-interest="nature">🌲 Nature</button>
+              <button type="button" class="interest-pill" data-interest="shopping">🛍️ Shopping</button>
+            </div>
+            <button type="button" class="primary-button" id="getPlacesBtn" style="width: 100%; margin-top: 12px; padding: 8px; font-size: 0.85rem; font-weight: bold; border-radius: 6px;">
+              Find Recommended Places
+            </button>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
+
+          <!-- Category filter tabs -->
+          <div class="places-filters" style="display: none;" id="placesCategoryFilters">
+            <button class="filter-chip active" data-category="All">All</button>
+            <button class="filter-chip" data-category="Landmark">Landmark</button>
+            <button class="filter-chip" data-category="Nature">Nature</button>
+            <button class="filter-chip" data-category="Food">Food</button>
+            <button class="filter-chip" data-category="Culture">Culture</button>
+            <button class="filter-chip" data-category="Hidden Gem">Hidden Gem</button>
+          </div>
+
+          <!-- Places Content Container -->
+          <div id="placesContent" class="places-list">
+            <div class="places-error-container" id="placesInitState">
+              <i class="fa-solid fa-map" style="color: var(--blue); opacity: 0.7;"></i>
+              <p>Click the button above to discover places tailored to your trip destination and travel purpose.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </aside>
 
@@ -218,6 +266,7 @@
       <nav class="top-nav" aria-label="Primary navigation">
         <a href="index.html#destinations">Destinations</a>
         <a href="index.html#guide">Guide</a>
+        <a href="places.html">Places to Visit</a>
         <a href="mytrip.html" id="navMyTrip" style="display: none;">My Trip</a>
         <span class="nav-divider">|</span>
         <div id="headerAuthArea">
@@ -361,8 +410,13 @@
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter your password" required
-            autocomplete="current-password">
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="Enter your password" required
+              autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
           <div style="text-align: right; margin-top: 4px;">
             <button type="button" class="link-btn forgot-password-trigger" style="font-size: 0.85rem;">Forgot Password?</button>
           </div>
@@ -406,8 +460,13 @@
         </div>
         <div class="form-group">
           <label for="signup-password">Password</label>
-          <input type="password" id="signup-password" placeholder="Min. 6 characters" required
-            autocomplete="new-password">
+          <div class="password-wrapper">
+            <input type="password" id="signup-password" placeholder="Min. 6 characters" required
+              autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
         <div class="form-error-msg" id="signupError"></div>
         <button class="primary-button modal-submit-btn" type="submit">Create Account</button>
@@ -466,11 +525,21 @@
         <form id="otpForm3">
           <div class="form-group">
             <label for="otpNewPassword">New Password</label>
-            <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+            <div class="password-wrapper">
+              <input type="password" id="otpNewPassword" placeholder="Enter new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
           <div class="form-group" style="margin-top: 15px;">
             <label for="otpConfirmPassword">Confirm Password</label>
-            <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+            <div class="password-wrapper">
+              <input type="password" id="otpConfirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
             <div class="form-error-msg" id="confirmPasswordError" style="margin-top: 4px; display: none; font-size: 0.82rem; font-weight: bold;">Passwords don't match</div>
           </div>
           
