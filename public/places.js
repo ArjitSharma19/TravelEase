@@ -449,6 +449,14 @@ function openPlaceDetails(place) {
         </div>
       </div>
 
+      <!-- Description -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 6px;">About</h4>
+        <p style="font-size: 0.92rem; line-height: 1.5; color: var(--ink); margin: 0;">
+          ${escapeHTML(place.description || 'Information not available.')}
+        </p>
+      </div>
+
       <!-- Address -->
       <div style="margin-bottom: 20px;">
         <h4 style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 6px;">Address</h4>
