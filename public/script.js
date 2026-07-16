@@ -2371,12 +2371,21 @@ function setCurrentUser(user) {
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.add("open");
+  if (modal) {
+    modal.classList.add("open");
+    document.body.classList.add("modal-open");
+  }
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove("open");
+  if (modal) {
+    modal.classList.remove("open");
+    const openModals = document.querySelectorAll(".modal-overlay.open");
+    if (openModals.length === 0) {
+      document.body.classList.remove("modal-open");
+    }
+  }
 }
 
 window.handleGoogleLogin = async function (response) {

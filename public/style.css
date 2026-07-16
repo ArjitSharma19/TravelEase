@@ -1726,6 +1726,7 @@ body.sidebar-expanded {
   pointer-events: none;
   transition: opacity 240ms ease;
   padding: 20px;
+  overflow-y: auto; /* Enable overlay scroll if content overflows */
 }
 
 .modal-overlay.open {
@@ -1747,10 +1748,16 @@ body.sidebar-expanded {
   transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
   max-height: 90vh;
   overflow-y: auto;
+  margin: auto; /* Center alignment and allow scrolling */
 }
 
 .modal-overlay.open .modal-content {
   transform: translateY(0) scale(1);
+}
+
+/* Body lock style when modal is open */
+body.modal-open {
+  overflow: hidden !important;
 }
 
 .modal-close {
