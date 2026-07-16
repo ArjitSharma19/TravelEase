@@ -11,7 +11,8 @@ The project uses a static HTML/CSS/JavaScript frontend served by an Express back
 - Dynamic flyer checklist with saved progress for authenticated users and local fallback behavior on the frontend.
 - Country guide experience for visa, currency, SIM, transport, travel tips, testimonials, and community comments.
 - AI travel assistant powered through the backend using Gemini 2.5 Flash, with retry handling for transient API failures.
-- Personalized places-to-visit recommendations using Google Places when configured, Gemini enrichment/fallback, category filters, interest selection, and save-to-trip support.
+- Personalized places-to-visit recommendations using the Google Places API (New) when configured, Gemini 2.5 Flash annotation (generating place descriptions, custom tips, and interest fit explanations), category filters, multi-select interests, FlagCDN-enabled autocomplete, and save-to-trip support.
+- Fully scroll-locked details modal overlay with body scroll isolation and internal card scrolling.
 - My Trip dashboard with trip summary, countdown, checklist progress, passport status, booked flights, saved places, quick country-guide links, and contextual AI quick ask.
 - Currency converter using live exchange-rate data from the frontend.
 - Flight search using Amadeus when credentials are configured, with realistic mock data fallback, filters/sorting on the frontend, and authenticated booking with generated PNR.
@@ -36,7 +37,7 @@ The project uses a static HTML/CSS/JavaScript frontend served by an Express back
 - Database: MongoDB with Mongoose.
 - Auth and security: bcrypt password hashing, JWT sessions, Google OAuth ID token verification, email verification tokens, hashed reset OTPs.
 - Email: Nodemailer.
-- External services: Gemini API, Google Places API, Google OAuth, Amadeus Flight Offers API, REST Countries, Unsplash, and live currency-rate APIs used from the frontend.
+- External services: Gemini API, Google Places API (New), Google OAuth, Amadeus Flight Offers API, REST Countries, Unsplash API, FlagCDN, and live currency-rate APIs used from the frontend.
 
 ## Project Structure
 
@@ -201,7 +202,7 @@ Express serves the frontend from `public`, so there is no separate frontend buil
 - Run all backend commands from `backend/`; that is where `package.json` lives.
 - The backend serves static assets from `../public`, so route and asset changes can usually be tested by refreshing `http://localhost:3000`.
 - The server seeds starter community comments when MongoDB has few or no comments.
-- Some frontend files currently reference `logo.png`, while the repository also contains `logo_final.png`. Keep asset names consistent when updating branding.
+- The branding assets include `logo_final.png` and `logo_white_bg.png` (which features a solid white circular background to support dark browser tab themes).
 - There is no automated test script defined yet in `backend/package.json`.
 
 ## Security Notes
