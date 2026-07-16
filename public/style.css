@@ -5612,6 +5612,28 @@ body.sidebar-expanded {
     height: 44px !important;
   }
 
+  /* Places to Visit page mobile overrides */
+  .places-header-card {
+    padding: 16px !important;
+  }
+
+  .places-config-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  #findPlacesBtn,
+  .places-config-row .primary-button {
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .primary-button {
+    animation: none !important; /* Disable heavy box-shadow infinite animation on mobile */
+  }
+
   /* Destination page updates */
   .hero-slideshow {
     height: 260px !important;
