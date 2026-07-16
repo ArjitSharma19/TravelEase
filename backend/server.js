@@ -1016,6 +1016,9 @@ Do not wrap the response in markdown blocks. Return only raw JSON. Prioritize a 
             recommendations = await Promise.all(photoPromises);
           }
         }
+      } else {
+        const errText = await geminiRes.text();
+        console.error(`Gemini API Error in places-to-visit: Status ${geminiRes.status}:`, errText);
       }
     }
 

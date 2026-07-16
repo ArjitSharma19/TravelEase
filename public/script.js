@@ -1,5 +1,7 @@
 const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
-const API_BASE_URL = window.TRAVELEASE_API_BASE_URL || "https://travelease-xva8.onrender.com";
+const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  ? "" 
+  : (window.TRAVELEASE_API_BASE_URL || "https://travelease-xva8.onrender.com");
 
 function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
