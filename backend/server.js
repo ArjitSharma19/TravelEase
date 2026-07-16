@@ -495,6 +495,48 @@ app.get('/api/countries/:countryName', async (req, res) => {
   }
 });
 
+// Reusable helper to fetch a landscape photo from Unsplash for recommendations fallback
+async function getUnsplashPhoto(query, fallbackQuery) {
+  const apiKey = process.env.UNSPLASH_API_KEY;
+  if (!apiKey || apiKey === 'YOUR_UNSPLASH_API_KEY' || apiKey.trim() === '') {
+    return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+  }
+  try {
+    let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query + ' travel landmark')}&per_page=1&orientation=landscape`;
+    let response = await fetch(url, {
+      headers: {
+        'Authorization': `Client-ID ${apiKey}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.results && data.results.length > 0) {
+        return data.results[0].urls.regular || data.results[0].urls.small || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+      }
+    }
+
+    // Secondary fallback using destination country
+    if (fallbackQuery) {
+      url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(fallbackQuery + ' travel landmark')}&per_page=5&orientation=landscape`;
+      response = await fetch(url, {
+        headers: {
+          'Authorization': `Client-ID ${apiKey}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.results && data.results.length > 0) {
+          const randomIndex = Math.floor(Math.random() * data.results.length);
+          return data.results[randomIndex].urls.regular || data.results[randomIndex].urls.small || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching photo from Unsplash for "${query}":`, error.message);
+  }
+  return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+}
+
 // Proxy route for fetching high-quality landscape photos from Unsplash
 app.get('/api/images/:query', async (req, res) => {
   const { query } = req.params;
@@ -954,20 +996,24 @@ Do not wrap the response in markdown blocks. Return only raw JSON. Prioritize a 
         if (generatedText) {
           const generatedPlaces = JSON.parse(generatedText.trim());
           if (Array.isArray(generatedPlaces)) {
-            // Enrich with default placeholder image
-            recommendations = generatedPlaces.map((p, idx) => ({
-              id: `gen-${idx}`,
-              name: p.name,
-              category: p.category || 'Landmark',
-              description: p.description || '',
-              estimatedDuration: p.estimatedDuration || '2 hours',
-              tip: p.tip || 'Check opening hours.',
-              relevanceReason: p.relevanceReason || 'Popular tourist site.',
-              photoUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800',
-              rating: 4.5,
-              address: `${p.name}, ${destination}`,
-              location: null
-            }));
+            // Enrich with high-quality landscape photos from Unsplash parallelly
+            const photoPromises = generatedPlaces.map(async (p, idx) => {
+              const photo = await getUnsplashPhoto(`${p.name} ${destination}`, destination);
+              return {
+                id: `gen-${idx}`,
+                name: p.name,
+                category: p.category || 'Landmark',
+                description: p.description || '',
+                estimatedDuration: p.estimatedDuration || '2 hours',
+                tip: p.tip || 'Check opening hours.',
+                relevanceReason: p.relevanceReason || 'Popular tourist site.',
+                photoUrl: photo,
+                rating: 4.5,
+                address: `${p.name}, ${destination}`,
+                location: null
+              };
+            });
+            recommendations = await Promise.all(photoPromises);
           }
         }
       }

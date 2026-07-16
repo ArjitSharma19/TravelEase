@@ -5617,14 +5617,13 @@ body.sidebar-expanded {
     padding: 16px !important;
   }
 
-  .places-config-row {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 16px !important;
+  .places-config-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
   }
 
   #findPlacesBtn,
-  .places-config-row .primary-button {
+  .config-left-col .primary-button {
     width: 100% !important;
     margin: 0 !important;
     box-sizing: border-box !important;

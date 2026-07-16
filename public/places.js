@@ -1,5 +1,7 @@
 // places.js - Controller for the full-page Places to Visit view
 
+let placesCountriesList = [];
+
 document.addEventListener("DOMContentLoaded", () => {
   // Sync page title with user destination
   updatePageHeader();
@@ -32,20 +34,164 @@ document.addEventListener("DOMContentLoaded", () => {
     findPlacesBtn.addEventListener("click", fetchFullPageRecommendations);
   }
 
-  // Auto-run if destination is already set in traveler profile
+  // Fetch countries list for autocomplete
+  fetch(apiUrl("/api/countries-list"))
+    .then((res) => {
+      if (res.ok) return res.json();
+      throw new Error("Failed to load countries list");
+    })
+    .then((data) => {
+      placesCountriesList = data;
+      setupPlacesAutocomplete();
+    })
+    .catch((err) => {
+      console.warn("Autocomplete list fetch failed, falling back to static popular list", err);
+      placesCountriesList = [
+        { name: "United Arab Emirates", officialName: "United Arab Emirates", cca2: "AE", flag: "🇦🇪", region: "Asia" },
+        { name: "United States", officialName: "United States of America", cca2: "US", flag: "🇺🇸", region: "Americas" },
+        { name: "United Kingdom", officialName: "United Kingdom of Great Britain and Northern Ireland", cca2: "GB", flag: "🇬🇧", region: "Europe" },
+        { name: "Thailand", officialName: "Kingdom of Thailand", cca2: "TH", flag: "🇹🇭", region: "Asia" },
+        { name: "Singapore", officialName: "Republic of Singapore", cca2: "SG", flag: "🇸🇬", region: "Asia" },
+        { name: "Japan", officialName: "Japan", cca2: "JP", flag: "🇯🇵", region: "Asia" },
+        { name: "Canada", officialName: "Canada", cca2: "CA", flag: "🇨🇦", region: "Americas" },
+        { name: "Australia", officialName: "Commonwealth of Australia", cca2: "AU", flag: "🇦🇺", region: "Oceania" },
+        { name: "Germany", officialName: "Federal Republic of Germany", cca2: "DE", flag: "🇩🇪", region: "Europe" },
+        { name: "France", officialName: "French Republic", cca2: "FR", flag: "🇫🇷", region: "Europe" },
+        { name: "Italy", officialName: "Italian Republic", cca2: "IT", flag: "🇮🇹", region: "Europe" },
+        { name: "Spain", officialName: "Kingdom of Spain", cca2: "ES", flag: "🇪🇸", region: "Europe" },
+        { name: "Switzerland", officialName: "Swiss Confederation", cca2: "CH", flag: "🇨🇭", region: "Europe" },
+        { name: "South Africa", officialName: "Republic of South Africa", cca2: "ZA", flag: "🇿🇦", region: "Africa" },
+        { name: "India", officialName: "Republic of India", cca2: "IN", flag: "🇮🇳", region: "Asia" }
+      ];
+      setupPlacesAutocomplete();
+    });
+});
+
+// Setup autocomplete for places country search input
+function setupPlacesAutocomplete() {
+  const input = document.getElementById("placesCountrySearch");
+  const suggestions = document.getElementById("placesSuggestions");
+  if (!input || !suggestions) return;
+
+  let highlightedIndex = -1;
+  let currentMatches = [];
+
+  const findMatches = (value) => {
+    const query = value.trim().toLowerCase();
+    if (query.length < 2) return [];
+    return placesCountriesList.filter((country) => {
+      const nameMatch = (country.name || "").toLowerCase().includes(query);
+      const officialMatch = (country.officialName || "").toLowerCase().includes(query);
+      return nameMatch || officialMatch;
+    });
+  };
+
+  const showSuggestions = () => {
+    currentMatches = findMatches(input.value).slice(0, 8);
+    highlightedIndex = -1;
+
+    if (currentMatches.length === 0) {
+      suggestions.classList.remove("show");
+      suggestions.innerHTML = "";
+      return;
+    }
+
+    suggestions.innerHTML = currentMatches.map((country) => {
+      const flagEmoji = country.flag || '🌍';
+      const regionLabel = country.region || 'World';
+      return `
+        <button class="suggestion-item" type="button" data-country-name="${country.name}" style="display: flex; align-items: center; width: 100%; text-align: left; background: none; border: none; padding: 10px 12px; cursor: pointer; font-size: 0.9rem; transition: background 0.15s;">
+          <span style="font-size: 1.2rem; vertical-align: middle; margin-right: 12px;">${flagEmoji}</span>
+          <strong class="suggestion-name" style="vertical-align: middle; color: var(--ink);">${country.name}</strong>
+          <span class="suggestion-region" style="font-size: 0.8rem; color: #888; margin-left: auto; padding-left: 12px; font-weight: normal; vertical-align: middle;">${regionLabel}</span>
+        </button>
+      `;
+    }).join("");
+    suggestions.classList.add("show");
+  };
+
+  const updateHighlight = () => {
+    const items = suggestions.querySelectorAll(".suggestion-item");
+    items.forEach((item, idx) => {
+      if (idx === highlightedIndex) {
+        item.style.backgroundColor = "#eef4ff";
+        item.scrollIntoView({ block: "nearest" });
+      } else {
+        item.style.backgroundColor = "";
+      }
+    });
+  };
+
+  const selectSuggestion = (name) => {
+    input.value = name;
+    suggestions.classList.remove("show");
+    suggestions.innerHTML = "";
+    highlightedIndex = -1;
+    fetchFullPageRecommendations();
+  };
+
+  input.addEventListener("input", showSuggestions);
+  input.addEventListener("focus", showSuggestions);
+
+  // Keyboard navigation
+  input.addEventListener("keydown", (event) => {
+    if (!suggestions.classList.contains("show")) return;
+
+    const items = suggestions.querySelectorAll(".suggestion-item");
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      highlightedIndex = (highlightedIndex + 1) % items.length;
+      updateHighlight();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+      updateHighlight();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < items.length) {
+        selectSuggestion(items[highlightedIndex].dataset.countryName);
+      }
+    } else if (event.key === "Escape") {
+      suggestions.classList.remove("show");
+      suggestions.innerHTML = "";
+      highlightedIndex = -1;
+    }
+  });
+
+  // Click selection
+  suggestions.addEventListener("click", (event) => {
+    const item = event.target.closest(".suggestion-item");
+    if (item) {
+      selectSuggestion(item.dataset.countryName);
+    }
+  });
+
+  // Close on click outside
+  document.addEventListener("click", (event) => {
+    if (!input.contains(event.target) && !suggestions.contains(event.target)) {
+      suggestions.classList.remove("show");
+      suggestions.innerHTML = "";
+      highlightedIndex = -1;
+    }
+  });
+
+  // Pre-fill user profile destination if configured
   const user = getCurrentUser();
   if (user && user.destination) {
+    input.value = user.destination;
     fetchFullPageRecommendations();
   }
-});
+}
 
 // Update the main header text with the traveler's destination
 function updatePageHeader() {
-  const user = getCurrentUser();
   const title = document.getElementById("placesPageTitle");
+  const countryInput = document.getElementById("placesCountrySearch");
+  const searchedDest = countryInput ? countryInput.value.trim() : "";
+  
   if (title) {
-    if (user && user.destination) {
-      title.textContent = `Personalized Recommendations for ${escapeHTML(user.destination)}`;
+    if (searchedDest) {
+      title.textContent = `Personalized Recommendations for ${escapeHTML(searchedDest)}`;
     } else {
       title.textContent = `Personalized Recommendations for Your Destination`;
     }
@@ -57,24 +203,25 @@ async function fetchFullPageRecommendations() {
   const user = getCurrentUser();
   const grid = document.getElementById("fullPagePlacesGrid");
   const filtersRow = document.getElementById("fullPageCategoryFiltersRow");
+  const countryInput = document.getElementById("placesCountrySearch");
 
   if (!grid) return;
 
-  if (!user || !user.destination) {
+  const destination = countryInput ? countryInput.value.trim() : "";
+
+  if (!destination) {
     grid.innerHTML = `
       <div class="places-error-container" style="grid-column: 1 / -1; padding: 60px 20px; text-align: center;">
-        <i class="fa-solid fa-earth-americas" style="font-size: 3rem; color: var(--blue); opacity: 0.7; margin-bottom: 15px;"></i>
+        <i class="fa-solid fa-map-location-dot" style="font-size: 3rem; color: var(--blue); opacity: 0.7; margin-bottom: 15px;"></i>
         <h3 style="font-size: 1.25rem; color: var(--ink); margin-bottom: 8px;">No Destination Selected</h3>
-        <p style="color: var(--muted); margin-bottom: 20px;">Please set your travel destination in your traveler profile to unlock recommendations.</p>
-        <button class="primary-button" onclick="openModal('profileModal')">Open Profile Settings</button>
+        <p style="color: var(--muted); margin-bottom: 20px;">Please type and select a destination country to discover recommendations.</p>
       </div>
     `;
     if (filtersRow) filtersRow.style.display = "none";
     return;
   }
 
-  const destination = user.destination;
-  const travelPurpose = user.tripPurpose || 'tourism';
+  const travelPurpose = (user && user.tripPurpose) ? user.tripPurpose : 'tourism';
 
   // Map tripPurpose for Gemini
   let purposeStr = 'Tourist';
