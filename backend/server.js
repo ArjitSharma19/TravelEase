@@ -868,7 +868,7 @@ app.post('/api/places-to-visit', async (req, res) => {
 
       // Call Gemini 2.5 Flash to annotate these real places
       const apiKey = process.env.GEMINI_API_KEY;
-      if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.trim() === '') {
+      if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.trim() !== '') {
         const placesInputList = enrichedPlaces.slice(0, 10).map(p => ({
           id: p.id,
           name: p.name,
@@ -886,6 +886,7 @@ Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \
 {
   "id": string (matching the input place id),
   "category": "Landmark" | "Nature" | "Food" | "Culture" | "Hidden Gem",
+  "description": string (1-2 sentences overview of the place and its main tourist highlight),
   "estimatedDuration": string (e.g. "2 hours"),
   "tip": string (practical tip for an Indian traveler: entry fee, best time, safety, or etiquette),
   "relevanceReason": string (1 sentence on why this fits their travelPurpose/interests)
@@ -922,7 +923,7 @@ Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \
                   id: p.id,
                   name: p.name,
                   category: ann.category || p.category,
-                  description: p.address,
+                  description: ann.description || `${p.name} is a highly recommended ${p.category.toLowerCase()} to visit in ${destination}.`,
                   estimatedDuration: ann.estimatedDuration || '2 hours',
                   tip: ann.tip || 'Plan ahead, keep currency handy, and check open hours.',
                   relevanceReason: ann.relevanceReason || `Matches your trip details.`,
@@ -933,6 +934,9 @@ Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \
                 };
               });
             }
+          } else {
+            const errText = await geminiRes.text();
+            console.error(`Gemini annotation error: Status ${geminiRes.status}:`, errText);
           }
         } catch (geminiErr) {
           console.error("Gemini places annotation failed, falling back to direct mapping:", geminiErr.message);
@@ -945,7 +949,7 @@ Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \
           id: p.id,
           name: p.name,
           category: p.category,
-          description: p.address,
+          description: `${p.name} is a highly recommended ${p.category.toLowerCase()} to visit in ${destination}.`,
           estimatedDuration: '2 hours',
           tip: 'Check entry fees and timing before visiting.',
           relevanceReason: `Popular spot in ${destination}.`,
