@@ -317,11 +317,11 @@ function setupSearch() {
     }
 
     suggestions.innerHTML = currentMatches.map((country) => {
-      const flagEmoji = country.flag || '🌍';
       const regionLabel = country.region || 'World';
+      const flagUrl = country.cca2 ? `https://flagcdn.com/w40/${country.cca2.toLowerCase()}.png` : '';
       return `
         <button class="suggestion-item" type="button" data-country-name="${country.name}" style="display: flex; align-items: center; width: 100%;">
-          <span style="font-size: 1.2rem; vertical-align: middle; margin-right: 12px;">${flagEmoji}</span>
+          ${flagUrl ? `<img src="${flagUrl}" alt="${country.name} flag" style="width: 20px; height: 14px; object-fit: cover; margin-right: 12px; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); vertical-align: middle;">` : `<span style="font-size: 1.2rem; vertical-align: middle; margin-right: 12px;">🌍</span>`}
           <strong class="suggestion-name" style="vertical-align: middle;">${country.name}</strong>
           <span class="suggestion-region" style="font-size: 0.8rem; color: #888; margin-left: auto; padding-left: 12px; font-weight: normal; vertical-align: middle;">${regionLabel}</span>
         </button>
