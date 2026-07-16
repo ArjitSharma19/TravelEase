@@ -22,9 +22,75 @@ function getCountryCode2(code) {
 }
 window.getCountryCode2 = getCountryCode2;
 
+function getOptimizedImageUrl(url) {
+  if (!url || !url.includes('unsplash.com')) return url;
+  
+  const isSlowConnection = navigator.connection && 
+    (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === 'slow-2g');
+    
+  if (isSlowConnection) {
+    if (url.includes('w=')) {
+      return url.replace(/w=\d+/, 'w=400');
+    }
+    return url + (url.includes('?') ? '&' : '?') + 'w=400';
+  }
+  
+  if (window.innerWidth < 768) {
+    if (url.includes('w=')) {
+      return url.replace(/w=\d+/, 'w=800');
+    }
+    return url + (url.includes('?') ? '&' : '?') + 'w=800';
+  }
+  
+  return url;
+}
+window.getOptimizedImageUrl = getOptimizedImageUrl;
+
+function optimizePageImages() {
+  document.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src');
+    if (src && src.includes('unsplash.com')) {
+      img.src = getOptimizedImageUrl(src);
+    }
+  });
+  
+  document.querySelectorAll('[style*="background-image"]').forEach(el => {
+    const bg = el.style.backgroundImage;
+    if (bg && bg.includes('unsplash.com')) {
+      const urlMatch = bg.match(/url\(['"]?([^'"]+)['"]?\)/);
+      if (urlMatch && urlMatch[1]) {
+        el.style.backgroundImage = `url('${getOptimizedImageUrl(urlMatch[1])}')`;
+      }
+    }
+  });
+}
+window.optimizePageImages = optimizePageImages;
+
 let allCountriesList = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Mobile performance detection
+  if (navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === 'slow-2g')) {
+    document.documentElement.classList.add('low-end-connection');
+  }
+  optimizePageImages();
+
+  // Hamburger Menu Controller
+  const hamburgerBtn = document.getElementById("hamburgerMenuBtn");
+  const topNav = document.querySelector(".top-nav");
+  if (hamburgerBtn && topNav) {
+    hamburgerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      topNav.classList.toggle("open");
+    });
+    
+    // Clicking outside navigation to close
+    document.addEventListener("click", (e) => {
+      if (!topNav.contains(e.target) && e.target !== hamburgerBtn) {
+        topNav.classList.remove("open");
+      }
+    });
+  }
   // Fetch full countries list as early as possible
   fetch(apiUrl("/api/countries-list"))
     .then((res) => {
@@ -177,13 +243,13 @@ function renderHomePage() {
     return `
       <a class="destination-card" href="destination.html?country=${encodeURIComponent(code)}" aria-label="Open ${destination.name} guide">
         <div class="destination-card-image-container shimmer-loading">
-          <img class="destination-card-img" src="${destination.heroImage}" alt="${destination.name}" loading="lazy" onload="this.style.opacity='1'; this.parentNode.classList.remove('shimmer-loading');" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.parentNode.classList.remove('shimmer-loading');">
+          <img class="destination-card-img" src="${getOptimizedImageUrl(destination.heroImage)}" alt="${destination.name}" loading="lazy" decoding="async" onload="this.style.opacity='1'; this.parentNode.classList.remove('shimmer-loading');" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.parentNode.classList.remove('shimmer-loading');">
           <div class="destination-card-placeholder" style="display: none;">
             <i class="fa-solid fa-earth-americas" aria-hidden="true"></i>
           </div>
         </div>
         <span class="flag" aria-hidden="true">
-          <img src="https://flagcdn.com/h40/${getCountryCode2(code)}.png" alt="" style="width: 24px; height: auto; border-radius: 2px;">
+          <img src="https://flagcdn.com/h40/${getCountryCode2(code)}.png" alt="" style="width: 24px; height: auto; border-radius: 2px;" loading="lazy" decoding="async">
         </span>
         <span>
           <strong>${code}</strong>
@@ -249,13 +315,11 @@ function setupSearch() {
     }
 
     suggestions.innerHTML = currentMatches.map((country) => {
-      const flagHtml = country.cca2
-        ? `<img src="https://flagcdn.com/h24/${country.cca2.toLowerCase()}.png" alt="" style="height: 16px; width: auto; vertical-align: middle; margin-right: 8px; border-radius: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">`
-        : `<span style="font-size: 1.2rem; vertical-align: middle; margin-right: 8px;">🌍</span>`;
+      const flagEmoji = country.flag || '🌍';
       const regionLabel = country.region || 'World';
       return `
         <button class="suggestion-item" type="button" data-country-name="${country.name}" style="display: flex; align-items: center; width: 100%;">
-          ${flagHtml}
+          <span style="font-size: 1.2rem; vertical-align: middle; margin-right: 12px;">${flagEmoji}</span>
           <strong class="suggestion-name" style="vertical-align: middle;">${country.name}</strong>
           <span class="suggestion-region" style="font-size: 0.8rem; color: #888; margin-left: auto; padding-left: 12px; font-weight: normal; vertical-align: middle;">${regionLabel}</span>
         </button>
@@ -301,11 +365,24 @@ function setupSearch() {
 
     searchError.style.display = "none";
 
-    // Curated countries to route to destination.html
-    const curatedCountries = ["UAE", "USA", "UK", "Thailand", "Singapore", "Japan", "Canada", "Australia"];
-    const matchedCurated = curatedCountries.find(
-      (curated) => curated.toLowerCase() === matchedCountry.name.toLowerCase()
-    );
+    // Curated countries map to standard curated codes
+    const nameToCuratedCode = {
+      "united arab emirates": "UAE",
+      "united states": "USA",
+      "united states of america": "USA",
+      "united kingdom": "UK",
+      "thailand": "Thailand",
+      "singapore": "Singapore",
+      "japan": "Japan",
+      "canada": "Canada",
+      "australia": "Australia",
+      "uae": "UAE",
+      "usa": "USA",
+      "uk": "UK"
+    };
+
+    const matchedCurated = nameToCuratedCode[matchedCountry.name.toLowerCase()] || 
+                           nameToCuratedCode[query.toLowerCase()];
 
     if (matchedCurated) {
       window.location.href = `destination.html?country=${encodeURIComponent(matchedCurated)}`;
@@ -499,9 +576,10 @@ function initSlideshow(country) {
 
   images.forEach((src, i) => {
     const img = document.createElement('img');
-    img.src = src;
+    img.src = getOptimizedImageUrl(src);
     img.className = 'slide' + (i === 0 ? ' active' : '');
     img.setAttribute('loading', 'lazy');
+    img.setAttribute('decoding', 'async');
     img.onerror = () => {
       img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       img.style.background = 'linear-gradient(135deg, var(--blue-soft), var(--blue))';
@@ -2221,6 +2299,14 @@ function setupSidebarLayout() {
     });
   }
 
+  const closeBtnMobile = document.getElementById("sidebarCloseBtnMobile");
+  if (closeBtnMobile) {
+    closeBtnMobile.addEventListener("click", (e) => {
+      e.preventDefault();
+      updateSidebarState(false);
+    });
+  }
+
   navBtns.forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -3832,7 +3918,7 @@ async function loadExplorePage(countryName) {
   // Show a nice generic image in slideshow
   if (slideshowContainer) {
     slideshowContainer.innerHTML = `
-      <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400" class="slide active" alt="${escapeHTML(countryName)} background" style="opacity: 1; filter: brightness(0.65); width: 100%; height: 100%; object-fit: cover;">
+      <img src="${getOptimizedImageUrl('https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400')}" class="slide active" alt="${escapeHTML(countryName)} background" style="opacity: 1; filter: brightness(0.65); width: 100%; height: 100%; object-fit: cover;" decoding="async" loading="lazy">
     `;
   }
   if (slideshowDots) slideshowDots.innerHTML = "";
@@ -4555,6 +4641,33 @@ function initTipsCarousel() {
     carouselWrapper.addEventListener("mouseleave", () => {
       resetAutoScroll();
     });
+  }
+
+  // Touch swipe support (minimum swipe distance 50px)
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  track.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  track.addEventListener("touchend", (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+  }, { passive: true });
+
+  function handleSwipeGesture() {
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        // Swiped left -> show next slide
+        slideNext();
+      } else {
+        // Swiped right -> show prev slide
+        slidePrev();
+      }
+      resetAutoScroll();
+    }
   }
 
   // Recalculate on window resize

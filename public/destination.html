@@ -17,6 +17,7 @@
        data-callback="handleGoogleLogin">
   </div>
   <aside class="collapsible-sidebar" id="sidebar">
+    <button class="sidebar-close-btn-mobile" id="sidebarCloseBtnMobile" aria-label="Close Sidebar">&times;</button>
     <div class="sidebar-toggle-container">
       <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
         <i class="fa-solid fa-chevron-right" id="toggleIcon"></i>
@@ -258,7 +259,7 @@
   <header class="site-header">
     <div class="header-container">
       <a class="brand" href="index.html" aria-label="TravelEase home">
-        <img src="logo.png" alt="TravelEase Logo" class="brand-logo">
+        <img src="logo.png" alt="TravelEase Logo" class="brand-logo" decoding="async">
         <div class="brand-text-container">
           <span class="brand-text">Travel<span class="brand-text-accent">Ease</span></span>
           <span class="brand-tagline">EXPLORE MORE. WORRY LESS.</span>
@@ -274,6 +275,7 @@
           <button class="header-auth-btn" id="headerLoginBtn"><i class="fa-solid fa-circle-user"></i> Log In</button>
         </div>
       </nav>
+      <button class="hamburger-menu" id="hamburgerMenuBtn" aria-label="Toggle menu">☰</button>
     </div>
   </header>
 
@@ -872,7 +874,7 @@
         <!-- Col 1: Brand -->
         <div class="footer-column footer-brand-column">
           <a class="brand" href="index.html" style="display: inline-flex; align-items: center; gap: 6px;">
-            <img src="logo.png" alt="TravelEase Logo" class="brand-logo" style="height: 48px;">
+            <img src="logo.png" alt="TravelEase Logo" class="brand-logo" style="height: 48px;" decoding="async" loading="lazy">
             <div class="brand-text-container">
               <span class="brand-text" style="color: #013678; font-weight: 700; font-size: 20px;">Travel<span class="brand-text-accent" style="color: #029aa5;">Ease</span></span>
               <span class="brand-tagline" style="font-size: 8px; font-weight: 700; color: #013678; letter-spacing: 0.5px;">EXPLORE MORE. WORRY LESS.</span>

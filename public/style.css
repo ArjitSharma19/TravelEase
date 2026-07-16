@@ -5340,3 +5340,309 @@ body.sidebar-expanded {
   border-color: var(--blue);
   color: var(--blue-dark);
 }
+
+/* ==========================================================================
+   Mobile Responsiveness and Performance Overrides (320px to 768px)
+   ========================================================================== */
+
+/* Remove backdrop blur filter and replace with solid backgrounds on mobile */
+@media (max-width: 768px) {
+  .site-header {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #ffffff !important;
+  }
+
+  .collapsible-sidebar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #ffffff !important;
+    width: 0 !important;
+  }
+
+  .collapsible-sidebar.expanded {
+    width: 100% !important; /* Full width sidebar when open on mobile */
+    z-index: 1005;
+  }
+
+  .slide-btn {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .hero-stat {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--ink) !important;
+    border-color: var(--line) !important;
+  }
+
+  .purpose-badge {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .feature-pill {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* Hamburger Navigation Menu Dropdown */
+  .hamburger-menu {
+    display: block !important;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 8px;
+    z-index: 21;
+    min-width: 44px;
+    min-height: 44px;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+
+  .top-nav {
+    display: none !important;
+    flex-direction: column !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--line) !important;
+    padding: 24px 16px !important;
+    gap: 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    z-index: 19 !important;
+  }
+
+  .top-nav.open {
+    display: flex !important;
+  }
+
+  .top-nav a {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 12px 0 !important;
+    font-size: 1.1rem !important;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .top-nav a:last-child {
+    border-bottom: none;
+  }
+
+  .nav-divider {
+    display: none !important;
+  }
+
+  #headerAuthArea {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  #headerAuthArea button,
+  .header-auth-btn {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 12px 0 !important;
+  }
+
+  /* Font size clamp overrides */
+  h1 {
+    font-size: clamp(26px, 5vw, 64px) !important;
+  }
+  
+  h2, .hero-overlay h2 {
+    font-size: clamp(20px, 4vw, 40px) !important;
+  }
+
+  h3 {
+    font-size: clamp(16px, 3vw, 28px) !important;
+  }
+
+  body {
+    font-size: 14px !important; /* Minimum body font-size 14px on mobile */
+  }
+
+  /* Disable parallax hero background scroll */
+  .hero {
+    background-attachment: scroll !important;
+    background-size: cover !important;
+    animation: none !important; /* Disable heavy background shift */
+  }
+
+  /* Simplify and disable heavy animations on mobile */
+  .hero-line-1,
+  .hero-line-2 {
+    animation-duration: 0.1s !important;
+    animation-name: heroFadeIn !important;
+    transform: none !important;
+  }
+
+  .hero-underline {
+    animation-duration: 0.1s !important;
+  }
+
+  .destination-card, 
+  .guide-grid article, 
+  .info-card, 
+  .tab-card, 
+  .place-card, 
+  .quick-link-btn, 
+  .primary-button, 
+  .secondary-button, 
+  .sidebar-toggle-btn {
+    transition-duration: 0.1s !important;
+    animation-duration: 0.1s !important;
+  }
+
+  /* Destination cards grid tablet layout */
+  .destination-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  /* Carousel Touch Target & Slide count */
+  .travel-tips-carousel-wrapper {
+    gap: 8px !important;
+  }
+
+  .travel-tips-carousel-wrapper .travel-tip-card {
+    flex: 0 0 100% !important; /* Show 1 card at a time on mobile */
+  }
+
+  .carousel-arrow {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Footer responsiveness */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+    text-align: center !important;
+  }
+
+  .footer-brand-column .brand {
+    justify-content: center !important;
+  }
+
+  .footer-brand-desc {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .footer-social-icons {
+    justify-content: center !important;
+  }
+
+  .footer-newsletter-form {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .footer-newsletter-form input[type="email"],
+  .footer-newsletter-form button {
+    width: 100% !important;
+    height: 44px !important;
+  }
+
+  /* Destination page updates */
+  .hero-slideshow {
+    height: 260px !important;
+  }
+
+  .tabs-shell {
+    width: 100% !important;
+    margin-top: 15px !important;
+  }
+
+  .tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .tab-card {
+    padding: 20px 16px !important; /* Remove excessive side padding on mobile */
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .community-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Touch Interactions & manipulators */
+  button, 
+  a, 
+  .tab-button, 
+  .filter-chip, 
+  .carousel-arrow, 
+  .sidebar-toggle-btn,
+  .mobile-tools-fab {
+    min-height: 44px; /* Ensure 44px touch target */
+    touch-action: manipulation !important;
+  }
+
+  .nav-icon-btn {
+    min-height: 42px; /* Close to 44px touch target */
+  }
+}
+
+/* Specific Mobile Grid layouts (<= 480px) */
+@media (max-width: 480px) {
+  .destination-grid {
+    grid-template-columns: 1fr !important; /* Change from 2-column to 1-column */
+  }
+
+  .hero-feature-pills {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 0 16px !important;
+    margin-top: 24px !important;
+  }
+
+  .feature-pill {
+    justify-content: center !important;
+    width: 100% !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Disable all animations on slow connections */
+.low-end-connection *,
+.low-end-connection *::before,
+.low-end-connection *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Global touch tap highlight removal */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Active will-change only on active animators */
+.carousel-track {
+  will-change: transform;
+}
