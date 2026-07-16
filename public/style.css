@@ -4956,22 +4956,51 @@ body.sidebar-expanded {
 /* Mobile Overrides */
 @media (max-width: 600px) {
   .search-panel {
-    margin-left: 16px;
-    margin-right: 16px;
-    max-width: calc(100% - 32px);
-    padding: 6px 6px 6px 16px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+    max-width: calc(100% - 32px) !important;
+    padding: 6px 6px 6px 16px !important;
+    height: 54px !important;
+    border-radius: 50px !important;
   }
   
-  .search-panel button[type="submit"] {
-    padding: 10px 20px;
+  .search-panel input {
+    flex-grow: 1 !important;
+    width: 0 !important;
+    padding: 0 8px 0 4px !important;
+    font-size: 14px !important;
+  }
+
+  .search-panel .search-icon {
+    font-size: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    color: #94a3b8 !important;
+  }
+  
+  .search-panel button[type="submit"],
+  .search-panel>button {
+    width: auto !important;
+    height: 42px !important;
+    padding: 0 20px !important;
+    border-radius: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+    margin: 0 !important;
   }
   
   .btn-text-desktop {
-    display: none;
+    display: none !important;
   }
   
   .btn-text-mobile {
-    display: inline;
+    display: inline !important;
   }
 }
 
@@ -5614,7 +5643,7 @@ body.sidebar-expanded {
   }
 
   /* Touch Interactions & manipulators */
-  button, 
+  button:not(.carousel-dot), 
   a, 
   .tab-button, 
   .filter-chip, 
@@ -5668,4 +5697,21 @@ body.sidebar-expanded {
 /* Active will-change only on active animators */
 .carousel-track {
   will-change: transform;
+}
+
+/* Hardware accelerate scrolling and transitions to prevent flickers on mobile */
+@media (max-width: 768px) {
+  .carousel-track,
+  .travel-tip-card,
+  .destination-card,
+  .hero,
+  .site-header,
+  .collapsible-sidebar {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
 }
