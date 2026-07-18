@@ -5744,3 +5744,156 @@ body.modal-open {
     -webkit-transform: translate3d(0, 0, 0);
   }
 }
+
+/* ==========================================================================
+   Trip Budget & Expense Planner Widget Styles
+   ========================================================================== */
+
+.budget-form .input-group {
+  margin-bottom: 10px;
+}
+
+.budget-summary-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 12px;
+  padding: 14px;
+  color: #ffffff;
+  margin: 14px 0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.budget-main-total {
+  text-align: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.budget-main-total .total-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.budget-main-total .total-inr {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.budget-main-total .total-fx {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.budget-per-day-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.budget-per-day-row strong {
+  color: #4ade80;
+  font-size: 0.95rem;
+}
+
+.budget-bar-section {
+  margin-top: 8px;
+}
+
+.budget-bar-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.budget-multi-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  gap: 2px;
+}
+
+.budget-multi-bar .bar-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.budget-multi-bar .bar-segment.stay { background: #38bdf8; }
+.budget-multi-bar .bar-segment.food { background: #fb923c; }
+.budget-multi-bar .bar-segment.transport { background: #a855f7; }
+.budget-multi-bar .bar-segment.activities { background: #4ade80; }
+.budget-multi-bar .bar-segment.emergency { background: #f43f5e; }
+
+.budget-categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.budget-cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.budget-cat-item.emergency-item {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #9f1239;
+}
+
+.cat-input-inr {
+  width: 100px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: right;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+  outline: none;
+}
+
+.cat-input-inr:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.save-budget-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+
