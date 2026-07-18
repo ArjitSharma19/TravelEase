@@ -35,6 +35,9 @@
       <button class="nav-icon-btn" data-target="converter" aria-label="Currency Converter" title="Converter">
         <i class="fa-solid fa-calculator"></i>
       </button>
+      <button class="nav-icon-btn" data-target="budget" aria-label="Trip Budget Planner" title="Budget Planner">
+        <i class="fa-solid fa-wallet"></i>
+      </button>
       <button class="nav-icon-btn" data-target="flight" aria-label="Book Flight" title="Book Flight">
         ✈️
       </button>
@@ -140,6 +143,123 @@
               <p id="conversionCalculation">₹1000.00 =</p>
               <strong id="converter-result">--</strong>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3.5: Trip Budget Planner -->
+      <div class="sidebar-panel" id="panel-budget">
+        <div class="widget-card-sidebar" id="budgetWidget">
+          <div class="widget-header">
+            <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+            <h3>Trip Budget Planner</h3>
+          </div>
+          <p class="panel-subtitle">Estimate expenses in local currency & INR</p>
+
+          <div class="converter-form budget-form">
+            <div class="input-group">
+              <label for="budget-destination">Destination Country</label>
+              <select id="budget-destination">
+                <option value="Thailand">Thailand (THB ฿)</option>
+                <option value="UAE">United Arab Emirates (AED)</option>
+                <option value="Singapore">Singapore (SGD S$)</option>
+                <option value="USA">United States (USD $)</option>
+                <option value="UK">United Kingdom (GBP £)</option>
+                <option value="Japan">Japan (JPY ¥)</option>
+                <option value="Europe">Europe (EUR €)</option>
+                <option value="Australia">Australia (AUD A$)</option>
+                <option value="Canada">Canada (CAD C$)</option>
+              </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <div class="input-group" style="flex: 1;">
+                <label for="budget-purpose">Purpose</label>
+                <select id="budget-purpose">
+                  <option value="tourism">Tourism</option>
+                  <option value="business">Business</option>
+                  <option value="education">Education</option>
+                  <option value="other">Family / Other</option>
+                </select>
+              </div>
+
+              <div class="input-group" style="flex: 1;">
+                <label for="budget-days">Days</label>
+                <input type="number" id="budget-days" value="5" min="1" max="90">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <div class="input-group" style="flex: 1;">
+                <label for="budget-travelers">Travelers</label>
+                <input type="number" id="budget-travelers" value="1" min="1" max="10">
+              </div>
+              <div class="input-group" style="flex: 1;">
+                <label for="budget-style">Style</label>
+                <select id="budget-style">
+                  <option value="budget">Budget</option>
+                  <option value="mid-range" selected>Comfort</option>
+                  <option value="luxury">Luxury</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Total Budget Box -->
+            <div class="budget-summary-card">
+              <div class="budget-main-total">
+                <div class="total-label">Estimated Total Budget</div>
+                <div class="total-inr" id="budgetTotalINR">₹0</div>
+                <div class="total-fx" id="budgetTotalFX">--</div>
+              </div>
+              <div class="budget-per-day-row">
+                <span>Daily Avg / Person:</span>
+                <strong id="budgetDailyPerPerson">₹0</strong>
+              </div>
+
+              <!-- Visual distribution progress bar -->
+              <div class="budget-bar-section">
+                <div class="budget-bar-title">Expense Allocation</div>
+                <div class="budget-multi-bar">
+                  <div class="bar-segment stay" id="barStay" style="width: 35%" title="Stay"></div>
+                  <div class="bar-segment food" id="barFood" style="width: 25%" title="Food"></div>
+                  <div class="bar-segment transport" id="barTransport" style="width: 15%" title="Transport"></div>
+                  <div class="bar-segment activities" id="barActivities" style="width: 15%" title="Activities"></div>
+                  <div class="bar-segment emergency" id="barEmergency" style="width: 10%" title="Emergency Forex"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expense Category Inputs -->
+            <div class="budget-categories-list">
+              <div class="budget-cat-item">
+                <span>🏨 Stay / Hotel</span>
+                <input type="number" id="catStayINR" class="cat-input-inr" placeholder="₹ Stay">
+              </div>
+              <div class="budget-cat-item">
+                <span>🍕 Food & Meals</span>
+                <input type="number" id="catFoodINR" class="cat-input-inr" placeholder="₹ Food">
+              </div>
+              <div class="budget-cat-item">
+                <span>🚕 Local Transit</span>
+                <input type="number" id="catTransportINR" class="cat-input-inr" placeholder="₹ Transport">
+              </div>
+              <div class="budget-cat-item">
+                <span>🎟️ Sightseeing</span>
+                <input type="number" id="catActivitiesINR" class="cat-input-inr" placeholder="₹ Activities">
+              </div>
+              <div class="budget-cat-item">
+                <span>🛍️ Shopping & Extras</span>
+                <input type="number" id="catShoppingINR" class="cat-input-inr" placeholder="₹ Shopping">
+              </div>
+              <div class="budget-cat-item emergency-item">
+                <span>🚨 Emergency Forex</span>
+                <input type="number" id="catEmergencyINR" class="cat-input-inr" placeholder="₹ Emergency">
+              </div>
+            </div>
+
+            <button class="primary-button save-budget-btn" id="saveBudgetBtn" type="button">
+              💾 Save Budget to My Trip
+            </button>
           </div>
         </div>
       </div>
