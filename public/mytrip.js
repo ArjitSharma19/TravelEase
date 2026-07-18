@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load user data and render
   loadTripSummary();
   loadSavedPlaces();
+  loadSavedBudgetDisplay();
 
   // Setup click handlers for Edit Trip details (reuses index.html modals)
   setupDashboardEditHandlers();
@@ -682,7 +683,68 @@ async function toggleDashboardPlaceBookmark(event, btn, place) {
   }
 }
 
-// Make loadSavedPlaces and helpers globally available
+// Render saved budget on dashboard
+function loadSavedBudgetDisplay() {
+  const panel = document.getElementById("savedBudgetPanel");
+  const container = document.getElementById("savedBudgetContainer");
+
+  if (!panel || !container) return;
+
+  const rawBudget = localStorage.getItem("travelease_saved_budget");
+  if (!rawBudget) {
+    panel.style.display = "none";
+    return;
+  }
+
+  try {
+    const budget = JSON.parse(rawBudget);
+    panel.style.display = "block";
+
+    const dailyAvgINR = Math.round(budget.totalINR / (budget.days * budget.travelers));
+
+    container.innerHTML = `
+      <div class="budget-summary-card" style="margin: 0; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 10px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed rgba(255,255,255,0.15); padding-bottom: 10px;">
+          <div>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Trip Destination</span>
+            <h4 style="margin: 2px 0 0 0; font-size: 1.1rem; color: #ffffff; font-weight: 800;">${escapeHTML(budget.destination)} (${budget.currency})</h4>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700;">Duration</span>
+            <div style="font-size: 0.95rem; font-weight: 800; color: #38bdf8;">${budget.days} Days (${budget.travelers} ${budget.travelers > 1 ? 'People' : 'Person'})</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Estimated Total Expense</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #4ade80;">₹${Math.round(budget.totalINR).toLocaleString('en-IN')}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Daily Avg / Person</div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: #38bdf8;">₹${dailyAvgINR.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.08);">
+          <div><span style="color:#94a3b8;">🏨 Stay/Day:</span> <strong style="color:#fff;">₹${(budget.stayPerDay || 0).toLocaleString('en-IN')}</strong></div>
+          <div><span style="color:#94a3b8;">🍕 Food/Day:</span> <strong style="color:#fff;">₹${(budget.foodPerDay || 0).toLocaleString('en-IN')}</strong></div>
+          <div><span style="color:#94a3b8;">🚕 Transit/Day:</span> <strong style="color:#fff;">₹${(budget.transportPerDay || 0).toLocaleString('en-IN')}</strong></div>
+          <div><span style="color:#94a3b8;">🎟️ Activities/Day:</span> <strong style="color:#fff;">₹${(budget.activitiesPerDay || 0).toLocaleString('en-IN')}</strong></div>
+          <div><span style="color:#94a3b8;">🛍️ Shopping/Day:</span> <strong style="color:#fff;">₹${(budget.shoppingPerDay || 0).toLocaleString('en-IN')}</strong></div>
+          <div><span style="color:#f43f5e;">🚨 Emergency Reserve:</span> <strong style="color:#f43f5e;">₹${(budget.emergency || 0).toLocaleString('en-IN')}</strong></div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Failed to render saved budget on dashboard:", err);
+    panel.style.display = "none";
+  }
+}
+
+// Make loadSavedPlaces, loadSavedBudgetDisplay and helpers globally available
 window.loadSavedPlaces = loadSavedPlaces;
+window.loadSavedBudgetDisplay = loadSavedBudgetDisplay;
 window.openPlaceDetails = openPlaceDetails;
 window.toggleDashboardPlaceBookmark = toggleDashboardPlaceBookmark;
+
