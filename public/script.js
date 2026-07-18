@@ -1596,6 +1596,7 @@ function escapeHTML(str) {
 function setupSidebarWidgets() {
   sidebarChecklistController();
   sidebarConverterController();
+  sidebarBudgetController();
   setupSidebarLayout();
   setupAuthHandlers();
   renderAuthUI();
@@ -2228,6 +2229,260 @@ async function sidebarConverterController() {
 
   convertCurrency();
 }
+
+/* ==========================================================================
+   Trip Budget & Expense Planner Controller
+   ========================================================================== */
+
+const BUDGET_PRESETS = {
+  'Thailand': {
+    currency: 'THB',
+    symbol: '฿',
+    budget: { stay: 1200, food: 700, transport: 350, activities: 500, shopping: 400, emergency: 2500 },
+    'mid-range': { stay: 3500, food: 1500, transport: 700, activities: 1200, shopping: 1000, emergency: 4000 },
+    luxury: { stay: 10000, food: 3500, transport: 2000, activities: 3500, shopping: 3000, emergency: 8000 }
+  },
+  'UAE': {
+    currency: 'AED',
+    symbol: 'AED',
+    budget: { stay: 3000, food: 1500, transport: 800, activities: 1200, shopping: 1000, emergency: 5000 },
+    'mid-range': { stay: 7000, food: 3000, transport: 1500, activities: 3000, shopping: 2500, emergency: 8000 },
+    luxury: { stay: 20000, food: 7500, transport: 4000, activities: 8000, shopping: 7000, emergency: 15000 }
+  },
+  'Singapore': {
+    currency: 'SGD',
+    symbol: 'S$',
+    budget: { stay: 3500, food: 1600, transport: 600, activities: 1500, shopping: 1200, emergency: 5000 },
+    'mid-range': { stay: 8000, food: 3200, transport: 1400, activities: 3500, shopping: 3000, emergency: 8000 },
+    luxury: { stay: 22000, food: 8000, transport: 3500, activities: 9000, shopping: 8000, emergency: 15000 }
+  },
+  'USA': {
+    currency: 'USD',
+    symbol: '$',
+    budget: { stay: 5000, food: 2200, transport: 1200, activities: 1800, shopping: 1500, emergency: 6000 },
+    'mid-range': { stay: 12000, food: 4500, transport: 2500, activities: 4000, shopping: 3500, emergency: 10000 },
+    luxury: { stay: 30000, food: 10000, transport: 6000, activities: 10000, shopping: 10000, emergency: 20000 }
+  },
+  'UK': {
+    currency: 'GBP',
+    symbol: '£',
+    budget: { stay: 4500, food: 2000, transport: 1100, activities: 1600, shopping: 1400, emergency: 6000 },
+    'mid-range': { stay: 11000, food: 4200, transport: 2200, activities: 3800, shopping: 3200, emergency: 10000 },
+    luxury: { stay: 28000, food: 9500, transport: 5500, activities: 9500, shopping: 9000, emergency: 20000 }
+  },
+  'Japan': {
+    currency: 'JPY',
+    symbol: '¥',
+    budget: { stay: 3200, food: 1600, transport: 900, activities: 1400, shopping: 1200, emergency: 5000 },
+    'mid-range': { stay: 7500, food: 3500, transport: 1800, activities: 3200, shopping: 2800, emergency: 8000 },
+    luxury: { stay: 20000, food: 8500, transport: 4500, activities: 8500, shopping: 8000, emergency: 16000 }
+  },
+  'Europe': {
+    currency: 'EUR',
+    symbol: '€',
+    budget: { stay: 4000, food: 1800, transport: 1000, activities: 1500, shopping: 1200, emergency: 5500 },
+    'mid-range': { stay: 10000, food: 3800, transport: 2000, activities: 3500, shopping: 3000, emergency: 9000 },
+    luxury: { stay: 25000, food: 8500, transport: 5000, activities: 8500, shopping: 8000, emergency: 18000 }
+  },
+  'Australia': {
+    currency: 'AUD',
+    symbol: 'A$',
+    budget: { stay: 4000, food: 1900, transport: 1000, activities: 1600, shopping: 1300, emergency: 5500 },
+    'mid-range': { stay: 9500, food: 4000, transport: 2200, activities: 3600, shopping: 3200, emergency: 9500 },
+    luxury: { stay: 24000, food: 9000, transport: 5000, activities: 9000, shopping: 8500, emergency: 18000 }
+  },
+  'Canada': {
+    currency: 'CAD',
+    symbol: 'C$',
+    budget: { stay: 4200, food: 1850, transport: 1050, activities: 1550, shopping: 1250, emergency: 5500 },
+    'mid-range': { stay: 9800, food: 3900, transport: 2100, activities: 3500, shopping: 3100, emergency: 9500 },
+    luxury: { stay: 24500, food: 8800, transport: 4800, activities: 8800, shopping: 8200, emergency: 18000 }
+  }
+};
+
+async function sidebarBudgetController() {
+  const budgetWidget = document.getElementById('budgetWidget');
+  if (!budgetWidget) return;
+
+  const destSelect = document.getElementById('budget-destination');
+  const purposeSelect = document.getElementById('budget-purpose');
+  const daysInput = document.getElementById('budget-days');
+  const travelersInput = document.getElementById('budget-travelers');
+  const styleSelect = document.getElementById('budget-style');
+
+  const catStay = document.getElementById('catStayINR');
+  const catFood = document.getElementById('catFoodINR');
+  const catTransport = document.getElementById('catTransportINR');
+  const catActivities = document.getElementById('catActivitiesINR');
+  const catShopping = document.getElementById('catShoppingINR');
+  const catEmergency = document.getElementById('catEmergencyINR');
+
+  const saveBtn = document.getElementById('saveBudgetBtn');
+
+  if (!destSelect || !purposeSelect || !daysInput || !travelersInput || !styleSelect) return;
+
+  // Auto-fill from user profile if available
+  const user = getCurrentUser();
+  if (user) {
+    if (user.destination && [...destSelect.options].some(o => o.value === user.destination)) {
+      destSelect.value = user.destination;
+    }
+    if (user.tripPurpose) {
+      purposeSelect.value = user.tripPurpose;
+    }
+    if (user.travelersCount) {
+      travelersInput.value = user.travelersCount;
+    }
+    if (user.budgetRange && [...styleSelect.options].some(o => o.value === user.budgetRange)) {
+      styleSelect.value = user.budgetRange;
+    }
+  }
+
+  function populatePresets() {
+    const dest = destSelect.value || 'Thailand';
+    const style = styleSelect.value || 'mid-range';
+    const purpose = purposeSelect.value || 'tourism';
+
+    const preset = BUDGET_PRESETS[dest] || BUDGET_PRESETS['Thailand'];
+    const rates = preset[style] || preset['mid-range'];
+
+    let stayMult = 1, foodMult = 1, transportMult = 1, actMult = 1, shopMult = 1;
+    if (purpose === 'business') {
+      stayMult = 1.25; foodMult = 1.2; actMult = 0.5;
+    } else if (purpose === 'education') {
+      stayMult = 0.65; foodMult = 0.6; transportMult = 0.5; shopMult = 0.4;
+    } else if (purpose === 'other') {
+      stayMult = 0.4;
+    }
+
+    if (catStay) catStay.value = Math.round(rates.stay * stayMult);
+    if (catFood) catFood.value = Math.round(rates.food * foodMult);
+    if (catTransport) catTransport.value = Math.round(rates.transport * transportMult);
+    if (catActivities) catActivities.value = Math.round(rates.activities * actMult);
+    if (catShopping) catShopping.value = Math.round(rates.shopping * shopMult);
+    if (catEmergency) catEmergency.value = rates.emergency;
+
+    recalculateTotal();
+  }
+
+  async function recalculateTotal() {
+    const dest = destSelect.value || 'Thailand';
+    const days = Math.max(1, parseInt(daysInput.value) || 1);
+    const travelers = Math.max(1, parseInt(travelersInput.value) || 1);
+
+    const preset = BUDGET_PRESETS[dest] || BUDGET_PRESETS['Thailand'];
+    const targetCurrency = preset.currency;
+    const symbol = preset.symbol;
+
+    const stayVal = Math.max(0, parseFloat(catStay ? catStay.value : 0) || 0);
+    const foodVal = Math.max(0, parseFloat(catFood ? catFood.value : 0) || 0);
+    const transportVal = Math.max(0, parseFloat(catTransport ? catTransport.value : 0) || 0);
+    const activitiesVal = Math.max(0, parseFloat(catActivities ? catActivities.value : 0) || 0);
+    const shoppingVal = Math.max(0, parseFloat(catShopping ? catShopping.value : 0) || 0);
+    const emergencyVal = Math.max(0, parseFloat(catEmergency ? catEmergency.value : 0) || 0);
+
+    const stayTotal = stayVal * days * travelers;
+    const foodTotal = foodVal * days * travelers;
+    const transportTotal = transportVal * days * travelers;
+    const activitiesTotal = activitiesVal * days * travelers;
+    const shoppingTotal = shoppingVal * days * travelers;
+    const emergencyTotal = emergencyVal;
+
+    const grandTotalINR = stayTotal + foodTotal + transportTotal + activitiesTotal + shoppingTotal + emergencyTotal;
+    const dailyPerPersonINR = Math.round(grandTotalINR / (days * travelers));
+
+    const totalINRElement = document.getElementById('budgetTotalINR');
+    const dailyElement = document.getElementById('budgetDailyPerPerson');
+    if (totalINRElement) totalINRElement.textContent = `₹${Math.round(grandTotalINR).toLocaleString('en-IN')}`;
+    if (dailyElement) dailyElement.textContent = `₹${dailyPerPersonINR.toLocaleString('en-IN')}`;
+
+    const totalFXElement = document.getElementById('budgetTotalFX');
+    const rate = await getLiveExchangeRate(targetCurrency);
+    if (rate && totalFXElement) {
+      const converted = (grandTotalINR * rate).toFixed(2);
+      totalFXElement.textContent = `(${symbol} ${parseFloat(converted).toLocaleString('en-US')})`;
+    } else if (totalFXElement) {
+      totalFXElement.textContent = `(${targetCurrency})`;
+    }
+
+    const barStay = document.getElementById('barStay');
+    const barFood = document.getElementById('barFood');
+    const barTransport = document.getElementById('barTransport');
+    const barActivities = document.getElementById('barActivities');
+    const barEmergency = document.getElementById('barEmergency');
+
+    if (grandTotalINR > 0) {
+      const stayPct = ((stayTotal / grandTotalINR) * 100).toFixed(1);
+      const foodPct = ((foodTotal / grandTotalINR) * 100).toFixed(1);
+      const transPct = ((transportTotal / grandTotalINR) * 100).toFixed(1);
+      const actPct = ((activitiesTotal / grandTotalINR) * 100).toFixed(1);
+      const emergPct = ((emergencyTotal / grandTotalINR) * 100).toFixed(1);
+
+      if (barStay) { barStay.style.width = `${stayPct}%`; barStay.title = `Stay (${stayPct}%)`; }
+      if (barFood) { barFood.style.width = `${foodPct}%`; barFood.title = `Food (${foodPct}%)`; }
+      if (barTransport) { barTransport.style.width = `${transPct}%`; barTransport.title = `Transport (${transPct}%)`; }
+      if (barActivities) { barActivities.style.width = `${actPct}%`; barActivities.title = `Activities (${actPct}%)`; }
+      if (barEmergency) { barEmergency.style.width = `${emergPct}%`; barEmergency.title = `Emergency (${emergPct}%)`; }
+    }
+  }
+
+  destSelect.addEventListener('change', populatePresets);
+  purposeSelect.addEventListener('change', populatePresets);
+  styleSelect.addEventListener('change', populatePresets);
+
+  daysInput.addEventListener('input', recalculateTotal);
+  travelersInput.addEventListener('input', recalculateTotal);
+
+  [catStay, catFood, catTransport, catActivities, catShopping, catEmergency].forEach(input => {
+    if (input) input.addEventListener('input', recalculateTotal);
+  });
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const dest = destSelect.value;
+      const preset = BUDGET_PRESETS[dest] || BUDGET_PRESETS['Thailand'];
+      const days = parseInt(daysInput.value) || 5;
+      const travelers = parseInt(travelersInput.value) || 1;
+
+      const stayVal = parseFloat(catStay ? catStay.value : 0) || 0;
+      const foodVal = parseFloat(catFood ? catFood.value : 0) || 0;
+      const transportVal = parseFloat(catTransport ? catTransport.value : 0) || 0;
+      const activitiesVal = parseFloat(catActivities ? catActivities.value : 0) || 0;
+      const shoppingVal = parseFloat(catShopping ? catShopping.value : 0) || 0;
+      const emergencyVal = parseFloat(catEmergency ? catEmergency.value : 0) || 0;
+
+      const grandTotalINR = (stayVal * days * travelers) + (foodVal * days * travelers) + (transportVal * days * travelers) + (activitiesVal * days * travelers) + (shoppingVal * days * travelers) + emergencyVal;
+
+      const budgetData = {
+        destination: dest,
+        currency: preset.currency,
+        symbol: preset.symbol,
+        purpose: purposeSelect.value,
+        style: styleSelect.value,
+        days,
+        travelers,
+        stayPerDay: stayVal,
+        foodPerDay: foodVal,
+        transportPerDay: transportVal,
+        activitiesPerDay: activitiesVal,
+        shoppingPerDay: shoppingVal,
+        emergency: emergencyVal,
+        totalINR: grandTotalINR,
+        savedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('travelease_saved_budget', JSON.stringify(budgetData));
+      showToast(`Budget of ₹${Math.round(grandTotalINR).toLocaleString('en-IN')} saved to My Trip!`, "success");
+
+      if (window.loadSavedBudgetDisplay) {
+        window.loadSavedBudgetDisplay();
+      }
+    });
+  }
+
+  populatePresets();
+}
+
 
 function setupSidebarLayout() {
   const sidebar = document.getElementById("sidebar");
