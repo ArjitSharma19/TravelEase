@@ -4455,13 +4455,8 @@ function renderExploreGuide(destination) {
 
   const urlParams = new URLSearchParams(window.location.search);
   const activeTab = urlParams.get("tab") || "visa";
-  renderExploreTab(activeTab);
-
-  // Hide the comments section on non-curated explore pages
-  const commentsSection = document.querySelector(".comments-section");
-  if (commentsSection) {
-    commentsSection.style.display = "none";
-  }
+  // Enable community comments section for explore guide destinations
+  setupCommentsSection(destination.name);
 }
 
 function showExploreError(countryName) {
@@ -4470,7 +4465,7 @@ function showExploreError(countryName) {
   const destName = document.getElementById("dest-name");
   const destDesc = document.getElementById("dest-description");
   const quickSummaryGrid = document.getElementById("quickSummaryGrid");
-  const commentsSection = document.querySelector(".comments-section");
+  const commentsSection = document.getElementById("communitySection");
 
   if (destName) destName.textContent = countryName;
   if (destDesc) destDesc.textContent = "Compilation failed.";
@@ -4495,9 +4490,25 @@ function showExploreError(countryName) {
 
 // --- TravelEase Footer Logic ---
 window.openSidebarPanel = function (panelName) {
+  const sidebar = document.getElementById("sidebar");
+  const toggleIcon = document.getElementById("toggleIcon");
+
+  if (sidebar && !sidebar.classList.contains("expanded")) {
+    sidebar.classList.add("expanded");
+    document.body.classList.add("sidebar-expanded");
+    if (toggleIcon) toggleIcon.className = "fa-solid fa-chevron-left";
+  }
+
   const btn = document.querySelector(`.nav-icon-btn[data-target="${panelName}"]`);
   if (btn) {
     btn.click();
+  } else {
+    document.querySelectorAll(".sidebar-panel").forEach((panel) => {
+      panel.classList.remove("active");
+      if (panel.id === `panel-${panelName}`) {
+        panel.classList.add("active");
+      }
+    });
   }
 };
 
