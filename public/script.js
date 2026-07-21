@@ -689,15 +689,41 @@ function renderDestinationPage() {
   prefillFlightDestination();
 }
 
+function getShortBestTime(str) {
+  if (!str || typeof str !== "string") return "Varies by region";
+  // Remove content inside parentheses e.g. (dry season...)
+  let clean = str.replace(/\s*\([^)]*\)/g, "").trim();
+  // Remove descriptive text after dash/colon
+  clean = clean.replace(/\s*[-–—:]\s*(dry|wet|peak|best|hot|cold|rainy|summer|winter|season|weather|check|varies).*/i, "").trim();
+  // Standard month abbreviations
+  const monthsMap = {
+    "January": "Jan", "February": "Feb", "March": "Mar", "April": "Apr",
+    "May": "May", "June": "Jun", "July": "Jul", "August": "Aug",
+    "September": "Sep", "October": "Oct", "November": "Nov", "December": "Dec"
+  };
+  Object.keys(monthsMap).forEach(m => {
+    const reg = new RegExp("\\b" + m + "\\b", "gi");
+    clean = clean.replace(reg, monthsMap[m]);
+  });
+  // Clean connectors
+  clean = clean.replace(/\s+or\s+/gi, " & ").replace(/\s+and\s+/gi, " & ");
+  clean = clean.replace(/\s*;\s*.*/, ""); // strip anything after semicolon
+  if (clean.length > 32) {
+    clean = clean.substring(0, 30) + "..";
+  }
+  return clean || "Varies by region";
+}
+
 function renderQuickSummary(destination) {
   const grid = document.getElementById("quickSummaryGrid");
   if (!grid) return;
 
+  const rawBestTime = destination.bestTime || (destination.essentials && destination.essentials.bestTime);
   const facts = [
     { icon: "fa-passport", label: "Visa type", value: destination.visa.type },
     { icon: "fa-money-bill-wave", label: "Currency", value: destination.currency.code || destination.currency.rate },
     { icon: "fa-language", label: "Language", value: destination.language },
-    { icon: "fa-sun", label: "Best time", value: destination.bestTime || destination.essentials.bestTime }
+    { icon: "fa-sun", label: "Best time", value: getShortBestTime(rawBestTime) }
   ];
 
   grid.innerHTML = facts.map((fact) => `
@@ -4235,6 +4261,7 @@ async function loadExplorePage(countryName) {
         "currencyCode": "3-letter currency code (e.g. 'EUR')",
         "currencyName": "Currency name (e.g. 'Euro')",
         "currencySymbol": "Currency symbol (e.g. '€')",
+        "bestTime": "Short concise best months to visit (e.g. 'Nov to Mar' or 'May to Sep'). MUST be maximum 3-5 words, no long descriptions or brackets.",
         "visaType": "e-Visa / Visa on Arrival / Visa Required / Visa Free",
         "visaCostINR": "Estimated cost in INR or 'Free'",
         "processingTime": "Typical processing time (e.g. '3-5 business days')",
@@ -4335,6 +4362,8 @@ function buildExploreDestination(restData, geminiData, countryName, imageList = 
     ? (Object.values(restData.languages || {}).join(", ") || "English")
     : (geminiData.languages || "English");
 
+  const shortBestTime = getShortBestTime(geminiData.bestTime || geminiData.bestTimeToVisit || "Varies by region");
+
   // Build the unified structure
   return {
     name: commonName,
@@ -4346,7 +4375,7 @@ function buildExploreDestination(restData, geminiData, countryName, imageList = 
     heroImage: imageList[0] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400",
     images: imageList.length > 0 ? imageList : ["https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400"],
     language: languageList,
-    bestTime: "Varies by region; check local seasonal forecasts.",
+    bestTime: shortBestTime,
     plugType: "Standard plug types.",
     upiAccepted: false,
     tipping: "Standard local customs apply.",
@@ -4390,7 +4419,7 @@ function buildExploreDestination(restData, geminiData, countryName, imageList = 
       dos: ["Respect local cultural norms, dress codes, and religious sites.", "Keep digital and printed copies of your passport and visa."],
       donts: ["Do not violate local customs or laws.", "Avoid carrying excessive cash in crowded areas."],
       tips: ["Be mindful of local laws and customs.", "Register with MADAD (Ministry of External Affairs portal) before travelling."],
-      bestTime: "Varies by region"
+      bestTime: shortBestTime
     }
   };
 }

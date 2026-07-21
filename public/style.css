@@ -818,7 +818,14 @@ h3 {
 }
 
 .summary-card strong {
-  font-size: 1.04rem;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .share-guide-button {
