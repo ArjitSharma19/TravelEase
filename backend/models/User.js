@@ -115,7 +115,7 @@ const UserSchema = new mongoose.Schema({
   },
   isEmailVerified: {
     type: Boolean,
-    default: false
+    default: true
   },
   verificationToken: {
     type: String

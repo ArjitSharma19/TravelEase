@@ -3805,16 +3805,27 @@ function setupAuthHandlers() {
         // Reset form inputs
         signupForm.reset();
         errorDiv.style.color = "var(--green)";
-        errorDiv.textContent = data.message || "Verification email sent, please check your inbox";
-        showToast(data.message || "Verification email sent, please check your inbox", "success");
+        errorDiv.textContent = data.message || "Account created successfully!";
 
-        // Redirect/switch modal after 2.5 seconds
-        setTimeout(() => {
-          closeModal("signupModal");
-          openModal("loginModal");
-          errorDiv.style.color = "var(--red)";
-          errorDiv.textContent = "";
-        }, 2500);
+        if (data.token && data.user) {
+          localStorage.setItem("travelease_token", data.token);
+          localStorage.setItem("travelease_user", JSON.stringify(data.user));
+          checkAuthState();
+          showToast(`Account created! Welcome, ${data.user.name || "Traveler"}`, "success");
+          setTimeout(() => {
+            closeModal("signupModal");
+            errorDiv.style.color = "var(--red)";
+            errorDiv.textContent = "";
+          }, 1200);
+        } else {
+          showToast(data.message || "Account created successfully! You can now log in.", "success");
+          setTimeout(() => {
+            closeModal("signupModal");
+            openModal("loginModal");
+            errorDiv.style.color = "var(--red)";
+            errorDiv.textContent = "";
+          }, 1500);
+        }
       } catch (error) {
         errorDiv.style.color = "var(--red)";
         errorDiv.textContent = error.message;

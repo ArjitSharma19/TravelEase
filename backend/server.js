@@ -120,8 +120,6 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationTokenRaw = crypto.randomBytes(32).toString('hex');
-    const hashedVerificationToken = crypto.createHash('sha256').update(verificationTokenRaw).digest('hex');
 
     const newUser = new User({
       email: email.toLowerCase(),
@@ -136,53 +134,26 @@ app.post('/api/auth/signup', async (req, res) => {
       isFirstTimeAbroad: !!isFirstTimeAbroad,
       travelersCount: travelersCount || 1,
       budgetRange: budgetRange || 'mid-range',
-      isEmailVerified: false,
-      verificationToken: hashedVerificationToken,
-      verificationTokenExpiry: Date.now() + 86400000 // 24 hours
+      isEmailVerified: true
     });
 
     await newUser.save();
 
-    // Send verification email via Nodemailer
-    const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
-    const verifyUrl = `${origin}/api/auth/verify-email/${verificationTokenRaw}`;
+    const token = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_SECRET || 'travelease_secure_jwt_secret_token_key_2026',
+      { expiresIn: '7d' }
+    );
 
-    const transporter = require('./utils/mailer');
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
 
-    const mailOptions = {
-      from: `"TravelEase Support" <${process.env.EMAIL_USER || 'no-reply@travelease.com'}>`,
-      to: email.toLowerCase(),
-      subject: 'TravelEase - Verify Your Email Address',
-      html: `
-        <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #dbe4f0; border-radius: 8px;">
-          <h2 style="color: #1a73e8; margin-top: 0;">Email Verification Required</h2>
-          <p>Hi ${name || 'Traveler'},</p>
-          <p>Thank you for registering with TravelEase. Please verify your email address by clicking the button below:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verifyUrl}" style="background-color: #1a73e8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verify Email</a>
-          </div>
-          <p>Or copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #5e6b7e;">${verifyUrl}</p>
-          <hr style="border: 0; border-top: 1px solid #dbe4f0; margin: 20px 0;">
-          <p style="font-size: 12px; color: #5e6b7e;">This link is valid for 24 hours.</p>
-        </div>
-      `
-    };
-
-    try {
-      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        await transporter.sendMail(mailOptions);
-        console.log(`Verification email successfully sent to: ${email}`);
-      } else {
-        console.warn('EMAIL_USER and EMAIL_PASS environment variables are not configured for verification email.');
-        console.log(`[DEVELOPMENT MODE] Verification link: ${verifyUrl}`);
-      }
-    } catch (emailErr) {
-      console.error('Nodemailer verification email failed to send:', emailErr);
-      console.log(`[DEVELOPMENT MODE] Verification link: ${verifyUrl}`);
-    }
-
-    res.status(201).json({ message: 'Verification email sent, please check your inbox' });
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully! You can now log in.',
+      token,
+      user: userResponse
+    });
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({ error: 'Failed to register traveler. Please try again.' });
@@ -206,11 +177,6 @@ app.post('/api/auth/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password.' });
-    }
-
-    // Block unverified local accounts
-    if (user.authProvider !== 'google' && !user.isEmailVerified) {
-      return res.status(400).json({ error: 'Please verify your email first' });
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'travelease_secure_jwt_secret_token_key_2026', { expiresIn: '7d' });
