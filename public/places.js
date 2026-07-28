@@ -590,14 +590,13 @@ function getPlaceFallbackImage(category, idx = 0) {
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop'
   ];
-  const landmarkPhotos = [
-    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&auto=format&fit=crop'
+  const neutralLandmarkPhotos = [
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1476514525535-ce74f45814d0?w=800&auto=format&fit=crop'
   ];
 
-  let list = landmarkPhotos;
+  let list = neutralLandmarkPhotos;
   if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) list = naturePhotos;
   else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) list = foodPhotos;
   else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) list = culturePhotos;

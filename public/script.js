@@ -5285,17 +5285,39 @@ async function setupPlacesWidget() {
   }
 }
 
-function getPlaceFallbackImage(category) {
+function getPlaceFallbackImage(category, idx = 0) {
   const cat = (category || '').toLowerCase();
-  if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) {
-    return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop';
-  } else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) {
-    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop';
-  } else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) {
-    return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop';
-  } else if (cat.includes('hidden') || cat.includes('gem') || cat.includes('beach')) {
-    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop';
-  }
-  return 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?w=800&auto=format&fit=crop';
+  
+  const naturePhotos = [
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop'
+  ];
+  const foodPhotos = [
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop'
+  ];
+  const culturePhotos = [
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop'
+  ];
+  const hiddenPhotos = [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop'
+  ];
+  const neutralLandmarkPhotos = [
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1476514525535-ce74f45814d0?w=800&auto=format&fit=crop'
+  ];
+
+  let list = neutralLandmarkPhotos;
+  if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) list = naturePhotos;
+  else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) list = foodPhotos;
+  else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) list = culturePhotos;
+  else if (cat.includes('hidden') || cat.includes('gem') || cat.includes('beach')) list = hiddenPhotos;
+
+  return list[Math.abs(idx) % list.length];
 }
 
