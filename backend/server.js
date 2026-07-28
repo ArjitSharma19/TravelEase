@@ -666,7 +666,7 @@ app.post('/api/chat', async (req, res) => {
   const systemInstruction = system ? { parts: [{ text: system }] } : undefined;
 
   try {
-    const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -832,7 +832,7 @@ app.post('/api/places-to-visit', async (req, res) => {
         };
       });
 
-      // Call Gemini 2.5 Flash to annotate these real places
+      // Call Gemini 3.1 Flash Lite to annotate these real places
       const apiKey = process.env.GEMINI_API_KEY;
       if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && apiKey.trim() !== '') {
         const placesInputList = enrichedPlaces.slice(0, 10).map(p => ({
@@ -859,7 +859,7 @@ Return ONLY a valid JSON array (no markdown, no prose, no markdown fences like \
 }`;
 
         try {
-          const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -948,7 +948,7 @@ Return ONLY a valid JSON array of 8 recommended places to visit, tailored to the
 
 Do not wrap the response in markdown blocks. Return only raw JSON. Prioritize a mix of categories.`;
 
-      const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const geminiRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
