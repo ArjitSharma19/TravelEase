@@ -5172,7 +5172,7 @@ async function setupPlacesWidget() {
       return `
         <div class="place-card">
           <div class="place-card-image-wrapper">
-            <img src="${escapeHTML(place.photoUrl)}" class="place-card-img" alt="${escapeHTML(place.name)}" loading="lazy">
+            <img src="${escapeHTML(place.photoUrl || getPlaceFallbackImage(place.category))}" class="place-card-img" alt="${escapeHTML(place.name)}" loading="lazy" onerror="this.onerror=null; this.src=getPlaceFallbackImage('${escapeHTML(place.category || '')}');">
             <button class="place-bookmark-btn ${isSavedClass}" data-place-name="${escapeHTML(place.name)}" aria-label="Bookmark place">
               <i class="${bookmarkIcon}"></i>
             </button>
@@ -5283,5 +5283,19 @@ async function setupPlacesWidget() {
   if (placesPanel) {
     observer.observe(placesPanel, { attributes: true });
   }
+}
+
+function getPlaceFallbackImage(category) {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) {
+    return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop';
+  } else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) {
+    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop';
+  } else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) {
+    return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop';
+  } else if (cat.includes('hidden') || cat.includes('gem') || cat.includes('beach')) {
+    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop';
+  }
+  return 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?w=800&auto=format&fit=crop';
 }
 
