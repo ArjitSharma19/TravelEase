@@ -10,8 +10,8 @@ The project uses a static HTML/CSS/JavaScript frontend served by an Express back
 - Personalized traveler profile with destination, trip purpose, travel dates, passport expiry, first-time-abroad flag, traveler count, and budget range.
 - Dynamic flyer checklist with saved progress for authenticated users and local fallback behavior on the frontend.
 - Country guide experience for visa, currency, SIM, transport, travel tips, testimonials, and community comments.
-- AI travel assistant powered through the backend using Gemini 2.5 Flash, with retry handling for transient API failures.
-- Personalized places-to-visit recommendations using the Google Places API (New) when configured, Gemini 2.5 Flash annotation (generating place descriptions, custom tips, and interest fit explanations), category filters, multi-select interests, FlagCDN-enabled autocomplete, and save-to-trip support.
+- AI travel assistant powered through the backend using Gemini 3.1 Flash Lite, with retry handling for transient API failures.
+- Personalized places-to-visit recommendations using the Google Places API (New) when configured, Gemini 3.1 Flash Lite annotation (generating place descriptions, custom tips, and interest fit explanations), category filters, multi-select interests, FlagCDN-enabled autocomplete, and save-to-trip support.
 - Fully scroll-locked details modal overlay with body scroll isolation and internal card scrolling.
 - My Trip dashboard with trip summary, countdown, checklist progress, passport status, booked flights, saved places, quick country-guide links, and contextual AI quick ask.
 - Currency converter using live exchange-rate data from the frontend.
