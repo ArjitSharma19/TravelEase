@@ -461,11 +461,25 @@ app.get('/api/countries/:countryName', async (req, res) => {
   }
 });
 
+function getCategoryFallbackPhoto(category) {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) {
+    return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop';
+  } else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) {
+    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop';
+  } else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) {
+    return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop';
+  } else if (cat.includes('hidden') || cat.includes('gem') || cat.includes('beach')) {
+    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop';
+  }
+  return 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?w=800&auto=format&fit=crop';
+}
+
 // Reusable helper to fetch a landscape photo from Unsplash for recommendations fallback
 async function getUnsplashPhoto(query, fallbackQuery) {
   const apiKey = process.env.UNSPLASH_API_KEY;
   if (!apiKey || apiKey === 'YOUR_UNSPLASH_API_KEY' || apiKey.trim() === '') {
-    return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+    return getCategoryFallbackPhoto(query);
   }
   try {
     let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query + ' travel landmark')}&per_page=1&orientation=landscape`;
@@ -500,7 +514,7 @@ async function getUnsplashPhoto(query, fallbackQuery) {
   } catch (error) {
     console.error(`Error fetching photo from Unsplash for "${query}":`, error.message);
   }
-  return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+  return getCategoryFallbackPhoto(query);
 }
 
 // Proxy route for fetching high-quality landscape photos from Unsplash
@@ -731,7 +745,15 @@ app.post('/api/places-to-visit', async (req, res) => {
 
     if (cached) {
       console.log(`Returning cached place recommendations for ${destination} (${purpose})`);
-      return res.json(cached.recommendations);
+      const sanitized = cached.recommendations.map(p => {
+        const obj = p.toObject ? p.toObject() : p;
+        let pUrl = obj.photoUrl;
+        if (!pUrl || pUrl.includes('places.googleapis.com')) {
+          pUrl = getCategoryFallbackPhoto(obj.category);
+        }
+        return { ...obj, photoUrl: pUrl };
+      });
+      return res.json(sanitized);
     }
 
     // 2. Fetch from Google Places API
@@ -812,15 +834,22 @@ app.post('/api/places-to-visit', async (req, res) => {
     // If Google Places returned places, annotate them using Gemini
     if (rawPlaces.length > 0) {
       // Map and enrich raw Google places
-      const enrichedPlaces = rawPlaces.map(place => {
-        let photoUrl = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'; // default
-        if (place.photos && place.photos.length > 0 && googleApiKey) {
+      const enrichedPromises = rawPlaces.slice(0, 10).map(async place => {
+        const category = mapGoogleTypesToCategory(place.types);
+        const name = place.displayName?.text || place.displayName || '';
+        let photoUrl = '';
+        if (place.photos && place.photos.length > 0 && googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY') {
           const photoName = place.photos[0].name;
           photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=600&key=${googleApiKey}`;
+        } else {
+          photoUrl = await getUnsplashPhoto(`${name} ${destination}`, destination);
+        }
+        if (!photoUrl) {
+          photoUrl = getCategoryFallbackPhoto(category);
         }
         return {
           id: place.id,
-          name: place.displayName?.text || place.displayName || '',
+          name,
           rating: place.rating || 4.0,
           address: place.formattedAddress || '',
           location: place.location ? {
@@ -828,9 +857,10 @@ app.post('/api/places-to-visit', async (req, res) => {
             longitude: place.location.longitude
           } : null,
           photoUrl,
-          category: mapGoogleTypesToCategory(place.types)
+          category
         };
       });
+      const enrichedPlaces = await Promise.all(enrichedPromises);
 
       // Call Gemini 3.1 Flash Lite to annotate these real places
       const apiKey = process.env.GEMINI_API_KEY;
