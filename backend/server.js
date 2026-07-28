@@ -467,38 +467,32 @@ function getCategoryFallbackPhoto(category, idx = 0) {
   const naturePhotos = [
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop'
   ];
   
   const foodPhotos = [
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop'
   ];
   
   const culturePhotos = [
     'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop'
   ];
   
   const hiddenPhotos = [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1476514525535-ce74f45814d0?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop'
   ];
   
-  const landmarkPhotos = [
-    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&auto=format&fit=crop'
+  const neutralLandmarkPhotos = [
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1476514525535-ce74f45814d0?w=800&auto=format&fit=crop'
   ];
 
-  let list = landmarkPhotos;
+  let list = neutralLandmarkPhotos;
   if (cat.includes('nature') || cat.includes('park') || cat.includes('outdoor')) list = naturePhotos;
   else if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) list = foodPhotos;
   else if (cat.includes('culture') || cat.includes('museum') || cat.includes('history')) list = culturePhotos;
@@ -510,24 +504,25 @@ function getCategoryFallbackPhoto(category, idx = 0) {
 // Fetch a real landmark photo from Wikipedia REST API without requiring API keys
 async function getWikipediaPhoto(placeName, countryName) {
   try {
+    const isSvgOrLogo = (url) => !url || url.endsWith('.svg') || url.includes('.svg/') || url.includes('logo') || (url.endsWith('.png') && url.includes('svg'));
     let queryTitle = placeName.trim();
     let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(queryTitle.replace(/ /g, '_'))}`);
     if (res.ok) {
       let data = await res.json();
       let imgUrl = data.thumbnail?.source || data.originalimage?.source;
-      if (imgUrl) return imgUrl.replace(/\/\d+px-/, '/800px-');
+      if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
     }
     const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(queryTitle + ' ' + (countryName || ''))}&utf8=&format=json&origin=*`;
     let searchRes = await fetch(searchUrl);
     if (searchRes.ok) {
       let searchData = await searchRes.json();
-      let firstTitle = searchData.query?.search?.[0]?.title;
-      if (firstTitle) {
-        let pageRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(firstTitle.replace(/ /g, '_'))}`);
+      let results = searchData.query?.search || [];
+      for (let item of results.slice(0, 3)) {
+        let pageRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
         if (pageRes.ok) {
           let pageData = await pageRes.json();
           let imgUrl = pageData.thumbnail?.source || pageData.originalimage?.source;
-          if (imgUrl) return imgUrl.replace(/\/\d+px-/, '/800px-');
+          if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
         }
       }
     }
@@ -809,15 +804,16 @@ app.post('/api/places-to-visit', async (req, res) => {
       console.log(`Returning cached place recommendations for ${destination} (${purpose})`);
       const sanitizedPromises = cached.recommendations.map(async (p, idx) => {
         const obj = p.toObject ? p.toObject() : p;
+        let wikiPhoto = await getWikipediaPhoto(obj.name, destination);
+        if (wikiPhoto) {
+          return { ...obj, photoUrl: wikiPhoto };
+        }
         let pUrl = obj.photoUrl;
-        if (!pUrl || pUrl.includes('places.googleapis.com') || pUrl.includes('photo-1526772662000-3f88f10405ff') || pUrl.includes('photo-1488646953014-85cb44e25828')) {
-          pUrl = await getWikipediaPhoto(obj.name, destination);
-          if (!pUrl) {
-            pUrl = await getUnsplashPhoto(`${obj.name} ${destination}`, destination);
-          }
-          if (!pUrl) {
-            pUrl = getCategoryFallbackPhoto(obj.category, idx);
-          }
+        if (!pUrl || pUrl.includes('places.googleapis.com') || pUrl.includes('photo-1513635269975') || pUrl.includes('photo-1502602898657') || pUrl.includes('photo-1552832230') || pUrl.includes('photo-1526772662000')) {
+          pUrl = await getUnsplashPhoto(`${obj.name} ${destination}`, destination);
+        }
+        if (!pUrl) {
+          pUrl = getCategoryFallbackPhoto(obj.category, idx);
         }
         return { ...obj, photoUrl: pUrl };
       });
