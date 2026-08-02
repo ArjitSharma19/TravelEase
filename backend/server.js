@@ -570,10 +570,17 @@ async function getUnsplashPhoto(placeName, countryName) {
   return null;
 }
 
-// Get best available photo: 1. Unsplash API, 2. Wikipedia REST API, 3. Category Fallback
-async function getBestPlacePhoto(placeName, countryName, category, idx = 0) {
+// Get best available photo: 1. Unsplash API, 2. Google Places photo, 3. Wikipedia REST API, 4. Category Fallback
+async function getBestPlacePhoto(placeName, countryName, category, idx = 0, googlePhotoName = null) {
   let photo = await getUnsplashPhoto(placeName, countryName);
   if (photo) return photo;
+
+  if (googlePhotoName) {
+    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY;
+    if (googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY' && googleApiKey.trim() !== '') {
+      return `https://places.googleapis.com/v1/${googlePhotoName}/media?maxWidthPx=600&key=${googleApiKey}`;
+    }
+  }
 
   photo = await getWikipediaPhoto(placeName, countryName);
   if (photo) return photo;
@@ -899,14 +906,8 @@ app.post('/api/places-to-visit', async (req, res) => {
       const enrichedPromises = rawPlaces.slice(0, 10).map(async (place, idx) => {
         const category = mapGoogleTypesToCategory(place.types);
         const name = place.displayName?.text || place.displayName || '';
-        let photoUrl = '';
-        if (place.photos && place.photos.length > 0 && googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY') {
-          const photoName = place.photos[0].name;
-          photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=600&key=${googleApiKey}`;
-        }
-        if (!photoUrl) {
-          photoUrl = await getBestPlacePhoto(name, destination, category, idx);
-        }
+        const googlePhotoName = (place.photos && place.photos.length > 0) ? place.photos[0].name : null;
+        const photoUrl = await getBestPlacePhoto(name, destination, category, idx, googlePhotoName);
         return {
           id: place.id,
           name,
