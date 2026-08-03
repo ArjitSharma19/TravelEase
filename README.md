@@ -213,6 +213,11 @@ Express serves the frontend from `public`, so there is no separate frontend buil
 - Passwords are hashed with bcrypt.
 - Google sign-in validates the ID token against `GOOGLE_CLIENT_ID`.
 
+## Contributing
+
+Contributions, bug reports, and feature requests are welcome. Feel free to open issues or submit pull requests to help improve TravelEase for first-time international travelers.
+
 ## License
 
 No project-level license file is currently included. Add one before publishing or accepting external contributions.
+
