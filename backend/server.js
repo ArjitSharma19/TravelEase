@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken');
 const dns = require('dns');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
 const Comment = require('./models/Comment');
 const PlaceRecommendation = require('./models/PlaceRecommendation');
@@ -18,9 +20,41 @@ require('./utils/mailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Apply Helmet security headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
 // Enable CORS and parse JSON bodies
 app.use(cors());
 app.use(express.json());
+
+// General API Rate Limiter (100 requests per 15 minutes per IP)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP address, please try again after 15 minutes.' }
+});
+
+// Stricter Rate Limiter for Authentication endpoints (10 requests per 15 minutes per IP)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login or authentication attempts, please try again after 15 minutes.' }
+});
+
+// Apply rate limiters to routes
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/send-otp', authLimiter);
+app.use('/api/auth/verify-otp', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/', apiLimiter);
 
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
@@ -1159,10 +1193,14 @@ app.get('/api/saved-places', requireAuth, async (req, res) => {
   }
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`TravelEase server running at http://localhost:${PORT}`);
-});
+// Start the server only if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`TravelEase server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 
 // Database Seeder for Community Comments
 async function seedCommentsIfNeeded() {
