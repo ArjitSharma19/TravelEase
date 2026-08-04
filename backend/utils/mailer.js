@@ -23,12 +23,14 @@ const transporter = nodemailer.createTransport({
 });
 
 // Add transporter.verify() on server startup that logs "Mail server connected successfully" or the exact error to terminal
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Mail server connection error:", error);
-  } else {
-    console.log("Mail server connected successfully");
-  }
-});
+if (process.env.NODE_ENV !== 'test') {
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error("Mail server connection error:", error);
+    } else {
+      console.log("Mail server connected successfully");
+    }
+  });
+}
 
 module.exports = transporter;
