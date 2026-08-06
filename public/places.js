@@ -499,7 +499,7 @@ async function togglePlaceBookmark(event, btn, place) {
   if (!place) return;
 
   const token = getToken();
-  if (!token) {
+  if (!token || token === "null" || token === "undefined") {
     showToast("Please log in to save places to your trip!", "warning");
     openModal("loginModal");
     return;
@@ -534,7 +534,13 @@ async function togglePlaceBookmark(event, btn, place) {
     });
 
     if (!res.ok) {
-      throw new Error("Bookmark request failed");
+      const errData = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        showToast("Session expired or login required. Please log in again.", "warning");
+        openModal("loginModal");
+        return;
+      }
+      throw new Error(errData.error || "Bookmark request failed");
     }
 
     const data = await res.json();
@@ -559,8 +565,8 @@ async function togglePlaceBookmark(event, btn, place) {
       window.loadSavedPlaces();
     }
   } catch (err) {
-    console.error(err);
-    showToast("Failed to update bookmark. Please try again.", "error");
+    console.error("Bookmark error:", err);
+    showToast(err.message || "Failed to update bookmark. Please try again.", "error");
   }
 }
 

@@ -2626,14 +2626,18 @@ function setupSidebarLayout() {
 }
 
 function getToken() {
-  return localStorage.getItem("travelease_token");
+  const token = localStorage.getItem("travelease_token") || localStorage.getItem("token") || localStorage.getItem("travelease_jwt");
+  if (!token || token === "null" || token === "undefined") return null;
+  return token;
 }
 
 function setToken(token) {
   if (token) {
     localStorage.setItem("travelease_token", token);
+    localStorage.setItem("token", token);
   } else {
     localStorage.removeItem("travelease_token");
+    localStorage.removeItem("token");
   }
 }
 
@@ -5214,8 +5218,10 @@ async function setupPlacesWidget() {
           return;
         }
 
+        const countryInput = document.getElementById("placesCountrySearch") || document.getElementById("searchCountryInput");
+        const searchedDest = countryInput ? countryInput.value.trim() : "";
         const user = getCurrentUser();
-        const destination = user ? user.destination : '';
+        const destination = searchedDest || placeObj.destination || (user && user.destination ? user.destination : "") || "General";
 
         try {
           const res = await fetch(apiUrl('/api/saved-places'), {
@@ -5237,7 +5243,13 @@ async function setupPlacesWidget() {
           });
 
           if (!res.ok) {
-            throw new Error('Save failed');
+            const errData = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+              showToast("Session expired or login required. Please log in again.", "warning");
+              openModal("loginModal");
+              return;
+            }
+            throw new Error(errData.error || "Save failed");
           }
 
           const responseData = await res.json();
@@ -5258,7 +5270,7 @@ async function setupPlacesWidget() {
           }
         } catch (err) {
           console.error(err);
-          showToast("Failed to update saved places. Please try again.", "error");
+          showToast(err.message || "Failed to update saved places. Please try again.", "error");
         }
       });
     });
