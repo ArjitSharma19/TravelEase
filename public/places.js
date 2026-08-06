@@ -188,7 +188,7 @@ function updatePageHeader() {
   const title = document.getElementById("placesPageTitle");
   const countryInput = document.getElementById("placesCountrySearch");
   const searchedDest = countryInput ? countryInput.value.trim() : "";
-  
+
   if (title) {
     if (searchedDest) {
       title.textContent = `Personalized Recommendations for ${escapeHTML(searchedDest)}`;
@@ -258,7 +258,7 @@ async function fetchFullPageRecommendations() {
         if (savedRes.ok) {
           const savedData = await savedRes.json();
           savedData.forEach(item => {
-            if (item.name) {
+            if (item.destination.toLowerCase() === destination.toLowerCase()) {
               savedSet.add(item.name.toLowerCase());
             }
           });
@@ -577,7 +577,7 @@ function escapeHTML(str) {
 
 function getPlaceFallbackImage(category, idx = 0) {
   const cat = (category || '').toLowerCase();
-  
+
   const naturePhotos = [
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop',
@@ -589,9 +589,9 @@ function getPlaceFallbackImage(category, idx = 0) {
     'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop'
   ];
   const culturePhotos = [
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop'
   ];
   const hiddenPhotos = [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',

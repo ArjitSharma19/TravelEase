@@ -441,7 +441,7 @@ app.get('/api/countries/:countryName', async (req, res) => {
     if (!response.ok) {
       const errText = await response.text();
       console.warn(`REST Countries v5 API returned status ${response.status}: ${errText}. Falling back to public v3.1.`);
-      
+
       return res.status(response.status).json({ error: `REST Countries API returned error: ${response.statusText}` });
     }
 
@@ -497,30 +497,29 @@ app.get('/api/countries/:countryName', async (req, res) => {
 
 function getCategoryFallbackPhoto(category, idx = 0) {
   const cat = (category || '').toLowerCase();
-  
+
   const naturePhotos = [
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop'
   ];
-  
+
   const foodPhotos = [
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop'
   ];
-  
+
   const culturePhotos = [
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop'
   ];
-  
+
   const hiddenPhotos = [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop'
   ];
-  
+
   const neutralLandmarkPhotos = [
     'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop',
@@ -536,6 +535,37 @@ function getCategoryFallbackPhoto(category, idx = 0) {
   return list[Math.abs(idx) % list.length];
 }
 
+// Fetch a real landmark photo from Wikipedia REST API without requiring API keys
+async function getWikipediaPhoto(placeName, countryName) {
+  try {
+    const isSvgOrLogo = (url) => !url || url.endsWith('.svg') || url.includes('.svg/') || url.includes('logo') || (url.endsWith('.png') && url.includes('svg'));
+    let queryTitle = placeName.trim();
+    let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(queryTitle.replace(/ /g, '_'))}`);
+    if (res.ok) {
+      let data = await res.json();
+      let imgUrl = data.thumbnail?.source || data.originalimage?.source;
+      if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
+    }
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(queryTitle + ' ' + (countryName || ''))}&utf8=&format=json&origin=*`;
+    let searchRes = await fetch(searchUrl);
+    if (searchRes.ok) {
+      let searchData = await searchRes.json();
+      let results = searchData.query?.search || [];
+      for (let item of results.slice(0, 3)) {
+        let pageRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
+        if (pageRes.ok) {
+          let pageData = await pageRes.json();
+          let imgUrl = pageData.thumbnail?.source || pageData.originalimage?.source;
+          if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`Wikipedia photo lookup failed for ${placeName}:`, e.message);
+  }
+  return null;
+}
+
 // Fetch a landscape photo from Unsplash for a place name and country
 async function getUnsplashPhoto(placeName, countryName) {
   const apiKey = process.env.UNSPLASH_API_KEY;
@@ -544,8 +574,8 @@ async function getUnsplashPhoto(placeName, countryName) {
   }
   try {
     const directQuery = countryName ? `${placeName} ${countryName}` : placeName;
-    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(directQuery)}&per_page=1&orientation=landscape`;
-    const response = await fetch(url, {
+    let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(directQuery)}&per_page=1&orientation=landscape`;
+    let response = await fetch(url, {
       headers: { 'Authorization': `Client-ID ${apiKey}` }
     });
     if (response.ok) {
@@ -554,27 +584,41 @@ async function getUnsplashPhoto(placeName, countryName) {
         return data.results[0].urls.regular || data.results[0].urls.small;
       }
     }
+
+    if (countryName) {
+      url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(countryName + ' travel landmark')}&per_page=5&orientation=landscape`;
+      response = await fetch(url, {
+        headers: { 'Authorization': `Client-ID ${apiKey}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.results && data.results.length > 0) {
+          const randomIndex = Math.floor(Math.random() * data.results.length);
+          return data.results[randomIndex].urls.regular || data.results[randomIndex].urls.small;
+        }
+      }
+    }
   } catch (error) {
     console.error(`Error fetching photo from Unsplash for "${placeName}":`, error.message);
   }
   return null;
 }
 
-// Get best available photo: 1. Google Places photo, 2. Unsplash API photo, 3. Category Fallback
+// Get best available photo: 1. Unsplash API, 2. Google Places photo, 3. Wikipedia REST API, 4. Category Fallback
 async function getBestPlacePhoto(placeName, countryName, category, idx = 0, googlePhotoName = null) {
-  // 1. Priority: Google Places API Photo
+  let photo = await getUnsplashPhoto(placeName, countryName);
+  if (photo) return photo;
+
   if (googlePhotoName) {
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY;
     if (googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY' && googleApiKey.trim() !== '') {
-      return `https://places.googleapis.com/v1/${googlePhotoName}/media?maxWidthPx=800&key=${googleApiKey}`;
+      return `https://places.googleapis.com/v1/${googlePhotoName}/media?maxWidthPx=600&key=${googleApiKey}`;
     }
   }
 
-  // 2. Priority: Unsplash API Photo for placeName + countryName
-  const photo = await getUnsplashPhoto(placeName, countryName);
+  photo = await getWikipediaPhoto(placeName, countryName);
   if (photo) return photo;
 
-  // 3. Priority: Category Fallback Photo (for error or places not fetched)
   return getCategoryFallbackPhoto(category, idx);
 }
 
@@ -676,7 +720,7 @@ app.get('/api/countries-list', async (req, res) => {
   try {
     const allObjects = [];
     const limit = 100;
-    
+
     // Paginate through REST Countries v5 API
     for (let offset = 0; offset < 300; offset += limit) {
       const url = `https://api.restcountries.com/countries/v5?limit=${limit}&offset=${offset}`;
@@ -686,11 +730,11 @@ app.get('/api/countries-list', async (req, res) => {
           'Authorization': `Bearer ${apiKey}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`REST Countries API returned status ${response.status}`);
       }
-      
+
       const result = await response.json();
       if (result && result.data && Array.isArray(result.data.objects)) {
         allObjects.push(...result.data.objects);
@@ -791,7 +835,7 @@ app.post('/api/places-to-visit', async (req, res) => {
 
   const purpose = travelPurpose || 'Tourist';
   const interestsList = Array.isArray(interests) ? interests : [];
-  
+
   // Sort and hash interests for consistent caching
   const sortedInterests = [...interestsList].sort();
   const interestsHash = crypto.createHash('sha256').update(sortedInterests.join(',')).digest('hex');
@@ -821,7 +865,7 @@ app.post('/api/places-to-visit', async (req, res) => {
 
     if (googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY' && googleApiKey.trim() !== '') {
       console.log(`Google Places API key is configured. Fetching places for ${destination}...`);
-      
+
       // We will perform parallel searches:
       // One general query: "top tourist attractions in {destination}"
       // And one per interest: "best {interest} spots in {destination}"
@@ -856,7 +900,7 @@ app.post('/api/places-to-visit', async (req, res) => {
         });
 
         const resultsArray = await Promise.all(fetchPromises);
-        
+
         // Flatten and deduplicate by id
         const placesMap = new Map();
         resultsArray.flat().forEach(place => {
