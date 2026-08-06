@@ -536,37 +536,6 @@ function getCategoryFallbackPhoto(category, idx = 0) {
   return list[Math.abs(idx) % list.length];
 }
 
-// Fetch a real landmark photo from Wikipedia REST API without requiring API keys
-async function getWikipediaPhoto(placeName, countryName) {
-  try {
-    const isSvgOrLogo = (url) => !url || url.endsWith('.svg') || url.includes('.svg/') || url.includes('logo') || (url.endsWith('.png') && url.includes('svg'));
-    let queryTitle = placeName.trim();
-    let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(queryTitle.replace(/ /g, '_'))}`);
-    if (res.ok) {
-      let data = await res.json();
-      let imgUrl = data.thumbnail?.source || data.originalimage?.source;
-      if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
-    }
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(queryTitle + ' ' + (countryName || ''))}&utf8=&format=json&origin=*`;
-    let searchRes = await fetch(searchUrl);
-    if (searchRes.ok) {
-      let searchData = await searchRes.json();
-      let results = searchData.query?.search || [];
-      for (let item of results.slice(0, 3)) {
-        let pageRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
-        if (pageRes.ok) {
-          let pageData = await pageRes.json();
-          let imgUrl = pageData.thumbnail?.source || pageData.originalimage?.source;
-          if (imgUrl && !isSvgOrLogo(imgUrl)) return imgUrl.replace(/\/\d+px-/, '/800px-');
-        }
-      }
-    }
-  } catch (e) {
-    console.warn(`Wikipedia photo lookup failed for ${placeName}:`, e.message);
-  }
-  return null;
-}
-
 // Fetch a landscape photo from Unsplash for a place name and country
 async function getUnsplashPhoto(placeName, countryName) {
   const apiKey = process.env.UNSPLASH_API_KEY;
@@ -575,8 +544,8 @@ async function getUnsplashPhoto(placeName, countryName) {
   }
   try {
     const directQuery = countryName ? `${placeName} ${countryName}` : placeName;
-    let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(directQuery)}&per_page=1&orientation=landscape`;
-    let response = await fetch(url, {
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(directQuery)}&per_page=1&orientation=landscape`;
+    const response = await fetch(url, {
       headers: { 'Authorization': `Client-ID ${apiKey}` }
     });
     if (response.ok) {
@@ -585,41 +554,27 @@ async function getUnsplashPhoto(placeName, countryName) {
         return data.results[0].urls.regular || data.results[0].urls.small;
       }
     }
-
-    if (countryName) {
-      url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(countryName + ' travel landmark')}&per_page=5&orientation=landscape`;
-      response = await fetch(url, {
-        headers: { 'Authorization': `Client-ID ${apiKey}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.results && data.results.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.results.length);
-          return data.results[randomIndex].urls.regular || data.results[randomIndex].urls.small;
-        }
-      }
-    }
   } catch (error) {
     console.error(`Error fetching photo from Unsplash for "${placeName}":`, error.message);
   }
   return null;
 }
 
-// Get best available photo: 1. Unsplash API, 2. Google Places photo, 3. Wikipedia REST API, 4. Category Fallback
+// Get best available photo: 1. Google Places photo, 2. Unsplash API photo, 3. Category Fallback
 async function getBestPlacePhoto(placeName, countryName, category, idx = 0, googlePhotoName = null) {
-  let photo = await getUnsplashPhoto(placeName, countryName);
-  if (photo) return photo;
-
+  // 1. Priority: Google Places API Photo
   if (googlePhotoName) {
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY;
     if (googleApiKey && googleApiKey !== 'YOUR_GOOGLE_PLACES_API_KEY' && googleApiKey.trim() !== '') {
-      return `https://places.googleapis.com/v1/${googlePhotoName}/media?maxWidthPx=600&key=${googleApiKey}`;
+      return `https://places.googleapis.com/v1/${googlePhotoName}/media?maxWidthPx=800&key=${googleApiKey}`;
     }
   }
 
-  photo = await getWikipediaPhoto(placeName, countryName);
+  // 2. Priority: Unsplash API Photo for placeName + countryName
+  const photo = await getUnsplashPhoto(placeName, countryName);
   if (photo) return photo;
 
+  // 3. Priority: Category Fallback Photo (for error or places not fetched)
   return getCategoryFallbackPhoto(category, idx);
 }
 
