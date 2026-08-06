@@ -258,7 +258,7 @@ async function fetchFullPageRecommendations() {
         if (savedRes.ok) {
           const savedData = await savedRes.json();
           savedData.forEach(item => {
-            if (item.destination.toLowerCase() === destination.toLowerCase()) {
+            if (item.name) {
               savedSet.add(item.name.toLowerCase());
             }
           });
@@ -505,8 +505,10 @@ async function togglePlaceBookmark(event, btn, place) {
     return;
   }
 
+  const countryInput = document.getElementById("placesCountrySearch");
+  const searchedDest = countryInput ? countryInput.value.trim() : "";
   const user = getCurrentUser();
-  const destination = user ? user.destination : "";
+  const destination = searchedDest || place.destination || (user && user.destination ? user.destination : "") || "General";
 
   try {
     const res = await fetch(apiUrl("/api/saved-places"), {
@@ -537,6 +539,11 @@ async function togglePlaceBookmark(event, btn, place) {
 
     const data = await res.json();
     place.isSaved = data.saved;
+
+    if (window.loadedFullPagePlaces) {
+      const match = window.loadedFullPagePlaces.find(p => p.name.toLowerCase() === place.name.toLowerCase());
+      if (match) match.isSaved = data.saved;
+    }
 
     // Toggle icon and button visual state
     btn.classList.toggle("saved", data.saved);
@@ -582,9 +589,9 @@ function getPlaceFallbackImage(category, idx = 0) {
     'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&auto=format&fit=crop'
   ];
   const culturePhotos = [
-    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop'
   ];
   const hiddenPhotos = [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',

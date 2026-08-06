@@ -511,8 +511,9 @@ function getCategoryFallbackPhoto(category, idx = 0) {
   ];
   
   const culturePhotos = [
-    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop'
+    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop'
   ];
   
   const hiddenPhotos = [
@@ -1139,17 +1140,22 @@ Do not wrap the response in markdown blocks. Return only raw JSON. Prioritize a 
 
 // POST toggle saved place
 app.post('/api/saved-places', requireAuth, async (req, res) => {
-  const { name, category, description, estimatedDuration, tip, relevanceReason, photoUrl, destination, id, rating, address, location } = req.body;
+  const { name, category, description, estimatedDuration, tip, relevanceReason, photoUrl, id, rating, address, location } = req.body;
+  let destination = (req.body.destination || '').trim();
 
-  if (!name || !destination) {
-    return res.status(400).json({ error: 'Place name and destination are required.' });
+  if (!name) {
+    return res.status(400).json({ error: 'Place name is required.' });
   }
 
   try {
+    if (!destination) {
+      const user = await User.findById(req.userId);
+      destination = (user && user.destination) ? user.destination.trim() : 'General';
+    }
+
     const existing = await SavedPlace.findOne({
       userId: req.userId,
-      name,
-      destination
+      name: { $regex: new RegExp(`^${name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i') }
     });
 
     if (existing) {

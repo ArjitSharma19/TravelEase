@@ -1,6 +1,6 @@
 const CHAT_SYSTEM_PROMPT = "You are a travel assistant for Indian passport holders. Answer questions about visas, currency, SIMs, transport and travel essentials. Be concise.";
 const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-  ? "" 
+  ? (window.location.port && window.location.port !== "3000" ? "http://localhost:3000" : "")
   : (window.TRAVELEASE_API_BASE_URL || "https://travelease-xva8.onrender.com");
 
 function apiUrl(path) {
@@ -26,24 +26,24 @@ window.getCountryCode2 = getCountryCode2;
 
 function getOptimizedImageUrl(url) {
   if (!url || !url.includes('unsplash.com')) return url;
-  
-  const isSlowConnection = navigator.connection && 
+
+  const isSlowConnection = navigator.connection &&
     (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === 'slow-2g');
-    
+
   if (isSlowConnection) {
     if (url.includes('w=')) {
       return url.replace(/w=\d+/, 'w=400');
     }
     return url + (url.includes('?') ? '&' : '?') + 'w=400';
   }
-  
+
   if (window.innerWidth < 768) {
     if (url.includes('w=')) {
       return url.replace(/w=\d+/, 'w=800');
     }
     return url + (url.includes('?') ? '&' : '?') + 'w=800';
   }
-  
+
   return url;
 }
 window.getOptimizedImageUrl = getOptimizedImageUrl;
@@ -55,7 +55,7 @@ function optimizePageImages() {
       img.src = getOptimizedImageUrl(src);
     }
   });
-  
+
   document.querySelectorAll('[style*="background-image"]').forEach(el => {
     const bg = el.style.backgroundImage;
     if (bg && bg.includes('unsplash.com')) {
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       topNav.classList.toggle("open");
     });
-    
+
     // Clicking outside navigation to close
     document.addEventListener("click", (e) => {
       if (!topNav.contains(e.target) && e.target !== hamburgerBtn) {
@@ -224,7 +224,7 @@ function setupPasswordToggles() {
       if (!input) return;
       const icon = btn.querySelector('i');
       if (!icon) return;
-      
+
       if (input.type === 'password') {
         input.type = 'text';
         icon.className = 'fa-solid fa-eye-slash';
@@ -383,8 +383,8 @@ function setupSearch() {
       "uk": "UK"
     };
 
-    const matchedCurated = nameToCuratedCode[matchedCountry.name.toLowerCase()] || 
-                           nameToCuratedCode[query.toLowerCase()];
+    const matchedCurated = nameToCuratedCode[matchedCountry.name.toLowerCase()] ||
+      nameToCuratedCode[query.toLowerCase()];
 
     if (matchedCurated) {
       window.location.href = `destination.html?country=${encodeURIComponent(matchedCurated)}`;
@@ -2047,7 +2047,7 @@ async function setupCustomCurrencySelect() {
   // 1. Create a container wrapper
   const wrapper = document.createElement("div");
   wrapper.className = "custom-select-wrapper";
-  
+
   // 2. Create the visible search input
   const searchInput = document.createElement("input");
   searchInput.type = "text";
@@ -2055,24 +2055,24 @@ async function setupCustomCurrencySelect() {
   searchInput.className = "custom-select-search";
   searchInput.placeholder = "Type to search currency...";
   searchInput.autocomplete = "off";
-  
+
   // 3. Create the hidden input to store the value
   const hiddenInput = document.createElement("input");
   hiddenInput.type = "hidden";
   hiddenInput.id = "converter-currency";
   hiddenInput.value = selectElement.value || "USD";
-  
+
   // 4. Create the custom dropdown items list container
   const listContainer = document.createElement("div");
   listContainer.className = "custom-select-list";
   listContainer.id = "currencySuggestions";
   listContainer.style.display = "none";
-  
+
   // Build the DOM
   wrapper.appendChild(searchInput);
   wrapper.appendChild(hiddenInput);
   wrapper.appendChild(listContainer);
-  
+
   // Replace selectElement with our searchable wrapper
   selectElement.parentNode.replaceChild(wrapper, selectElement);
 
@@ -2108,8 +2108,8 @@ async function setupCustomCurrencySelect() {
   // Render options helper
   const renderOptions = (filterQuery = "") => {
     const query = filterQuery.toLowerCase().trim();
-    const filtered = allCurrencyList.filter(c => 
-      c.code.toLowerCase().includes(query) || 
+    const filtered = allCurrencyList.filter(c =>
+      c.code.toLowerCase().includes(query) ||
       c.name.toLowerCase().includes(query)
     );
 
@@ -2150,7 +2150,7 @@ async function setupCustomCurrencySelect() {
       hiddenInput.value = value;
       searchInput.value = currency.displayName;
       listContainer.style.display = "none";
-      
+
       // Trigger change event on hidden input to fire convertCurrency
       hiddenInput.dispatchEvent(new Event("change"));
     }
@@ -2242,7 +2242,7 @@ async function sidebarConverterController() {
   if (!converterWidget) return;
 
   const amountInput = document.getElementById("converter-amount");
-  
+
   // Set up searchable currency selector
   await setupCustomCurrencySelect();
 
@@ -5053,7 +5053,7 @@ async function setupPlacesWidget() {
 
     const destination = user.destination;
     const travelPurpose = user.tripPurpose || 'tourism';
-    
+
     // Map tripPurpose for Gemini
     let purposeStr = 'Tourist';
     if (travelPurpose === 'business') purposeStr = 'Business';
@@ -5214,8 +5214,10 @@ async function setupPlacesWidget() {
           return;
         }
 
+        const countryInput = document.getElementById("placesCountrySearch") || document.getElementById("searchCountryInput");
+        const searchedDest = countryInput ? countryInput.value.trim() : "";
         const user = getCurrentUser();
-        const destination = user ? user.destination : '';
+        const destination = searchedDest || placeObj.destination || (user && user.destination ? user.destination : "") || "General";
 
         try {
           const res = await fetch(apiUrl('/api/saved-places'), {
@@ -5242,7 +5244,7 @@ async function setupPlacesWidget() {
 
           const responseData = await res.json();
           placeObj.isSaved = responseData.saved;
-          
+
           // Toggle button styling
           btn.classList.toggle('saved', responseData.saved);
           const icon = btn.querySelector('i');
@@ -5287,7 +5289,7 @@ async function setupPlacesWidget() {
 
 function getPlaceFallbackImage(category, idx = 0) {
   const cat = (category || '').toLowerCase();
-  
+
   const naturePhotos = [
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop',

@@ -660,7 +660,7 @@ async function toggleDashboardPlaceBookmark(event, btn, place) {
       },
       body: JSON.stringify({
         name: place.name,
-        destination: place.destination
+        destination: place.destination || (getLoggedInUser() ? getLoggedInUser().destination : "") || "General"
       })
     });
 
