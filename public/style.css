@@ -3720,7 +3720,8 @@ body.modal-open {
 
 .flight-price-action {
   text-align: right;
-  flex: 0 0 100px;
+  flex: 0 0 160px;
+  min-width: 140px;
 }
 
 .price-text {
