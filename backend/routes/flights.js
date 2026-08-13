@@ -313,6 +313,28 @@ function generateMockItinerary(from, to, dateStr, index, carrierCode, airlineNam
   };
 }
 
+function buildKiwiUrl(origin, destination, departureDate, returnDate, adults = 1) {
+  const orig = (origin || '').toLowerCase();
+  const dest = (destination || '').toLowerCase();
+  let path = `${orig}-${dest}/${departureDate}`;
+  if (returnDate) {
+    path += `/${returnDate}`;
+  }
+  return `https://www.kiwi.com/en/search/results/${path}?adults=${adults}&affilid=travelease`;
+}
+
+function buildSkyscannerUrl(origin, destination, departureDate, returnDate, adults = 1) {
+  const orig = (origin || '').toLowerCase();
+  const dest = (destination || '').toLowerCase();
+  const depFormatted = departureDate ? departureDate.replace(/-/g, '').slice(2) : '';
+  const retFormatted = returnDate ? returnDate.replace(/-/g, '').slice(2) : '';
+  let path = `${orig}/${dest}/${depFormatted}`;
+  if (retFormatted) {
+    path += `/${retFormatted}`;
+  }
+  return `https://www.skyscanner.co.in/transport/flights/${path}/?adults=${adults}&tag=travelease`;
+}
+
 // GET Flight Offers Search
 router.get('/search', async (req, res) => {
   const { origin, destination, departure, returnDate, adults } = req.query;
@@ -320,6 +342,17 @@ router.get('/search', async (req, res) => {
   if (!origin || !destination || !departure) {
     return res.status(400).json({ error: 'Origin, destination, and departure date are required.' });
   }
+
+  const kiwiSearchUrl = buildKiwiUrl(origin, destination, departure, returnDate, adults || 1);
+  const skyscannerSearchUrl = buildSkyscannerUrl(origin, destination, departure, returnDate, adults || 1);
+
+  const attachDeepLinks = (offers) => {
+    return offers.map(offer => ({
+      ...offer,
+      kiwiUrl: kiwiSearchUrl,
+      skyscannerUrl: skyscannerSearchUrl
+    }));
+  };
 
   try {
     const token = await getAmadeusToken();
@@ -342,13 +375,23 @@ router.get('/search', async (req, res) => {
     }
 
     const data = await apiRes.json();
-    const formatted = formatAmadeusOffers(data.data || []);
-    return res.json({ success: true, source: 'amadeus', data: formatted });
+    const formatted = attachDeepLinks(formatAmadeusOffers(data.data || []));
+    return res.json({
+      success: true,
+      source: 'amadeus',
+      data: formatted,
+      deepLinks: { kiwiUrl: kiwiSearchUrl, skyscannerUrl: skyscannerSearchUrl }
+    });
 
   } catch (error) {
     console.warn(`Amadeus flight search failed (${error.message}). Serving realistic mock data.`);
-    const mockData = generateMockFlights(origin, destination, departure, returnDate, adults || 1);
-    return res.json({ success: true, source: 'mock', data: mockData });
+    const mockData = attachDeepLinks(generateMockFlights(origin, destination, departure, returnDate, adults || 1));
+    return res.json({
+      success: true,
+      source: 'mock',
+      data: mockData,
+      deepLinks: { kiwiUrl: kiwiSearchUrl, skyscannerUrl: skyscannerSearchUrl }
+    });
   }
 });
 

@@ -2970,6 +2970,29 @@ window.renderFlightResults = function () {
       `;
     }
 
+    const fromCode = document.getElementById('flight-from')?.value || 'DEL';
+    const toCode = document.getElementById('flight-to')?.value || 'DXB';
+    const depDate = document.getElementById('flight-departure')?.value || '';
+    const retDate = document.getElementById('flight-return')?.value || '';
+    const numAdults = document.getElementById('flight-travellers')?.value || '1';
+
+    const buildKiwiLink = (f, t, d, r, a) => {
+      let p = `${(f||'del').toLowerCase()}-${(t||'dxb').toLowerCase()}/${d}`;
+      if (r) p += `/${r}`;
+      return `https://www.kiwi.com/en/search/results/${p}?adults=${a || 1}&affilid=travelease`;
+    };
+
+    const buildSkyscannerLink = (f, t, d, r, a) => {
+      const depF = d ? d.replace(/-/g, '').slice(2) : '';
+      const retF = r ? r.replace(/-/g, '').slice(2) : '';
+      let p = `${(f||'del').toLowerCase()}/${(t||'dxb').toLowerCase()}/${depF}`;
+      if (retF) p += `/${retF}`;
+      return `https://www.skyscanner.co.in/transport/flights/${p}/?adults=${a || 1}&tag=travelease`;
+    };
+
+    const kiwiUrl = flight.kiwiUrl || buildKiwiLink(fromCode, toCode, depDate, retDate, numAdults);
+    const skyscannerUrl = flight.skyscannerUrl || buildSkyscannerLink(fromCode, toCode, depDate, retDate, numAdults);
+
     return `
       <div class="flight-card">
         <div class="flight-card-summary">
@@ -3002,7 +3025,14 @@ window.renderFlightResults = function () {
           </div>
           <div class="flight-price-action">
             <div class="price-text">₹${flight.price}</div>
-            <button class="book-btn" onclick="openBookingFlow('${flight.id}')">Book Flight</button>
+            <div class="flight-affiliate-btns" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; width: 100%;">
+              <a href="${kiwiUrl}" target="_blank" rel="noopener sponsored" class="book-btn kiwi-btn" style="background: #00a698; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; transition: background 0.2s;">
+                Book on Kiwi.com ✈️
+              </a>
+              <a href="${skyscannerUrl}" target="_blank" rel="noopener sponsored" class="book-btn skyscanner-btn" style="background: #0770e3; color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; transition: background 0.2s;">
+                Compare on Skyscanner
+              </a>
+            </div>
           </div>
         </div>
         ${inboundHTML}
@@ -3017,11 +3047,14 @@ window.openBookingFlow = function (flightId) {
 
   window.selectedFlight = flight;
 
-  const user = getCurrentUser();
-  const passengerInput = document.getElementById('bookingPassengerName');
-  if (passengerInput) {
-    passengerInput.value = user ? user.name : '';
-  }
+  const fromCode = document.getElementById('flight-from')?.value || 'DEL';
+  const toCode = document.getElementById('flight-to')?.value || 'DXB';
+  const depDate = document.getElementById('flight-departure')?.value || '';
+  const retDate = document.getElementById('flight-return')?.value || '';
+  const numAdults = document.getElementById('flight-travellers')?.value || '1';
+
+  const kiwiUrl = flight.kiwiUrl || `https://www.kiwi.com/en/search/results/${fromCode.toLowerCase()}-${toCode.toLowerCase()}/${depDate}${retDate ? '/' + retDate : ''}?adults=${numAdults}&affilid=travelease`;
+  const skyscannerUrl = flight.skyscannerUrl || `https://www.skyscanner.co.in/transport/flights/${fromCode.toLowerCase()}/${toCode.toLowerCase()}/${depDate ? depDate.replace(/-/g, '').slice(2) : ''}/?adults=${numAdults}&tag=travelease`;
 
   const detailsContainer = document.getElementById('bookingFlightDetails');
   if (detailsContainer) {
@@ -3029,10 +3062,11 @@ window.openBookingFlow = function (flightId) {
     const inbound = flight.itineraries[1];
 
     let summaryText = `
-      <div style="font-weight: 700; color: #1a73e8; margin-bottom: 6px;">
+      <div style="font-weight: 700; color: #1a73e8; font-size: 1.1rem; margin-bottom: 8px;">
         ${escapeHTML(flight.airline)} (${escapeHTML(flight.flightNumber)})
       </div>
-      <div><strong>Outbound:</strong> ${escapeHTML(outbound.departure.iata)} ➔ ${escapeHTML(outbound.arrival.iata)} (${outbound.departure.time} - ${outbound.arrival.time}) on ${outbound.departure.date}</div>
+      <div style="font-size: 0.9rem; line-height: 1.5; color: #444;">
+        <div><strong>Outbound:</strong> ${escapeHTML(outbound.departure.iata)} ➔ ${escapeHTML(outbound.arrival.iata)} (${outbound.departure.time} - ${outbound.arrival.time}) on ${outbound.departure.date}</div>
     `;
 
     if (inbound) {
@@ -3041,14 +3075,34 @@ window.openBookingFlow = function (flightId) {
       `;
     }
 
-    summaryText += `<div style="margin-top: 8px; font-weight: 700; color: #333;">Total Cost: ₹${flight.price}</div>`;
+    summaryText += `
+        <div style="margin-top: 10px; font-weight: 700; font-size: 1.1rem; color: #111;">Estimated Fare: ₹${flight.price}</div>
+      </div>
+
+      <div style="margin-top: 18px; padding: 12px 14px; background: #eef9f8; border: 1px solid #b2e8e3; border-radius: 8px; font-size: 0.85rem; color: #005c53; line-height: 1.4;">
+        <i class="fa-solid fa-shield-halved" style="margin-right: 6px; color: #00a698;"></i>
+        <strong>Official Booking Partner:</strong> You will be redirected securely to Kiwi.com or Skyscanner to complete your ticket booking with zero hidden platform fees.
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <a href="${kiwiUrl}" target="_blank" rel="noopener sponsored" class="primary-button" style="background: #00a698; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; font-weight: 700; font-size: 1rem; border-radius: 8px; text-align: center;">
+          <i class="fa-solid fa-plane-departure"></i> Continue to Kiwi.com &rarr;
+        </a>
+        <a href="${skyscannerUrl}" target="_blank" rel="noopener sponsored" class="secondary-button" style="background: #0770e3; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-weight: 600; font-size: 0.95rem; border-radius: 8px; text-align: center;">
+          Compare options on Skyscanner &rarr;
+        </a>
+      </div>
+    `;
 
     detailsContainer.innerHTML = summaryText;
   }
 
-  document.getElementById('bookingError').textContent = '';
-  document.getElementById('bookingFormSide').style.display = 'block';
-  document.getElementById('bookingSuccessPanel').style.display = 'none';
+  const bookingFormSide = document.getElementById('bookingFormSide');
+  if (bookingFormSide) {
+    // Hide standard form elements inside modal since we redirect directly via affiliate partners
+    const formFields = bookingFormSide.querySelector('.booking-fields');
+    if (formFields) formFields.style.display = 'none';
+  }
 
   closeModal('flightResultsModal');
   openModal('flightBookingModal');
